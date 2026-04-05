@@ -1,0 +1,14 @@
+{
+  "name": "scms-kiU",
+  "version": "1.0.0",
+  "description": "Student Complaint Management System for KIU",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "start": "docker compose up -d",
+    "dev": "docker compose up"
+  }
+}
