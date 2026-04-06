@@ -1,12 +1,8 @@
 import { 
   BarChart3, 
   TrendingUp, 
-  Calendar, 
   Download, 
-  Filter, 
-  PieChart, 
-  LayoutDashboard,
-  FileText
+  PieChart
 } from 'lucide-react';
 
 export default function ReportsOverview() {

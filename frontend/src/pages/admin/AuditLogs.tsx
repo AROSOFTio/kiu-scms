@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
-  ShieldAlert, 
   Search, 
   Filter, 
   Calendar,
-  Clock,
   User,
   Activity,
   History,

@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
-  Users, 
   Search, 
   Filter, 
   UserPlus, 
-  MoreVertical, 
   ShieldCheck, 
   ShieldAlert, 
   Mail,
   Building2,
-  Trash2,
   Edit2
 } from 'lucide-react';
 import api from '../../lib/api';
