@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { db } from '../config/database';
+import { NotificationService } from '../services/notification.service';
 
 // @desc    Get all complaints (Admin/Staff only)
 export const getAllComplaints = async (req: Request, res: Response) => {
@@ -90,6 +91,12 @@ export const assignStaff = async (req: Request, res: Response) => {
       [id, adminId, `Complaint assigned to ${staff[0].first_name} ${staff[0].last_name}`]
     );
 
+    // Notify the assigned staff
+    await NotificationService.notifyAssignment(parseInt(id), staffId);
+
+    // Notify the student about assignment (implicitly through status change)
+    await NotificationService.notifyStatusChange(parseInt(id), 'Under Review', `Complaint has been assigned to ${staff[0].first_name} ${staff[0].last_name}`);
+
     res.json({ status: 'success', message: 'Staff assigned successfully' });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
@@ -133,6 +140,9 @@ export const updateStatus = async (req: Request, res: Response) => {
        VALUES (?, ?, ?, ?)`,
       [id, status, userId, remarks]
     );
+
+    // Notify student of status update
+    await NotificationService.notifyStatusChange(parseInt(id), status, remarks);
 
     res.json({ status: 'success', message: 'Status updated successfully' });
   } catch (err: any) {
@@ -439,6 +449,126 @@ export const toggleUserStatus = async (req: Request, res: Response) => {
   try {
     await db.query('UPDATE users SET is_active = ? WHERE id = ?', [isActive ? 1 : 0, id]);
     res.json({ status: 'success', message: `User ${isActive ? 'activated' : 'suspended'} successfully` });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get all feedback with complaint details
+export const getFeedback = async (req: Request, res: Response) => {
+  const { page = '1', limit = '20' } = req.query as any;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  try {
+    const [countRows]: any = await db.query('SELECT COUNT(*) as total FROM feedback');
+    const total = countRows[0].total;
+
+    const [rows]: any = await db.query(
+      `SELECT f.*, c.reference_number, c.title as complaint_title, 
+              u.first_name, u.last_name, u.email
+       FROM feedback f
+       JOIN complaints c ON f.complaint_id = c.id
+       JOIN students s ON f.student_id = s.id
+       JOIN users u ON s.user_id = u.id
+       ORDER BY f.created_at DESC LIMIT ? OFFSET ?`,
+      [parseInt(limit), offset]
+    );
+
+    res.json({ status: 'success', data: rows, total });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get feedback summary stats
+export const getFeedbackStats = async (req: Request, res: Response) => {
+  try {
+    const [avg]: any = await db.query('SELECT AVG(rating) as averageRating, COUNT(*) as totalFeedback FROM feedback');
+    const [distribution]: any = await db.query('SELECT rating, COUNT(*) as count FROM feedback GROUP BY rating ORDER BY rating DESC');
+    
+    res.json({ 
+      status: 'success', 
+      data: {
+        averageRating: parseFloat(avg[0].averageRating || 0).toFixed(1),
+        totalFeedback: avg[0].totalFeedback,
+        distribution
+      } 
+    });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get detailed analytical reports
+export const getDetailedReports = async (req: Request, res: Response) => {
+  try {
+    // 1. Distribution by Category
+    const [byCategory]: any = await db.query(
+      `SELECT cc.name as name, COUNT(c.id) as value 
+       FROM complaint_categories cc 
+       LEFT JOIN complaints c ON cc.id = c.category_id 
+       GROUP BY cc.name`
+    );
+
+    // 2. Distribution by Status
+    const [byStatus]: any = await db.query(
+      `SELECT status as name, COUNT(*) as value FROM complaints GROUP BY status`
+    );
+
+    // 3. Trend analysis (Monthly volume for last 12 months)
+    const [trends]: any = await db.query(
+      `SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as count 
+       FROM complaints 
+       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+       GROUP BY month ORDER BY MIN(created_at)`
+    );
+
+    // 4. Resolution Efficiency (Avg hours to resolve)
+    const [resolutionTime]: any = await db.query(
+      `SELECT cc.name as category, 
+              ROUND(AVG(TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at)), 1) as avgHours
+       FROM complaints c
+       JOIN complaint_categories cc ON c.category_id = cc.id
+       WHERE c.status IN ('Resolved', 'Closed')
+       GROUP BY cc.name`
+    );
+
+    res.json({
+      status: 'success',
+      data: {
+        byCategory,
+        byStatus,
+        trends,
+        resolutionTime
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Export complaints as CSV
+export const exportComplaintsCsv = async (req: Request, res: Response) => {
+  try {
+    const [rows]: any = await db.query(
+      `SELECT c.reference_number, c.title, c.status, c.priority, 
+              cc.name as category, u.first_name as student_first, u.last_name as student_last,
+              c.created_at
+       FROM complaints c
+       JOIN complaint_categories cc ON c.category_id = cc.id
+       JOIN students s ON c.student_id = s.id
+       JOIN users u ON s.user_id = u.id
+       ORDER BY c.created_at DESC`
+    );
+
+    let csv = 'Reference,Title,Status,Priority,Category,Student,Date\n';
+    rows.forEach((r: any) => {
+      csv += `"${r.reference_number}","${r.title.replace(/"/g, '""')}","${r.status}","${r.priority}","${r.category}","${r.student_first} ${r.student_last}","${r.created_at.toISOString()}"\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=complaints_report_all.csv');
+    res.status(200).send(csv);
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }

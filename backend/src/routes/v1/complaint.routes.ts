@@ -4,7 +4,10 @@ import {
   getMyComplaints, 
   getComplaintById, 
   getStudentStats,
-  getCategories
+  getCategories,
+  submitFeedback,
+  getNotifications,
+  markNotificationAsRead
 } from '../../controllers/complaint.controller';
 import { requireAuth } from '../../middlewares/auth.middleware';
 import { upload } from '../../middlewares/upload.middleware';
@@ -18,6 +21,9 @@ router.get('/categories', requireAuth, getCategories);
 router.post('/', requireAuth, upload.array('attachments', 5), submitComplaint);
 router.get('/', requireAuth, getMyComplaints);
 router.get('/stats', requireAuth, getStudentStats);
+router.get('/notifications', requireAuth, getNotifications);
+router.patch('/notifications/:id/read', requireAuth, markNotificationAsRead);
 router.get('/:id', requireAuth, getComplaintById);
+router.post('/:id/feedback', requireAuth, submitFeedback);
 
 export default router;

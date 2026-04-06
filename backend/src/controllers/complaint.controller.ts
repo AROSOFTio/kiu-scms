@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import { NotificationService } from '../services/notification.service';
 import path from 'path';
 
 // Helper: Generate reference number like SCM-2025-000123
@@ -54,6 +55,16 @@ export const submitComplaint = async (req: Request, res: Response) => {
        VALUES (?, 'Submitted', ?, 'Complaint submitted by student')`,
       [complaintId, userId]
     );
+
+    // 1. Send in-app notification to student
+    await NotificationService.sendInApp(
+      userId, 
+      'Complaint Received', 
+      `Your complaint ${reference} has been successfully submitted and is awaiting review.`
+    );
+
+    // 2. Optional: Notify Admin of new complaint?
+    // We can add this later or use a different service call.
 
     res.status(201).json({
       status: 'success',
@@ -186,6 +197,80 @@ export const getCategories = async (req: Request, res: Response) => {
   try {
     const [rows]: any = await db.query('SELECT id, name, description FROM complaint_categories ORDER BY name');
     res.json({ status: 'success', data: rows });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Submit feedback for a resolved complaint
+export const submitFeedback = async (req: Request, res: Response) => {
+  const userId = (req as any).user?.userId;
+  const { id } = req.params;
+  const { rating, comments } = req.body;
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ status: 'error', message: 'Valid rating (1-5) is required' });
+  }
+
+  try {
+    // 1. Verify complaint belongs to student and is resolved/closed
+    const [complaints]: any = await db.query(
+      `SELECT c.id, c.student_id 
+       FROM complaints c
+       JOIN students s ON c.student_id = s.id
+       WHERE c.id = ? AND s.user_id = ? AND c.status IN ('Resolved', 'Closed')`,
+      [id, userId]
+    );
+
+    if (complaints.length === 0) {
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Complaint not found or not in a state allowing feedback' 
+      });
+    }
+
+    const studentId = complaints[0].student_id;
+
+    // 2. Insert feedback (using ON DUPLICATE KEY UPDATE since complaint_id is unique)
+    await db.query(
+      `INSERT INTO feedback (complaint_id, student_id, rating, comments)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE rating = VALUES(rating), comments = VALUES(comments)`,
+      [id, studentId, rating, comments]
+    );
+
+    res.json({ status: 'success', message: 'Feedback submitted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get user notifications
+export const getNotifications = async (req: Request, res: Response) => {
+  const userId = (req as any).user?.userId;
+
+  try {
+    const [rows]: any = await db.query(
+      'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+      [userId]
+    );
+    res.json({ status: 'success', data: rows });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Mark notification as read
+export const markNotificationAsRead = async (req: Request, res: Response) => {
+  const userId = (req as any).user?.userId;
+  const { id } = req.params;
+
+  try {
+    await db.query(
+      'UPDATE notifications SET is_read = TRUE WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
+    res.json({ status: 'success', message: 'Notification marked as read' });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }

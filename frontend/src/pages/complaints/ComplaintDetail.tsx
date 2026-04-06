@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Skeleton } from '../../components/ui/Skeleton';
+import FeedbackForm from '../../components/complaints/FeedbackForm';
 
 interface TimelineEvent {
   id: number;
@@ -36,6 +37,7 @@ interface ComplaintDetail {
   created_at: string;
   attachments: { id: number; file_path: string; file_name: string }[];
   timeline: TimelineEvent[];
+  feedback?: { rating: number; comments: string };
 }
 
 export default function ComplaintDetail() {
@@ -214,6 +216,23 @@ export default function ComplaintDetail() {
                   </a>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Feedback Section (If Resolved/Closed) */}
+          {(complaint.status === 'Resolved' || complaint.status === 'Closed') && (
+            <section className="space-y-4 pt-4">
+              <h2 className="text-lg font-black text-gray-900 tracking-tight flex items-center gap-4">
+                Feedback
+                <div className="h-[2px] flex-1 bg-gray-50" />
+              </h2>
+              <FeedbackForm 
+                complaintId={id!} 
+                existingFeedback={complaint.feedback}
+                onSuccess={() => {
+                  // Optionally refresh or just let the form handle the success state
+                }} 
+              />
             </section>
           )}
 

@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Bell, LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import NotificationCenter from './NotificationCenter';
 
 export default function DashboardLayout() {
   const location = useLocation();
@@ -84,10 +85,7 @@ export default function DashboardLayout() {
           </div>
           
           <div className="flex items-center space-x-6 text-sm text-primary-50">
-            <button className="hover:text-white relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-0 right-0 block h-1.5 w-1.5 rounded-full bg-red-400 ring-2 ring-[#008540]" />
-            </button>
+            <NotificationCenter />
             <button className="hover:text-white transition-colors">Change password</button>
             <button onClick={handleLogout} className="flex items-center hover:text-white transition-colors font-medium">
               Logout

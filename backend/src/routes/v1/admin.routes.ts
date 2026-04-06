@@ -13,7 +13,11 @@ import {
   getSettings,
   updateSettings,
   getAuditLogs,
-  manageOrg
+  manageOrg,
+  getFeedback,
+  getFeedbackStats,
+  getDetailedReports,
+  exportComplaintsCsv
 } from '../../controllers/admin.controller';
 
 const router = Router();
@@ -67,5 +71,13 @@ router.post('/departments', requireAuth, requireRole(['Admin']), manageOrg.creat
 
 router.get('/categories', requireAuth, requireRole(['Admin', 'Staff']), manageOrg.getCategories);
 router.post('/categories', requireAuth, requireRole(['Admin']), manageOrg.createCategory);
+
+// Feedback retrieval
+router.get('/feedback', requireAuth, requireRole(['Admin', 'Staff']), getFeedback);
+router.get('/feedback/stats', requireAuth, requireRole(['Admin', 'Staff']), getFeedbackStats);
+
+// Analytical Reports & Exports
+router.get('/reports/analytics', requireAuth, requireRole(['Admin', 'Staff']), getDetailedReports);
+router.get('/reports/export', requireAuth, requireRole(['Admin']), exportComplaintsCsv);
 
 export default router;
