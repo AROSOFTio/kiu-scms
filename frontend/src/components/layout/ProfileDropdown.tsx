@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Key, User, ChevronDown, Settings, Shield } from 'lucide-react';
+import { LogOut, Key, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileDropdown() {

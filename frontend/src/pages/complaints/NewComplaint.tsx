@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   FileText,
-  Upload, 
   X, 
   AlertCircle,
   CheckCircle2,
@@ -13,7 +12,8 @@ import {
   Loader2,
   Send,
   Plus,
-  ShieldCheck
+  ShieldCheck,
+  ArrowRight
 } from 'lucide-react';
 import api from '../../lib/api';
 

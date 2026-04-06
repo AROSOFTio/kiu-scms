@@ -11,7 +11,7 @@ import {
   History
 } from 'lucide-react';
 import api from '../../lib/api';
-import { CardSkeleton, TableRowSkeleton, StatSkeleton } from '../../components/ui/Skeleton';
+import { TableRowSkeleton, StatSkeleton } from '../../components/ui/Skeleton';
 
 interface DashboardStats {
   total: number;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationCenter from './NotificationCenter';
@@ -7,8 +7,7 @@ import ProfileDropdown from './ProfileDropdown';
 
 export default function DashboardLayout() {
   const location = useLocation();
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -18,10 +17,6 @@ export default function DashboardLayout() {
     setIsSidebarOpen(false);
   }, [location.pathname]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   // Filter navigation based on role
   
