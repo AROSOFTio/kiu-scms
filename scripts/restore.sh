@@ -1,21 +1,37 @@
 #!/bin/bash
 
 # SCMS Database Restore Script
-# Usage: ./restore.sh <backup_file.sql.gz>
+# Usage: ./scripts/restore.sh <backup_file.sql.gz>
 
 if [ -z "$1" ]; then
     echo "❌ Error: No backup file specified."
-    echo "Usage: ./restore.sh <backup_file.sql.gz>"
+    echo "Usage: ./scripts/restore.sh backups/<backup_file.sql.gz>"
     exit 1
 fi
 
+if [ ! -f ".env" ]; then
+    echo "❌ Error: .env file missing. Cannot extract credentials."
+    exit 1
+fi
+
+set -a
+source .env
+set +a
+
 BACKUP_FILE=$1
 CONTAINER_NAME="scms-db-prod"
-DB_NAME="scms_db"
 
-echo "📂 Starting database restore from $BACKUP_FILE..."
+echo "📂 Warning: This will overwrite the live database from $BACKUP_FILE!"
+read -p "Are you absolutely sure? (y/n) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Restoration cancelled."
+    exit 1
+fi
 
-# 1. Unzip backup
-gunzip -c $BACKUP_FILE | docker exec -i $CONTAINER_NAME /usr/bin/mysql -u root --password=kiudbpass!23 $DB_NAME
+echo "📂 Starting database restore..."
 
-echo "✅ Restoration completed successfully!"
+# Execute Restoration
+gunzip -c $BACKUP_FILE | docker exec -i $CONTAINER_NAME /usr/bin/mysql -u root --password="${DB_ROOT_PASSWORD}" ${DB_NAME}
+
+echo "✅ Restoration completed forcefully and successfully!"
