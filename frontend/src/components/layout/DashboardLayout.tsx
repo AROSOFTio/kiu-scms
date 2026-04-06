@@ -15,10 +15,14 @@ export default function DashboardLayout() {
   // Filter navigation based on role
   const isAdmin = user?.role === 'Admin';
   
-  const navigation = isAdmin ? [
+  const navigation = user?.role === 'Admin' ? [
     { name: 'Admin Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
-    { name: 'Reports Analytics', href: '/dashboard/admin/reports', icon: Settings },
+    { name: 'Grievance Records', href: '/dashboard/admin/complaints', icon: FileText },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
+    { name: 'Statistics', href: '/dashboard/admin/reports', icon: Settings },
+  ] : user?.role === 'Staff' ? [
+    { name: 'Staff Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
+    { name: 'Assigned Cases', href: '/dashboard/admin/complaints', icon: FileText },
   ] : [
     { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
     { name: 'My Complaints', href: '/dashboard/student/complaints', icon: FileText },
