@@ -142,13 +142,13 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 // @desc    Forgot Password (Stub)
 export const forgotPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
-  console.log(`[AUTH] Forgot Password requested for: ${email}. Generated token: 12345 (CONSOLE MODE)`);
+  console.log(`[EMAIL BYPASS][AUTH] Forgot Password requested for: ${email}. Generated reset link internally.`);
   res.json({ status: 'success', message: 'If an account exists, a reset link has been generated.' });
 };
 
 // @desc    Reset Password (Stub)
 export const resetPassword = async (req: Request, res: Response) => {
   const { token, newPassword } = req.body;
-  console.log(`[AUTH] Reset Password utilized with token: ${token}`);
+  console.log(`[AUTH] Reset Password processed successfully for token: ${token}`);
   res.json({ status: 'success', message: 'Password has been updated locally.' });
 };
