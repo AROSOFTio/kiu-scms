@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { db } from '../config/database';
 
 // @desc    Get all complaints (Admin/Staff only)
