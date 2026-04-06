@@ -31,12 +31,14 @@ export default function NewComplaint() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ComplaintFormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<ComplaintFormData>({
     resolver: zodResolver(complaintSchema),
     defaultValues: {
       priority: 'Medium'
     }
   });
+
+  const descriptionValue = watch('description') || '';
 
   useEffect(() => {
     const fetchCategories = async () => {

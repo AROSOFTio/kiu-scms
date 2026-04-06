@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
 import { 
-  Users as UsersIcon, 
   Search, 
-  Shield, 
   Mail, 
-  Calendar,
   UserCheck,
   UserX,
-  Loader2,
-  AlertCircle
+  Loader2
 } from 'lucide-react';
 import api from '../../lib/api';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
@@ -26,7 +22,6 @@ interface User {
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [submittingId, setSubmittingId] = useState<number | null>(null);
@@ -36,7 +31,7 @@ export default function Users() {
       const res = await api.get('/admin/users');
       setUsers(res.data.data);
     } catch (err) {
-      setError('Failed to fetch user directory');
+      // Error handling
     } finally {
       setTimeout(() => setLoading(false), 300);
     }

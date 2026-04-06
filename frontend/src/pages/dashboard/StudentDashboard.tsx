@@ -9,7 +9,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import api from '../../lib/api';
-import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Skeleton';
+import { CardSkeleton, TableRowSkeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 interface DashboardStats {

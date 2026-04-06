@@ -6,11 +6,9 @@ import {
   Printer, 
   TrendingUp, 
   CheckCircle, 
-  AlertCircle,
   FileText
 } from 'lucide-react';
 import api from '../../lib/api';
-import { Skeleton } from '../../components/ui/Skeleton';
 
 interface ReportData {
   total: number;
@@ -21,7 +19,6 @@ interface ReportData {
 export default function AdminReports() {
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchReports = async () => {

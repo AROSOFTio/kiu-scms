@@ -13,7 +13,6 @@ export default function DashboardLayout() {
   };
 
   // Filter navigation based on role
-  const isAdmin = user?.role === 'Admin';
   
   const navigation = user?.role === 'Admin' ? [
     { name: 'Admin Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },

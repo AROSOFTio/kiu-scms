@@ -1,24 +1,16 @@
-import { useState, useEffect } from 'react';
 import { 
   Search, 
-  Filter, 
-  User, 
-  Mail, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle,
-  MoreVertical,
-  ChevronRight,
-  UserPlus,
   Loader2,
-  Calendar,
-  MoreHorizontal
+  User,
+  CheckCircle2,
+  AlertCircle,
+  UserPlus
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { Skeleton, TableRowSkeleton } from '../../components/ui/Skeleton';
-import { EmptyState } from '../../components/ui/EmptyState';
 import { Modal } from '../../components/ui/Modal';
+import { TableRowSkeleton } from '../../components/ui/Skeleton';
 
 interface Complaint {
   id: number;
@@ -49,7 +41,6 @@ export default function ComplaintsList() {
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
   // Filters
   const [search, setSearch] = useState('');
@@ -76,7 +67,7 @@ export default function ComplaintsList() {
         setComplaints(res.data.data);
         setTotal(res.data.total);
       } catch (err) {
-        setError('Failed to load complaints');
+        // Error handling
       } finally {
         setTimeout(() => setLoading(false), 300);
       }

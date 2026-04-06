@@ -3,10 +3,8 @@ import {
   FileText, 
   Users, 
   Clock, 
-  CheckCircle, 
   TrendingUp, 
-  AlertCircle,
-  ArrowRight
+  AlertCircle
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Skeleton, CardSkeleton } from '../../components/ui/Skeleton';
@@ -22,7 +20,6 @@ interface DashboardStats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchAdminStats = async () => {

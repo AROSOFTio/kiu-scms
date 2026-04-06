@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 interface SkeletonProps {
   className?: string;
@@ -12,7 +12,7 @@ export function Skeleton({ className = '', variant = 'rectangular' }: SkeletonPr
   return <div className={`${baseClasses} ${variantClasses} ${className}`} />;
 }
 
-export function TableRowSkeleton({ cols = 5 }: { cols?: number }) {
+export function TableRowSkeleton() {
   return (
     <div className="flex items-center space-x-4 p-6 border-b border-gray-50">
       <div className="flex-1 space-y-3">
