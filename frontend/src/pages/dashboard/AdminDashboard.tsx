@@ -14,6 +14,7 @@ interface DashboardStats {
   byStatus: { status: string; count: number }[];
   byCategory: { category: string; count: number }[];
   recentActivity: any[];
+  slaMetrics: { breached: number; onTrack: number };
 }
 
 export default function AdminDashboard() {
@@ -80,25 +81,54 @@ export default function AdminDashboard() {
         {/* Status Breakdown */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
           <h2 className="text-lg font-black text-gray-900 tracking-tight mb-8">Status Metrics</h2>
-          <div className="space-y-6">
-            {stats?.byStatus.map((s) => (
-              <div key={s.status} className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-bold text-gray-700">{s.status}</span>
-                  <span className="font-black text-gray-900">{s.count}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              {stats?.byStatus.map((s) => (
+                <div key={s.status} className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-bold text-gray-700">{s.status}</span>
+                    <span className="font-black text-gray-900">{s.count}</span>
+                  </div>
+                  <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-1000 ${
+                        s.status === 'Resolved' ? 'bg-emerald-500' :
+                        s.status === 'Submitted' ? 'bg-blue-500' :
+                        s.status === 'Rejected' ? 'bg-red-500' : 'bg-amber-500'
+                      }`}
+                      style={{ width: `${(s.count / (stats?.total || 1)) * 100}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-1000 ${
-                      s.status === 'Resolved' ? 'bg-emerald-500' :
-                      s.status === 'Submitted' ? 'bg-blue-500' :
-                      s.status === 'Rejected' ? 'bg-red-500' : 'bg-amber-500'
-                    }`}
-                    style={{ width: `${(s.count / (stats?.total || 1)) * 100}%` }}
-                  />
+              ))}
+            </div>
+            
+            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-6">Service Level Agreement</h3>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <span className="text-sm font-bold text-gray-700">On Track</span>
+                  </div>
+                  <span className="text-xl font-black text-gray-900">{stats?.slaMetrics?.onTrack || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-3 rounded-full bg-red-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                    <span className="text-sm font-bold text-gray-700">Breached</span>
+                  </div>
+                  <span className="text-xl font-black text-red-600">{stats?.slaMetrics?.breached || 0}</span>
+                </div>
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="h-2 w-full flex rounded-full overflow-hidden bg-gray-200">
+                    <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${((stats?.slaMetrics?.onTrack || 0) / ((stats?.slaMetrics?.onTrack || 0) + (stats?.slaMetrics?.breached || 0) || 1)) * 100}%` }} />
+                    <div className="h-full bg-red-500 transition-all duration-1000" style={{ width: `${((stats?.slaMetrics?.breached || 0) / ((stats?.slaMetrics?.onTrack || 0) + (stats?.slaMetrics?.breached || 0) || 1)) * 100}%` }} />
+                  </div>
+                  <p className="text-[10px] font-bold text-gray-400 mt-3 text-center uppercase tracking-widest">Active Resolution Compliance</p>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
 

@@ -33,6 +33,25 @@ export class NotificationService {
    * Send an email notification using Nodemailer.
    */
   static async sendEmail(to: string, subject: string, text: string, html?: string) {
+    const makeHtmlTemplate = (title: string, body: string) => `
+<div style="font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#f8fafc;padding:40px 20px;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);">
+    <div style="background-color:#008540;padding:30px;text-align:center;">
+      <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">KIU Grievance Portal</h1>
+    </div>
+    <div style="padding:40px 30px;">
+      <h2 style="color:#1e293b;font-size:18px;margin-top:0;font-weight:800;border-bottom:2px solid #f1f5f9;padding-bottom:15px;">${title}</h2>
+      <div style="color:#475569;font-size:15px;line-height:1.6;margin-top:20px;">
+        ${body.replace(/\n/g, '<br/>')}
+      </div>
+    </div>
+    <div style="background-color:#f1f5f9;padding:20px 30px;text-align:center;">
+      <p style="color:#94a3b8;font-size:12px;margin:0;line-height:1.5;">This is an automated institutional message from the Kampala International University Complaint Management System. Please do not reply directly to this email.</p>
+    </div>
+  </div>
+</div>
+`;
+
     // If SMTP details aren't provided, just log it.
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.log(`[EMAIL BYPASS] To: ${to} | Subject: ${subject} | Body: ${text}`);
@@ -45,7 +64,7 @@ export class NotificationService {
         to,
         subject,
         text,
-        html: html || text.replace(/\n/g, '<br>'),
+        html: html || makeHtmlTemplate(subject, text),
       });
     } catch (err) {
       console.error('Error sending email notification:', err);

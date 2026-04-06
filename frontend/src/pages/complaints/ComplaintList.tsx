@@ -11,6 +11,8 @@ import {
 import api from '../../lib/api';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { PriorityBadge } from '../../components/ui/PriorityBadge';
+import { SLAIndicator } from '../../components/ui/SLAIndicator';
 
 export default function ComplaintList() {
   const [complaints, setComplaints] = useState<any[]>([]);
@@ -163,15 +165,11 @@ export default function ComplaintList() {
                         </span>
                       </div>
                       <h3 className="font-black text-slate-900 leading-tight group-hover:text-[#008540] transition-colors text-xl md:text-2xl tracking-tight">{complaint.title}</h3>
-                      <div className="flex flex-wrap items-center text-xs text-slate-500 gap-x-8 gap-y-3 font-bold">
+                      <div className="flex flex-wrap items-center text-xs text-slate-500 gap-x-6 gap-y-3 font-bold">
                         <span className="flex items-center"><FileText className="h-4 w-4 mr-2" /> {complaint.category_name}</span>
                         <span className="flex items-center"><Calendar className="h-4 w-4 mr-2" /> {new Date(complaint.created_at).toLocaleDateString()}</span>
-                        <span className={`flex items-center ${
-                          complaint.priority === 'Critical' ? 'text-red-700' :
-                          complaint.priority === 'High' ? 'text-amber-700' : 'text-slate-500'
-                        }`}>
-                          <AlertCircle className={`h-4 w-4 mr-2 ${complaint.priority === 'Critical' ? 'animate-pulse' : ''}`} /> {complaint.priority} Assessment
-                        </span>
+                        <PriorityBadge priority={complaint.priority} />
+                        <SLAIndicator priority={complaint.priority} createdAt={complaint.created_at} status={complaint.status} />
                       </div>
                     </div>
                     <div className="h-12 w-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center mt-4 group-hover:bg-[#008540] group-hover:border-[#008540] transition-all duration-300">

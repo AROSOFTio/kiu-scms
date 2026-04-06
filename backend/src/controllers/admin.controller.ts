@@ -160,6 +160,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
     let statsQuery = '';
     let statusQuery = '';
     let categoryQuery = '';
+    let slaQuery = '';
     let params: any[] = [];
 
     if (isStaff) {
@@ -169,6 +170,10 @@ export const getAdminStats = async (req: Request, res: Response) => {
                        FROM complaint_categories cc 
                        LEFT JOIN complaints c ON cc.id = c.category_id AND c.assigned_staff_id = ?
                        GROUP BY cc.name`;
+      slaQuery = `SELECT 
+                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
+                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
+                  FROM complaints WHERE assigned_staff_id = ?`;
       params = [userId];
     } else {
       statsQuery = 'SELECT COUNT(*) as count FROM complaints';
@@ -177,11 +182,16 @@ export const getAdminStats = async (req: Request, res: Response) => {
                        FROM complaint_categories cc 
                        LEFT JOIN complaints c ON cc.id = c.category_id 
                        GROUP BY cc.name`;
+      slaQuery = `SELECT 
+                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
+                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
+                  FROM complaints`;
     }
 
     const [total]: any = await db.query(statsQuery, params);
     const [byStatus]: any = await db.query(statusQuery, params);
     const [byCategory]: any = await db.query(categoryQuery, params);
+    const [slaMetrics]: any = await db.query(slaQuery, params);
     const [users]: any = await db.query('SELECT COUNT(*) as count FROM users');
     
     // Recent activity (last 5 status changes related to the user if staff)
@@ -204,6 +214,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
         total: total[0].count,
         byStatus,
         byCategory,
+        slaMetrics: slaMetrics[0] ? slaMetrics[0] : { breached: 0, onTrack: 0 },
         totalUsers: users[0].count,
         recentActivity: recent,
         isStaffSpecific: isStaff

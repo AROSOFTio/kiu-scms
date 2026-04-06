@@ -17,6 +17,8 @@ import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../../components/ui/Modal';
 import { TableRowSkeleton, CardSkeleton } from '../../components/ui/Skeleton';
+import { PriorityBadge } from '../../components/ui/PriorityBadge';
+import { SLAIndicator } from '../../components/ui/SLAIndicator';
 
 interface Complaint {
   id: number;
@@ -290,12 +292,9 @@ export default function ComplaintsList() {
                       <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border w-fit shadow-sm ${getStatusColor(c.status)}`}>
                         {c.status}
                       </span>
-                      <div className="flex items-center text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
-                         <span className={`h-2 w-2 rounded-full mr-2 ${
-                           c.priority === 'Critical' ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 
-                           c.priority === 'High' ? 'bg-amber-500 shadow-md shadow-amber-500/20' : 'bg-blue-500'
-                         }`} />
-                         {c.priority} Priority
+                      <div className="flex flex-wrap gap-2">
+                        <PriorityBadge priority={c.priority} />
+                        <SLAIndicator priority={c.priority} createdAt={c.created_at} status={c.status} />
                       </div>
                     </div>
                   </td>

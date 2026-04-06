@@ -31,7 +31,7 @@ export default function DashboardLayout() {
   // Filter navigation based on role
   
   const navigation = user?.role === 'Admin' ? [
-    { name: 'Admin Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
+    { name: 'Executive Overview', href: '/dashboard/admin', icon: LayoutDashboard },
     { name: 'Grievance Records', href: '/dashboard/admin/complaints', icon: FileText },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Organizational Structure', href: '/dashboard/admin/org', icon: Building2 },
