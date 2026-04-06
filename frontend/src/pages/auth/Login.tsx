@@ -44,34 +44,29 @@ export default function Login() {
       className="min-h-screen flex items-center justify-center relative bg-gray-900"
       style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
-      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-[#35393c]/50" />
 
-      <div className="relative z-10 w-full max-w-[460px] mx-4">
+      <div className="relative z-10 w-full max-w-[420px] mx-4 pt-12">
         {/* Card */}
-        <div className="bg-white shadow-2xl">
-          {/* Green top bar */}
-          <div className="h-1.5 bg-[#008540]" />
+        <div className="bg-white">
+          {/* No green top bar replicating the native portal */}
 
           <div className="px-10 py-10">
-            {/* Logo */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="flex items-end text-[#008540] mb-3">
-                <svg width="52" height="52" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M4 22H6V14H4V22ZM18 22H20V6H18V22ZM11 22H13V10H11V22Z"/>
-                </svg>
-                <div className="ml-2 font-extrabold leading-tight uppercase">
-                  <div className="text-3xl tracking-tight">KIU</div>
+            {/* Logo area replicating the native Student Portal */}
+            <div className="flex flex-col items-center mb-8 font-['Arial',sans-serif]">
+              <div className="flex items-center text-[#2ea84b] mb-2">
+                <div className="flex flex-col items-center">
+                  {/* Simplistic fallback for the Giraffe KIU logo */}
+                  <span className="font-extrabold text-[42px] tracking-tighter leading-none" style={{ transform: 'scaleY(1.1)' }}>KIU</span>
+                  <span className="text-[6.5px] font-bold tracking-widest mt-0.5 whitespace-nowrap">EXPLORING THE HEIGHTS</span>
                 </div>
-                <div className="ml-2 text-[9px] flex flex-col justify-end pb-1 font-semibold leading-tight text-[#008540]">
+                <div className="ml-3 flex flex-col justify-center font-bold text-[10px] leading-[1.2] tracking-wider text-[#2ea84b] whitespace-nowrap">
                   <span>KAMPALA</span>
                   <span>INTERNATIONAL</span>
                   <span>UNIVERSITY</span>
                 </div>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 uppercase tracking-widest mt-1">SCMS</h1>
-              <p className="text-[11px] text-gray-500 font-semibold tracking-[0.2em] uppercase mt-0.5">
-                Complaint Management System
-              </p>
+              <h1 className="text-[22px] font-bold text-gray-900 mt-5">Student Portal</h1>
             </div>
 
             {/* API Error */}
@@ -85,43 +80,29 @@ export default function Login() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               {/* Identifier */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">
-                  Email or Registration Number
-                </label>
                 <input
                   type="text"
                   autoComplete="username"
                   {...register('identifier')}
-                  className={`w-full px-3.5 py-3 border text-sm rounded-sm focus:outline-none focus:ring-2 focus:ring-[#008540]/30 focus:border-[#008540] transition-colors ${
-                    errors.identifier ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors ${
+                    errors.identifier ? 'border-red-500' : 'border-[#d0d0d0]'
                   }`}
-                  placeholder="e.g. 2100700123 or admin@kiu.ac.ug"
+                  placeholder="Email or Registration number"
                 />
                 {errors.identifier && (
-                  <p className="mt-1 text-xs text-red-600">{errors.identifier.message}</p>
+                  <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.identifier.message}</p>
                 )}
               </div>
 
               {/* Password */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Password
-                  </label>
-                  <Link
-                    to="/forgot-password"
-                    className="text-xs text-[#008540] hover:underline font-medium"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     {...register('password')}
-                    className={`w-full px-3.5 py-3 border text-sm rounded-sm focus:outline-none focus:ring-2 focus:ring-[#008540]/30 focus:border-[#008540] transition-colors pr-10 ${
-                      errors.password ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                    className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors pr-10 ${
+                      errors.password ? 'border-red-500' : 'border-[#d0d0d0]'
                     }`}
                     placeholder="Enter your password"
                   />
@@ -134,7 +115,7 @@ export default function Login() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+                  <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.password.message}</p>
                 )}
               </div>
 
@@ -142,28 +123,23 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-4 bg-[#008540] hover:bg-[#006830] disabled:bg-gray-400 text-white text-sm font-semibold rounded-sm transition-colors mt-2 tracking-wide uppercase"
+                className="w-full py-3 px-4 bg-[#2ea84b] hover:bg-[#258a3d] disabled:opacity-70 text-white text-[15px] rounded-sm transition-colors mt-2"
               >
-                {isSubmitting ? 'Signing in...' : 'Sign In'}
+                {isSubmitting ? 'Signing in...' : 'Next'}
               </button>
             </form>
 
-            {/* Register link */}
-            <div className="mt-7 text-center border-t border-gray-100 pt-6">
-              <p className="text-sm text-gray-500 mb-2">Requester / Don't have an account?</p>
-              <Link
-                to="/register"
-                className="inline-block text-sm font-semibold text-[#008540] hover:text-[#006830] hover:underline transition-colors"
-              >
-                Register for SCMS →
-              </Link>
+            {/* Bottom text info recreating the student portal footer */}
+            <div className="mt-8 text-[11px] leading-tight text-[#666] font-['Arial',sans-serif] px-1">
+              Please use your registration number or KIU student email address (e.g. xxxxxx@stdwc.kiu.ac.ug) to login. For assistance please visit ICT office.
+              <div className="mt-4 flex justify-between">
+                <Link to="/forgot-password" className="text-[#2ea84b] hover:underline">Forgot password?</Link>
+                <Link to="/register" className="text-[#2ea84b] hover:underline">Register for SCMS</Link>
+              </div>
             </div>
           </div>
         </div>
 
-        <p className="text-center text-white/50 text-xs mt-5">
-          © {new Date().getFullYear()} Kampala International University. All rights reserved.
-        </p>
       </div>
     </div>
   );
