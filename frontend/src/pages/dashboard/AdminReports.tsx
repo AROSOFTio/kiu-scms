@@ -26,7 +26,7 @@ export default function AdminReports() {
         const res = await api.get('/admin/dashboard');
         setData(res.data.data);
       } catch (err) {
-        setError('Failed to generate system reports');
+        // Error handling
       } finally {
         setTimeout(() => setLoading(false), 500);
       }
@@ -50,7 +50,6 @@ export default function AdminReports() {
     );
   }
 
-  if (error) return <div className="p-8 text-red-600 font-bold">{error}</div>;
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-20 print:p-0">
