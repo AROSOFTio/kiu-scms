@@ -7,7 +7,13 @@ import {
   assignStaff, 
   updateStatus,
   addInternalNote,
-  getInternalNotes
+  getInternalNotes,
+  getAllUsers,
+  createUser,
+  getSettings,
+  updateSettings,
+  getAuditLogs,
+  manageOrg
 } from '../../controllers/admin.controller';
 
 const router = Router();
@@ -32,12 +38,34 @@ router.patch('/complaints/:id/assign', requireAuth, requireRole(['Admin', 'Staff
 // @desc    Update complaint status with remarks (Timeline)
 router.patch('/complaints/:id/status', requireAuth, requireRole(['Admin', 'Staff']), updateStatus);
 
-// @route   POST /api/v1/admin/complaints/:id/notes
-// @desc    Add internal note to a complaint
-router.post('/complaints/:id/notes', requireAuth, requireRole(['Admin', 'Staff']), addInternalNote);
+// @route   GET /api/v1/admin/users
+// @desc    Get all users (Admin only)
+router.get('/users', requireAuth, requireRole(['Admin']), getAllUsers);
 
-// @route   GET /api/v1/admin/complaints/:id/notes
-// @desc    Get internal notes for a complaint
-router.get('/complaints/:id/notes', requireAuth, requireRole(['Admin', 'Staff']), getInternalNotes);
+// @route   POST /api/v1/admin/users
+// @desc    Create a new user (Staff/Admin/Student)
+router.post('/users', requireAuth, requireRole(['Admin']), createUser);
+
+// @route   GET /api/v1/admin/settings
+// @desc    Get system settings
+router.get('/settings', requireAuth, requireRole(['Admin', 'Staff']), getSettings);
+
+// @route   PUT /api/v1/admin/settings
+// @desc    Update system settings
+router.put('/settings', requireAuth, requireRole(['Admin']), updateSettings);
+
+// @route   GET /api/v1/admin/audit-logs
+// @desc    Get administrative audit logs
+router.get('/audit-logs', requireAuth, requireRole(['Admin']), getAuditLogs);
+
+// Organizational Structure
+router.get('/faculties', requireAuth, requireRole(['Admin', 'Staff']), manageOrg.getFaculties);
+router.post('/faculties', requireAuth, requireRole(['Admin']), manageOrg.createFaculty);
+
+router.get('/departments', requireAuth, requireRole(['Admin', 'Staff']), manageOrg.getDepartments);
+router.post('/departments', requireAuth, requireRole(['Admin']), manageOrg.createDepartment);
+
+router.get('/categories', requireAuth, requireRole(['Admin', 'Staff']), manageOrg.getCategories);
+router.post('/categories', requireAuth, requireRole(['Admin']), manageOrg.createCategory);
 
 export default router;

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Bell, LayoutDashboard, FileText, PlusCircle, Settings, Users } from 'lucide-react';
+import { LogOut, Bell, LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function DashboardLayout() {
@@ -18,14 +18,17 @@ export default function DashboardLayout() {
     { name: 'Admin Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
     { name: 'Grievance Records', href: '/dashboard/admin/complaints', icon: FileText },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
-    { name: 'Statistics', href: '/dashboard/admin/reports', icon: Settings },
+    { name: 'Organizational Structure', href: '/dashboard/admin/org', icon: Building2 },
+    { name: 'System Configuration', href: '/dashboard/admin/config', icon: Settings },
+    { name: 'Audit Logs', href: '/dashboard/admin/logs', icon: ShieldAlert },
+    { name: 'Institutional Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   ] : user?.role === 'Staff' ? [
     { name: 'Staff Dashboard', href: '/dashboard/staff', icon: LayoutDashboard },
-    { name: 'Resolution Center', href: '/dashboard/staff/worklist', icon: FileText },
+    { name: 'Resolution Hub', href: '/dashboard/staff/worklist', icon: ClipboardList },
   ] : [
-    { name: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
+    { name: 'My Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
     { name: 'My Complaints', href: '/dashboard/student/complaints', icon: FileText },
-    { name: 'Submit Complaint', href: '/dashboard/student/complaints/new', icon: PlusCircle },
+    { name: 'New Complaint', href: '/dashboard/student/complaints/new', icon: PlusCircle },
   ];
 
   const userName = user ? `${user.firstName} ${user.lastName}` : 'User';

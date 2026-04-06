@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { db } from '../config/database';
 
 // @desc    Get all complaints (Admin/Staff only)
@@ -245,19 +246,188 @@ export const getInternalNotes = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get all users (Admin only)
+// @desc    Get all users with detailed info (Admin only)
 export const getAllUsers = async (req: Request, res: Response) => {
+  const { role, search, status, page = '1', limit = '20' } = req.query as any;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
   try {
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+
+    if (role) { where += ' AND r.name = ?'; params.push(role); }
+    if (status) { where += ' AND u.is_active = ?'; params.push(status === 'active' ? 1 : 0); }
+    if (search) { 
+      where += ' AND (u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ?)'; 
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`); 
+    }
+
+    const [countRows]: any = await db.query(
+      `SELECT COUNT(*) as total FROM users u JOIN roles r ON u.role_id = r.id ${where}`, 
+      params
+    );
+    const total = countRows[0].total;
+
     const [rows]: any = await db.query(
       `SELECT u.id, u.first_name, u.last_name, u.email, u.is_active, u.created_at,
-              r.name as role_name
+              r.name as role_name,
+              CASE 
+                WHEN r.name = 'Student' THEN (SELECT d.name FROM students s JOIN departments d ON s.department_id = d.id WHERE s.user_id = u.id)
+                WHEN r.name = 'Staff' THEN (SELECT d.name FROM staff st JOIN departments d ON st.department_id = d.id WHERE st.user_id = u.id)
+                ELSE NULL
+              END as department_name,
+              CASE 
+                WHEN r.name = 'Student' THEN (SELECT s.student_number FROM students s WHERE s.user_id = u.id)
+                WHEN r.name = 'Staff' THEN (SELECT st.staff_number FROM staff st WHERE st.user_id = u.id)
+                ELSE NULL
+              END as id_number
        FROM users u
        JOIN roles r ON u.role_id = r.id
-       ORDER BY u.created_at DESC`
+       ${where}
+       ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, parseInt(limit), offset]
     );
-    res.json({ status: 'success', data: rows });
+
+    res.json({ status: 'success', data: rows, total });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Create a new user (Staff/Admin/Student)
+export const createUser = async (req: Request, res: Response) => {
+  const { roleName, firstName, lastName, email, password, idNumber, departmentId } = req.body;
+  const adminId = (req as any).user?.userId;
+
+  try {
+    // 1. Get role ID
+    const [roles]: any = await db.query('SELECT id FROM roles WHERE name = ?', [roleName]);
+    if (roles.length === 0) return res.status(400).json({ status: 'error', message: 'Invalid role' });
+    const roleId = roles[0].id;
+
+    // 2. Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 3. Create User record
+    const [userResult]: any = await db.query(
+      'INSERT INTO users (role_id, first_name, last_name, email, password_hash) VALUES (?, ?, ?, ?, ?)',
+      [roleId, firstName, lastName, email, passwordHash]
+    );
+    const userId = userResult.insertId;
+
+    // 4. Role-specific record
+    if (roleName === 'Student' && idNumber && departmentId) {
+      await db.query('INSERT INTO students (user_id, student_number, department_id) VALUES (?, ?, ?)', [userId, idNumber, departmentId]);
+    } else if (roleName === 'Staff' && idNumber && departmentId) {
+      await db.query('INSERT INTO staff (user_id, staff_number, department_id) VALUES (?, ?, ?)', [userId, idNumber, departmentId]);
+    }
+
+    // 5. Log audit
+    await db.query(
+      'INSERT INTO audit_logs (user_id, action, details) VALUES (?, ?, ?)',
+      [adminId, 'CREATE_USER', `Created ${roleName}: ${firstName} ${lastName} (${email})`]
+    );
+
+    res.json({ status: 'success', message: `${roleName} created successfully`, userId });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get system settings
+export const getSettings = async (req: Request, res: Response) => {
+  try {
+    const [rows]: any = await db.query('SELECT * FROM system_settings');
+    const settings: any = {};
+    rows.forEach((r: any) => { settings[r.key_name] = r.value; });
+    res.json({ status: 'success', data: settings });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Update system settings (Bulk)
+export const updateSettings = async (req: Request, res: Response) => {
+  const settings = req.body;
+  const adminId = (req as any).user?.userId;
+
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      await db.query('UPDATE system_settings SET value = ? WHERE key_name = ?', [value, key]);
+    }
+
+    await db.query(
+      'INSERT INTO audit_logs (user_id, action, details) VALUES (?, ?, ?)',
+      [adminId, 'UPDATE_SETTINGS', 'System-wide settings updated']
+    );
+
+    res.json({ status: 'success', message: 'Settings updated successfully' });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get Audit Logs
+export const getAuditLogs = async (req: Request, res: Response) => {
+  const { page = '1', limit = '50' } = req.query as any;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  try {
+    const [countRows]: any = await db.query('SELECT COUNT(*) as total FROM audit_logs');
+    const total = countRows[0].total;
+
+    const [rows]: any = await db.query(
+      `SELECT al.*, u.first_name, u.last_name, r.name as role_name
+       FROM audit_logs al
+       JOIN users u ON al.user_id = u.id
+       JOIN roles r ON u.role_id = r.id
+       ORDER BY al.created_at DESC LIMIT ? OFFSET ?`,
+      [parseInt(limit), offset]
+    );
+
+    res.json({ status: 'success', data: rows, total });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Manage Organizational Structure (Faculties/Departments/Categories)
+export const manageOrg = {
+  getFaculties: async (req: Request, res: Response) => {
+    try {
+      const [rows]: any = await db.query('SELECT * FROM faculties ORDER BY name');
+      res.json({ status: 'success', data: rows });
+    } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
+  },
+  createFaculty: async (req: Request, res: Response) => {
+    try {
+      await db.query('INSERT INTO faculties (name) VALUES (?)', [req.body.name]);
+      res.json({ status: 'success', message: 'Faculty created' });
+    } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
+  },
+  getDepartments: async (req: Request, res: Response) => {
+    try {
+      const [rows]: any = await db.query('SELECT d.*, f.name as faculty_name FROM departments d JOIN faculties f ON d.faculty_id = f.id ORDER BY f.name, d.name');
+      res.json({ status: 'success', data: rows });
+    } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
+  },
+  createDepartment: async (req: Request, res: Response) => {
+    try {
+      await db.query('INSERT INTO departments (faculty_id, name) VALUES (?, ?)', [req.body.facultyId, req.body.name]);
+      res.json({ status: 'success', message: 'Department created' });
+    } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
+  },
+  getCategories: async (req: Request, res: Response) => {
+    try {
+      const [rows]: any = await db.query('SELECT * FROM complaint_categories ORDER BY name');
+      res.json({ status: 'success', data: rows });
+    } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
+  },
+  createCategory: async (req: Request, res: Response) => {
+    try {
+      await db.query('INSERT INTO complaint_categories (name, description) VALUES (?, ?)', [req.body.name, req.body.description]);
+      res.json({ status: 'success', message: 'Category created' });
+    } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
   }
 };
 

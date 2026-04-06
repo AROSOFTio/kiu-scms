@@ -12,12 +12,17 @@ import StudentDashboard from '../pages/dashboard/StudentDashboard';
 import ComplaintList from '../pages/complaints/ComplaintList';
 import NewComplaint from '../pages/complaints/NewComplaint';
 import ComplaintDetail from '../pages/complaints/ComplaintDetail';
-import AdminDashboard from '../pages/dashboard/AdminDashboard';
-import AdminReports from '../pages/dashboard/AdminReports';
 import ComplaintsList from '../pages/dashboard/ComplaintsList';
-import Users from '../pages/dashboard/Users';
 import StaffDashboard from '../pages/dashboard/StaffDashboard';
 import StaffComplaintWorkspace from '../pages/dashboard/StaffComplaintWorkspace';
+
+// Phase 5: Administrative Control Panel
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import UserManagement from '../pages/admin/UserManagement';
+import OrgManagement from '../pages/admin/OrgManagement';
+import SystemConfig from '../pages/admin/SystemConfig';
+import AuditLogs from '../pages/admin/AuditLogs';
+import ReportsOverview from '../pages/admin/ReportsOverview';
 
 export default function AppRoutes() {
   return (
@@ -42,11 +47,14 @@ export default function AppRoutes() {
         <Route path="student/complaints/new" element={<NewComplaint />} />
         <Route path="student/complaints/:id" element={<ComplaintDetail />} />
         
-        {/* Admin/Staff Shared Routes */}
+        {/* Administrative Management Routes */}
         <Route path="admin" element={<AdminDashboard />} />
         <Route path="admin/complaints" element={<ComplaintsList />} />
-        <Route path="admin/reports" element={<AdminReports />} />
-        <Route path="admin/users" element={<Users />} />
+        <Route path="admin/users" element={<UserManagement />} />
+        <Route path="admin/org" element={<OrgManagement />} />
+        <Route path="admin/config" element={<SystemConfig />} />
+        <Route path="admin/logs" element={<AuditLogs />} />
+        <Route path="admin/reports" element={<ReportsOverview />} />
 
         {/* Staff Specific Routes */}
         <Route path="staff" element={<StaffDashboard />} />
