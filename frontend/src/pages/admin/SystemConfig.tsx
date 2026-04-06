@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { 
   Settings, 
   LayoutGrid, 
@@ -41,7 +41,7 @@ export default function SystemConfig() {
     fetchData();
   }, []);
 
-  const handleUpdateSettings = async (e: React.FormEvent) => {
+  const handleUpdateSettings = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
