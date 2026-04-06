@@ -28,16 +28,13 @@ export default function DashboardLayout() {
     { name: 'System Configuration', href: '/dashboard/admin/config', icon: Settings },
     { name: 'Audit Logs', href: '/dashboard/admin/logs', icon: ShieldAlert },
     { name: 'Institutional Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
-    { name: 'Phase 7 Reflection', href: '/dashboard/reflection', icon: Sparkles },
   ] : user?.role === 'Staff' ? [
     { name: 'Staff Dashboard', href: '/dashboard/staff', icon: LayoutDashboard },
     { name: 'Resolution Hub', href: '/dashboard/staff/worklist', icon: ClipboardList },
-    { name: 'Phase 7 Reflection', href: '/dashboard/reflection', icon: Sparkles },
   ] : [
     { name: 'My Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
     { name: 'My Complaints', href: '/dashboard/student/complaints', icon: FileText },
     { name: 'New Complaint', href: '/dashboard/student/complaints/new', icon: PlusCircle },
-    { name: 'Phase 7 Reflection', href: '/dashboard/reflection', icon: Sparkles },
   ];
 
   const userName = user ? `${user.firstName} ${user.lastName}` : 'User';

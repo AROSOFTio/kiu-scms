@@ -15,7 +15,6 @@ import ComplaintDetail from '../pages/complaints/ComplaintDetail';
 import ComplaintsList from '../pages/dashboard/ComplaintsList';
 import StaffDashboard from '../pages/dashboard/StaffDashboard';
 import StaffComplaintWorkspace from '../pages/dashboard/StaffComplaintWorkspace';
-import Reflection from '../pages/dashboard/Reflection';
 
 // Phase 5: Administrative Control Panel
 import AdminDashboard from '../pages/admin/AdminDashboard';
@@ -62,8 +61,6 @@ export default function AppRoutes() {
         <Route path="staff/worklist" element={<ComplaintsList />} />
         <Route path="staff/complaints/:id" element={<StaffComplaintWorkspace />} />
 
-        {/* Phase 7: Reflection */}
-        <Route path="reflection" element={<Reflection />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

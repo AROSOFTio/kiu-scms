@@ -62,6 +62,24 @@ services:
     networks:
       - scms_prod_network
 
+  proxy:
+    image: nginx:alpine
+    container_name: scms-nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/production.conf:/etc/nginx/conf.d/default.conf
+      # certbot volumes for SSL readiness
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - scms_prod_network
+
 volumes:
   db_data_prod:
 
