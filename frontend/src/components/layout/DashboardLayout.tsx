@@ -128,18 +128,21 @@ export default function DashboardLayout() {
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex items-center">
-              <div className="p-1 px-2.5 bg-white/5 border border-white/10 rounded mr-3">
+              <div className="hidden sm:block p-1 px-2.5 bg-white/5 border border-white/10 rounded mr-3">
                  <Menu className="h-4 w-4 text-slate-500" />
               </div>
-              <h1 className="text-[13px] font-black text-emerald-500 uppercase tracking-widest">
+              <h1 className="hidden sm:block text-[13px] font-black text-emerald-500 uppercase tracking-widest">
                 Student Complaint and Management System
+              </h1>
+              <h1 className="sm:hidden text-lg font-black text-emerald-500 uppercase tracking-widest">
+                SCMS
               </h1>
             </div>
           </div>
           
-          <div className="flex items-center space-x-6 text-[11px] font-bold text-slate-300">
+          <div className="flex items-center space-x-4 sm:space-x-6 text-[11px] font-bold text-slate-300">
             <NotificationDropdown />
-            <Link to="/dashboard/profile" className="flex items-center gap-2 hover:text-white transition-colors">
+            <Link to="/dashboard/profile" className="hidden sm:flex items-center gap-2 hover:text-white transition-colors">
               Change password <ChevronDown className="h-3 w-3" />
             </Link>
             <button 
@@ -147,9 +150,9 @@ export default function DashboardLayout() {
                 logout();
                 window.location.href = '/login';
               }}
-              className="flex items-center gap-2 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 hover:text-white transition-colors"
             >
-              Logout <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Logout</span> <LogOut className="h-4 w-4" />
             </button>
           </div>
         </header>

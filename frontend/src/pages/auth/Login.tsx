@@ -8,7 +8,7 @@ import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
 const loginSchema = z.object({
-  identifier: z.string().min(1, 'Email or registration number is required'),
+  identifier: z.string().min(1, 'Institutional Email, Staff ID, or Student Reg Number is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -66,7 +66,7 @@ export default function Login() {
                   <span>UNIVERSITY</span>
                 </div>
               </div>
-              <h1 className="text-[18px] font-bold text-gray-800 mt-5 leading-tight text-center">Student Complaint and Management System</h1>
+              <h1 className="text-[18px] font-bold text-gray-800 mt-5 leading-tight text-center">Centralized SCMS Authentication</h1>
             </div>
 
             {/* API Error */}
@@ -87,7 +87,7 @@ export default function Login() {
                   className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors ${
                     errors.identifier ? 'border-red-500' : 'border-[#d0d0d0]'
                   }`}
-                  placeholder="Email or Registration number"
+                  placeholder="Email, Staff ID, or Student Reg No."
                 />
                 {errors.identifier && (
                   <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.identifier.message}</p>
@@ -131,7 +131,7 @@ export default function Login() {
 
             {/* Bottom text info recreating the student portal footer */}
             <div className="mt-8 text-[11px] leading-tight text-[#666] font-['Arial',sans-serif] px-1">
-              Please use your registration number or KIU student email address (e.g. xxxxxx@stdwc.kiu.ac.ug) to login. For assistance please visit ICT office.
+              Please use your assigned organizational credentials. <strong>Students</strong> can use their Registration Number or KIU student email. <strong>Administrators & Staff</strong> should use their assigned institutional emails. For technical assistance, please visit the ICT office.
               <div className="mt-4 flex justify-between">
                 <Link to="/forgot-password" className="text-[#2ea84b] hover:underline">Forgot password?</Link>
                 <Link to="/register" className="text-[#2ea84b] hover:underline">Register for SCMS</Link>
