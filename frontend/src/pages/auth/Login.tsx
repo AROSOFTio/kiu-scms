@@ -54,18 +54,7 @@ export default function Login() {
           <div className="px-10 py-10">
             {/* Logo area replicating the native Student Portal */}
             <div className="flex flex-col items-center mb-8 font-['Arial',sans-serif]">
-              <div className="flex items-center text-[#2ea84b] mb-2">
-                <div className="flex flex-col items-center">
-                  {/* Simplistic fallback for the Giraffe KIU logo */}
-                  <span className="font-extrabold text-[42px] tracking-tighter leading-none" style={{ transform: 'scaleY(1.1)' }}>KIU</span>
-                  <span className="text-[6.5px] font-bold tracking-widest mt-0.5 whitespace-nowrap">EXPLORING THE HEIGHTS</span>
-                </div>
-                <div className="ml-3 flex flex-col justify-center font-bold text-[10px] leading-[1.2] tracking-wider text-[#2ea84b] whitespace-nowrap">
-                  <span>KAMPALA</span>
-                  <span>INTERNATIONAL</span>
-                  <span>UNIVERSITY</span>
-                </div>
-              </div>
+              <img src="/kiu-logo.png" alt="Kampala International University" className="w-[220px] object-contain mb-4" />
               <h1 className="text-[18px] font-bold text-gray-800 mt-5 leading-tight text-center">Centralized SCMS Authentication</h1>
             </div>
 
