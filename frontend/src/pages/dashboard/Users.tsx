@@ -65,7 +65,7 @@ export default function Users() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">User Directory</h1>
-          <p className="text-gray-500 mt-1 font-medium italic">Manage institutional accounts and access levels.</p>
+          <p className="text-gray-500 mt-1 font-medium">Manage institutional accounts and access levels.</p>
         </div>
       </div>
 
@@ -116,7 +116,7 @@ export default function Users() {
                 </>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-24 text-center text-gray-400 italic font-medium">No users found matching your criteria.</td>
+                  <td colSpan={5} className="py-24 text-center text-gray-400 font-medium">No users found matching your criteria.</td>
                 </tr>
               ) : filteredUsers.map((u) => (
                 <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">

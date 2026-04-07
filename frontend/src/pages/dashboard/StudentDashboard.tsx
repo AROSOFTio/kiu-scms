@@ -76,7 +76,7 @@ export default function StudentDashboard() {
           <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
             Institutional <span className="text-emerald-600">Command.</span>
           </h1>
-          <p className="text-slate-500 mt-4 font-medium max-w-xl leading-relaxed italic">
+          <p className="text-slate-500 mt-4 font-medium max-w-xl leading-relaxed">
             Centralized monitoring of your academic and institutional interactions at Kampala International University.
           </p>
         </div>

@@ -234,14 +234,14 @@ export default function StaffComplaintWorkspace() {
                   <p className="text-xs font-bold text-gray-800">{new Date(complaint.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
-              <p className="text-sm font-bold text-gray-600 leading-relaxed whitespace-pre-wrap italic">"{complaint.description}"</p>
+              <p className="text-sm font-bold text-gray-600 leading-relaxed whitespace-pre-wrap">"{complaint.description}"</p>
             </div>
           </section>
 
           <section className="space-y-4">
             <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-50 pb-2">Supporting Documents</h2>
             {complaint.attachments.length === 0 ? (
-               <p className="text-xs text-gray-400 italic font-medium">No attachments provided.</p>
+               <p className="text-xs text-gray-400 font-medium">No attachments provided.</p>
             ) : (
               <div className="space-y-2">
                 {complaint.attachments.map(file => (
@@ -290,7 +290,7 @@ export default function StaffComplaintWorkspace() {
                         <span className="text-[10px] font-black text-primary-600 uppercase tracking-widest bg-primary-50 px-2 py-0.5 rounded">{event.status}</span>
                         <span className="text-[9px] text-gray-400 font-bold">{new Date(event.created_at).toLocaleString()}</span>
                       </div>
-                      <p className="text-sm font-bold text-gray-800 italic">"{event.remarks}"</p>
+                      <p className="text-sm font-bold text-gray-800">"{event.remarks}"</p>
                       <p className="text-[10px] text-gray-400 mt-4 font-black uppercase tracking-tighter">— {event.created_by_name}</p>
                     </div>
                   </div>
@@ -306,7 +306,7 @@ export default function StaffComplaintWorkspace() {
                         placeholder="Add professional remarks for the student to see along with this status change..."
                         value={statusUpdate.remarks}
                         onChange={(e) => setStatusUpdate(prev => ({ ...prev, remarks: e.target.value }))}
-                        className="w-full bg-gray-50/50 border-gray-100 rounded-xl p-4 text-xs font-bold placeholder:italic focus:ring-[#008540] min-h-[100px]"
+                        className="w-full bg-gray-50/50 border-gray-100 rounded-xl p-4 text-xs font-bold focus:ring-[#008540] min-h-[100px]"
                       />
                       <button 
                         disabled={submitting || !statusUpdate.remarks}
@@ -323,7 +323,7 @@ export default function StaffComplaintWorkspace() {
               <div className="max-w-2xl mx-auto space-y-8">
                  <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 flex items-center gap-3 mb-8">
                     <Lock className="h-4 w-4 text-amber-600" />
-                    <p className="text-[10px] text-amber-700 font-bold italic uppercase tracking-tighter">Internal Workspace: Notes are visible only to Staff and Admin users.</p>
+                    <p className="text-[10px] text-amber-700 font-bold uppercase tracking-tighter">Internal Workspace: Notes are visible only to Staff and Admin users.</p>
                  </div>
 
                  {/* New Note Form */}
@@ -332,7 +332,7 @@ export default function StaffComplaintWorkspace() {
                      placeholder="Type individual observations, call logs, or private coordination details..."
                      value={newNote}
                      onChange={(e) => setNewNote(e.target.value)}
-                     className="w-full border-none rounded-xl p-4 h-24 text-xs font-bold focus:ring-0 placeholder:italic"
+                     className="w-full border-none rounded-xl p-4 h-24 text-xs font-bold focus:ring-0"
                    />
                    <div className="flex justify-end p-2">
                      <button 
@@ -347,7 +347,7 @@ export default function StaffComplaintWorkspace() {
 
                  <div className="space-y-6">
                     {internalNotes.length === 0 ? (
-                       <div className="py-12 text-center text-gray-400 italic">No internal notes added yet.</div>
+                       <div className="py-12 text-center text-gray-400">No internal notes added yet.</div>
                     ) : internalNotes.map(note => (
                        <div key={note.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative group overflow-hidden">
                           <div className="absolute top-0 right-0 w-12 h-1 text-gray-100 bg-gray-50" />

@@ -74,7 +74,7 @@ export default function NotificationCenter() {
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-xs text-gray-400 font-bold italic">No alerts yet.</p>
+                <p className="text-xs text-gray-400 font-bold">No alerts yet.</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-50">

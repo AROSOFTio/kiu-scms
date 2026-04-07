@@ -109,7 +109,7 @@ export default function NewComplaint() {
             <CheckCircle2 className="h-16 w-16 text-[#008540] animate-in slide-in-from-bottom-2" />
           </div>
         </div>
-        <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter italic">Submission Successful.</h2>
+        <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter">Submission Successful.</h2>
         <p className="text-slate-500 mb-10 text-center max-w-md font-medium px-4 leading-relaxed">
           Your grievance has been successfully logged within the KIU Institutional framework. A staff member will be assigned shortly.
         </p>
@@ -136,7 +136,7 @@ export default function NewComplaint() {
               Return to Safety
             </button>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Log Institutional <span className="text-emerald-600">Grievance</span></h1>
-            <p className="text-slate-500 mt-2 font-medium italic">Empowering student voices through structured resolution.</p>
+            <p className="text-slate-500 mt-2 font-medium">Empowering student voices through structured resolution.</p>
         </div>
         <div className="hidden lg:block">
            <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 rounded-2xl border border-emerald-100/50">

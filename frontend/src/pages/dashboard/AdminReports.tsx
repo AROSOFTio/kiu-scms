@@ -56,7 +56,7 @@ export default function AdminReports() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 no-print">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">System Intelligence</h1>
-          <p className="text-gray-500 mt-1 font-medium italic">Comprehensive analytical report of institutional grievances.</p>
+          <p className="text-gray-500 mt-1 font-medium">Comprehensive analytical report of institutional grievances.</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -91,7 +91,7 @@ export default function AdminReports() {
               <div key={s.status} className="group">
                 <div className="flex justify-between items-center mb-2">
                    <span className="text-sm font-bold text-gray-700">{s.status}</span>
-                   <span className="text-sm font-black text-gray-900">{s.count} <span className="text-gray-400 font-medium italic ml-1">({data?.total ? Math.round((s.count/data.total)*100) : 0}%)</span></span>
+                   <span className="text-sm font-black text-gray-900">{s.count} <span className="text-gray-400 font-medium ml-1">({data?.total ? Math.round((s.count/data.total)*100) : 0}%)</span></span>
                 </div>
                 <div className="h-3 bg-gray-50 rounded-full overflow-hidden border border-gray-50">
                   <div 
@@ -143,7 +143,7 @@ export default function AdminReports() {
               <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Efficiency Rate</p>
               <p className="text-3xl font-black">{data?.total ? Math.round((data.byStatus.find(s => s.status === 'Resolved')?.count || 0) / data.total * 100) : 0}%</p>
             </div>
-            <p className="text-xs text-gray-400 italic">Percentage of resolved grievances vs total cases submitted.</p>
+            <p className="text-xs text-gray-400">Percentage of resolved grievances vs total cases submitted.</p>
          </div>
 
          <div className="p-8 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
@@ -152,7 +152,7 @@ export default function AdminReports() {
               <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Success Count</p>
               <p className="text-3xl font-black text-gray-900">{data?.byStatus.find(s => s.status === 'Resolved')?.count || 0}</p>
             </div>
-            <p className="text-xs text-gray-500 italic">Total number of students who had their issues fully resolved.</p>
+            <p className="text-xs text-gray-500">Total number of students who had their issues fully resolved.</p>
          </div>
 
          <div className="p-8 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
@@ -161,7 +161,7 @@ export default function AdminReports() {
               <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Active Intake</p>
               <p className="text-3xl font-black text-gray-900">{data?.byStatus.find(s => s.status === 'Submitted')?.count || 0}</p>
             </div>
-            <p className="text-xs text-gray-500 italic">Current volume of new cases waiting for administrative review.</p>
+            <p className="text-xs text-gray-500">Current volume of new cases waiting for administrative review.</p>
          </div>
       </div>
 

@@ -69,7 +69,7 @@ export default function ReportsOverview() {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-pulse">
         <RefreshCcw className="h-12 w-12 text-primary-200 animate-spin mb-4" />
-        <p className="text-sm font-black text-gray-400 uppercase tracking-widest italic">Aggregating Institutional Insights...</p>
+        <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Aggregating Institutional Insights...</p>
       </div>
     );
   }
@@ -79,7 +79,7 @@ export default function ReportsOverview() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tighter">Institutional Reporting</h1>
-          <p className="text-gray-500 font-medium italic">Comprehensive data analytics and performance benchmarks.</p>
+          <p className="text-gray-500 font-medium">Comprehensive data analytics and performance benchmarks.</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -150,7 +150,7 @@ export default function ReportsOverview() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontStyle: 'italic' }} />
+                <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
                 <YAxis fontSize={10} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
@@ -190,7 +190,7 @@ export default function ReportsOverview() {
          <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000" />
          <div className="max-w-2xl relative">
             <BarChart3 className="h-10 w-10 text-emerald-200 mb-8" />
-            <h2 className="text-4xl font-black tracking-tighter leading-tight mb-6 italic">Visual Intelligence<br/>Empowers Quick Action.</h2>
+            <h2 className="text-4xl font-black tracking-tighter leading-tight mb-6">Visual Intelligence<br/>Empowers Quick Action.</h2>
             <p className="text-lg text-emerald-50 font-medium leading-relaxed opacity-90 mb-8">
                Our institutional reporting engine analyzes case data to help resolve bottlenecks and ensure every Student's voice is heard at Kampala International University.
             </p>

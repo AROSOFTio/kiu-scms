@@ -82,7 +82,7 @@ export default function StaffDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Staff Resolution Hub</h1>
-          <p className="text-gray-500 mt-1 font-medium italic">Overview of your assigned institutional grievances.</p>
+          <p className="text-gray-500 mt-1 font-medium">Overview of your assigned institutional grievances.</p>
         </div>
         <Link 
           to="/dashboard/staff/worklist"
@@ -105,7 +105,7 @@ export default function StaffDashboard() {
             </div>
             <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{kpi.label}</p>
             <p className="text-4xl font-black text-gray-900 mt-1">{kpi.value}</p>
-            <p className="text-xs text-gray-400 mt-4 font-medium italic">{kpi.description}</p>
+            <p className="text-xs text-gray-400 mt-4 font-medium">{kpi.description}</p>
           </div>
         ))}
       </div>
@@ -123,7 +123,7 @@ export default function StaffDashboard() {
           
           <div className="space-y-6">
             {stats?.recentActivity.length === 0 ? (
-              <div className="py-12 text-center text-gray-400 italic">No recent activity on your assigned cases.</div>
+              <div className="py-12 text-center text-gray-400">No recent activity on your assigned cases.</div>
             ) : stats?.recentActivity.map((act) => (
               <div key={act.id} className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 group">
                 <div className="bg-gray-100 p-3 rounded-xl text-gray-400 group-hover:bg-white group-hover:text-[#008540] transition-all">
@@ -137,7 +137,7 @@ export default function StaffDashboard() {
                     <span className="text-[10px] text-gray-400 font-bold">{new Date(act.changed_at).toLocaleDateString()}</span>
                   </div>
                   <p className="text-sm text-gray-600 font-bold line-clamp-1">
-                    Status updated to <span className="text-[#008540] italic">"{act.status}"</span> by {act.first_name}
+                    Status updated to <span className="text-[#008540]">"{act.status}"</span> by {act.first_name}
                   </p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export default function StaffDashboard() {
           <div className="mt-8 pt-8 border-t border-gray-50">
              <div className="p-4 bg-[#008540]/5 rounded-xl border border-[#008540]/10">
                 <p className="text-[10px] font-black text-[#008540] uppercase tracking-widest mb-1">Success Target</p>
-                <p className="text-xs text-[#008540] font-bold italic">Always aim for a 100% resolution rate on student inquiries.</p>
+                <p className="text-xs text-[#008540] font-bold">Always aim for a 100% resolution rate on student inquiries.</p>
              </div>
           </div>
         </div>

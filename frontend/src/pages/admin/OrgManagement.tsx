@@ -51,7 +51,7 @@ export default function OrgManagement() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight tracking-tighter">Institutional Structure</h1>
-          <p className="text-gray-500 font-medium italic">Manage the hierarchy of faculties and academic departments.</p>
+          <p className="text-gray-500 font-medium">Manage the hierarchy of faculties and academic departments.</p>
         </div>
         <div className="flex gap-3">
           <button className="inline-flex items-center px-4 py-2 bg-white border border-gray-100 text-gray-900 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-md transition-all">
@@ -102,7 +102,7 @@ export default function OrgManagement() {
                   {isExpanded && (
                     <div className="bg-gray-50/50 border-t border-gray-50 p-4 space-y-2">
                        {facultyDeps.length === 0 ? (
-                         <p className="p-6 text-center text-xs text-gray-300 italic font-medium">No departments registered for this faculty.</p>
+                         <p className="p-6 text-center text-xs text-gray-300 font-medium">No departments registered for this faculty.</p>
                        ) : facultyDeps.map(dep => (
                          <div key={dep.id} className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-50 shadow-sm hover:border-[#008540]/30 transition-all group">
                             <div className="flex items-center gap-3">

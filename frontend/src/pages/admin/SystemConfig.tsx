@@ -61,7 +61,7 @@ export default function SystemConfig() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight tracking-tighter">System Configuration</h1>
-          <p className="text-gray-500 font-medium italic">Adjust global parameters and manage complaint classification.</p>
+          <p className="text-gray-500 font-medium">Adjust global parameters and manage complaint classification.</p>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ export default function SystemConfig() {
                      </div>
                      <div>
                         <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">{cat.name}</h3>
-                        <p className="text-xs text-gray-400 font-medium italic leading-relaxed">{cat.description}</p>
+                        <p className="text-xs text-gray-400 font-medium leading-relaxed">{cat.description}</p>
                      </div>
                   </div>
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -215,7 +215,7 @@ export default function SystemConfig() {
                                placeholder="e.g. pdf, jpg, png, docx"
                                className="w-full bg-gray-50 border-none rounded-xl p-3 text-xs font-bold focus:ring-[#008540]" 
                             />
-                            <p className="text-[9px] text-gray-400 font-bold italic mt-1 flex items-center">
+                            <p className="text-[9px] text-gray-400 font-bold mt-1 flex items-center">
                                <AlertCircle className="h-2.5 w-2.5 mr-1" /> comma separated values
                             </p>
                          </div>
@@ -228,7 +228,7 @@ export default function SystemConfig() {
                 <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
                    <AlertCircle className="h-6 w-6" />
                 </div>
-                <p className="text-xs text-amber-700 font-bold italic">
+                <p className="text-xs text-amber-700 font-bold">
                    Warning: Changing these parameters affects the behavior of the application for all users instantly. Please verify values before committing.
                 </p>
              </div>

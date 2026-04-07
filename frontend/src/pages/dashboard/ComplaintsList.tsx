@@ -149,7 +149,7 @@ export default function ComplaintsList() {
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
             {isWorklist ? 'Resolution Worklist' : 'Grievance Intelligence'}
           </h1>
-          <p className="text-slate-500 mt-3 font-medium max-w-2xl leading-relaxed italic">
+          <p className="text-slate-500 mt-3 font-medium max-w-2xl leading-relaxed">
             {isWorklist 
               ? 'Managed workspace for cases explicitly assigned to your jurisdiction.' 
               : 'End-to-end audit trail of all institutional grievances logged across Kampala International University.'}
@@ -240,7 +240,7 @@ export default function ComplaintsList() {
                   <td colSpan={6} className="py-40 text-center">
                      <div className="flex flex-col items-center opacity-30">
                         <Loader2 className="h-12 w-12 mb-4 animate-spin-slow rotate-12" />
-                        <p className="text-sm font-black uppercase tracking-widest italic">Zero matches in historical data</p>
+                        <p className="text-sm font-black uppercase tracking-widest">Zero matches in historical data</p>
                      </div>
                   </td>
                 </tr>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, Bell, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, Bell, LogOut, ChevronDown, ShieldCheck, History, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function DashboardLayout() {
@@ -29,7 +29,9 @@ export default function DashboardLayout() {
   // Filter navigation based on role
   
   const navigation = user?.role === 'Admin' ? [
-    { name: 'Executive Overview', href: '/dashboard/admin', icon: LayoutDashboard },
+    { name: 'Welcome Home', href: '/dashboard/admin?view=welcome', icon: Home },
+    { name: 'Institutional Command', href: '/dashboard/admin?view=command', icon: ShieldCheck },
+    { name: 'Activity Logs', href: '/dashboard/admin?view=activity', icon: History },
     { name: 'Grievance Records', href: '/dashboard/admin/complaints', icon: FileText },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Organizational Structure', href: '/dashboard/admin/org', icon: Building2 },
@@ -83,7 +85,8 @@ export default function DashboardLayout() {
           <div className="px-6 text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-[0.2em]">Main</div>
           <ul className="space-y-0.5">
             {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+              const currentFullHref = location.pathname + location.search;
+              const isActive = currentFullHref === item.href || (location.pathname === item.href && !location.search);
               return (
                 <li key={item.name}>
                   <Link

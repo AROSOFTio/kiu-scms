@@ -184,7 +184,7 @@ export default function ComplaintDetail() {
               Description 
               <div className="h-[2px] flex-1 bg-gray-50 ml-4" />
             </h2>
-            <div className="bg-gray-50/50 p-6 rounded-2xl text-gray-700 leading-relaxed font-bold border border-gray-100 italic whitespace-pre-wrap">
+            <div className="bg-gray-50/50 p-6 rounded-2xl text-gray-700 leading-relaxed font-bold border border-gray-100 whitespace-pre-wrap">
               {complaint.description}
             </div>
           </section>

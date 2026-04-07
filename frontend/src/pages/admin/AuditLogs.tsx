@@ -41,7 +41,7 @@ export default function AuditLogs() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight tracking-tighter">System Audit Trail</h1>
-          <p className="text-gray-500 font-medium italic">Immutable record of administrative actions and security events.</p>
+          <p className="text-gray-500 font-medium">Immutable record of administrative actions and security events.</p>
         </div>
         <div className="flex gap-3">
           <button className="inline-flex items-center px-4 py-2 bg-white border border-gray-100 text-gray-900 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:shadow-md transition-all">
@@ -133,7 +133,7 @@ export default function AuditLogs() {
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2 group/trace">
                        <History className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" />
-                       <p className="text-xs font-bold text-gray-600 line-clamp-1 italic group-hover/trace:text-gray-900 transition-colors">
+                       <p className="text-xs font-bold text-gray-600 line-clamp-1 group-hover/trace:text-gray-900 transition-colors">
                           {log.details}
                        </p>
                     </div>
@@ -151,7 +151,7 @@ export default function AuditLogs() {
 
         {/* Pagination Toolbar */}
         <div className="p-6 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
-           <p className="text-xs font-bold text-gray-500 italic">Showing {logs.length} of {total} records</p>
+           <p className="text-xs font-bold text-gray-500">Showing {logs.length} of {total} records</p>
            <div className="flex gap-2">
               <button 
                 onClick={() => setPage(prev => Math.max(1, prev - 1))}
