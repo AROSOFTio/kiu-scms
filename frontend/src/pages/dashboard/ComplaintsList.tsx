@@ -32,6 +32,7 @@ interface Complaint {
   student_last_name: string;
   staff_first_name?: string;
   staff_last_name?: string;
+  feedback_rating?: number;
 }
 
 interface Staff {
@@ -295,6 +296,11 @@ export default function ComplaintsList() {
                       <div className="flex flex-wrap gap-2">
                         <PriorityBadge priority={c.priority} />
                         <SLAIndicator priority={c.priority} createdAt={c.created_at} status={c.status} />
+                        {c.status === 'Resolved' && c.feedback_rating && (
+                          <div className="flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-200 px-3 py-1 rounded-full shadow-sm text-[10px] font-black whitespace-nowrap">
+                            <span className="text-amber-500">⭐</span> {c.feedback_rating}.0
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -339,9 +345,16 @@ export default function ComplaintsList() {
              <div key={c.id} className="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 space-y-6">
                 <div className="flex justify-between items-start">
                    <span className="font-black text-slate-900 bg-white shadow-sm border border-slate-100 px-3 py-1.5 rounded-xl text-[10px] tracking-widest">{c.reference_number}</span>
-                   <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-xs ${getStatusColor(c.status)}`}>
-                      {c.status}
-                   </span>
+                   <div className="flex flex-col items-end gap-2">
+                     <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-xs ${getStatusColor(c.status)}`}>
+                        {c.status}
+                     </span>
+                     {c.status === 'Resolved' && c.feedback_rating && (
+                       <div className="flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-200 px-2 py-1 rounded-full shadow-sm text-[9px] font-black">
+                         ⭐ {c.feedback_rating}.0
+                       </div>
+                     )}
+                   </div>
                 </div>
                 <div>
                    <Link to={isStaff ? `/dashboard/staff/complaints/${c.id}` : '#'} className="text-lg font-black text-slate-900 tracking-tight leading-tight block mb-2">{c.title}</Link>

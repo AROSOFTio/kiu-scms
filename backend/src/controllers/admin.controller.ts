@@ -42,18 +42,87 @@ export const getAllComplaints = async (req: Request, res: Response) => {
       `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at, c.updated_at,
               cc.name as category_name,
               u.first_name as student_first_name, u.last_name as student_last_name,
-              su.first_name as staff_first_name, su.last_name as staff_last_name
+              su.first_name as staff_first_name, su.last_name as staff_last_name,
+              f.rating as feedback_rating
        FROM complaints c
        JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
        LEFT JOIN users su ON c.assigned_staff_id = su.id
+       LEFT JOIN feedback f ON c.id = f.complaint_id
        ${where}
        ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
       [...params, parseInt(limit), offset]
     );
 
     res.json({ status: 'success', data: rows, total, page: parseInt(page), limit: parseInt(limit) });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get single complaint details (Admin/Staff)
+export const getComplaintById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = (req as any).user?.userId;
+  const roleName = (req as any).user?.roleName;
+
+  try {
+    let where = 'WHERE c.id = ?';
+    const params: any[] = [id];
+
+    // If Staff, they might only be allowed to view it if assigned to them or if Staff has global access.
+    // Assuming staff can view any case if they have the ID, or limit it: let's allow all staff to view.
+
+    const [rows]: any = await db.query(
+      `SELECT c.*, cc.name as category_name,
+              u.first_name as student_first_name, u.last_name as student_last_name, u.email as student_email,
+              su.first_name as staff_first_name, su.last_name as staff_last_name,
+              f.rating as feedback_rating, f.comments as feedback_comments, f.created_at as feedback_date
+       FROM complaints c
+       JOIN complaint_categories cc ON c.category_id = cc.id
+       JOIN students s ON c.student_id = s.id
+       JOIN users u ON s.user_id = u.id
+       LEFT JOIN users su ON c.assigned_staff_id = su.id
+       LEFT JOIN feedback f ON c.id = f.complaint_id
+       ${where}`,
+      params
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+    }
+
+    const complaint = rows[0];
+
+    const [attachments]: any = await db.query(
+      'SELECT id, file_path as file_path, file_path as file_name FROM complaint_attachments WHERE complaint_id = ?', [id]
+    );
+
+    const [timeline]: any = await db.query(
+      `SELECT csh.*, u.first_name, u.last_name, r.name as role_name
+       FROM complaint_status_history csh
+       JOIN users u ON csh.changed_by_user_id = u.id
+       JOIN roles r ON u.role_id = r.id
+       WHERE csh.complaint_id = ?
+       ORDER BY csh.changed_at ASC`,
+      [id]
+    );
+
+    // Format response to match expected UI structure
+    res.json({
+      status: 'success',
+      data: { 
+        ...complaint, 
+        attachments: attachments.map((a: any) => ({...a, file_name: a.file_path.split('/').pop()})), 
+        timeline,
+        feedback: complaint.feedback_rating ? {
+          rating: complaint.feedback_rating,
+          comments: complaint.feedback_comments,
+          date: complaint.feedback_date
+        } : null
+      }
+    });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
@@ -544,13 +613,24 @@ export const getDetailedReports = async (req: Request, res: Response) => {
        GROUP BY cc.name`
     );
 
+    // 5. Top Resolution Actions
+    const [topActions]: any = await db.query(
+      `SELECT remarks as action, COUNT(*) as count 
+       FROM complaint_status_history 
+       WHERE status = 'Resolved' 
+       GROUP BY remarks 
+       ORDER BY count DESC 
+       LIMIT 5`
+    );
+
     res.json({
       status: 'success',
       data: {
         byCategory,
         byStatus,
         trends,
-        resolutionTime
+        resolutionTime,
+        topActions
       }
     });
   } catch (err: any) {

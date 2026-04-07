@@ -17,7 +17,8 @@ import {
   getFeedback,
   getFeedbackStats,
   getDetailedReports,
-  exportComplaintsCsv
+  exportComplaintsCsv,
+  getComplaintById
 } from '../../controllers/admin.controller';
 
 const router = Router();
@@ -29,6 +30,10 @@ router.get('/dashboard', requireAuth, requireRole(['Admin', 'Staff']), getAdminS
 // @route   GET /api/v1/admin/complaints
 // @desc    Get all complaints with pagination/filters (Admin/Staff only)
 router.get('/complaints', requireAuth, requireRole(['Admin', 'Staff']), getAllComplaints);
+
+// @route   GET /api/v1/admin/complaints/:id
+// @desc    Get single complaint details
+router.get('/complaints/:id', requireAuth, requireRole(['Admin', 'Staff']), getComplaintById);
 
 // @route   GET /api/v1/admin/staff
 // @desc    Get all active staff members for assignment

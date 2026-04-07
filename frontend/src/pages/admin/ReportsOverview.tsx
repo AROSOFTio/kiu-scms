@@ -5,7 +5,8 @@ import {
   Download, 
   PieChart as PieChartIcon,
   RefreshCcw,
-  FileText
+  FileText,
+  Activity
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -162,7 +163,7 @@ export default function ReportsOverview() {
         </div>
 
         {/* Resolution Efficiency */}
-        <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm col-span-1 lg:col-span-2 relative group overflow-hidden">
+        <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm relative group overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 opacity-50 transition-all group-hover:w-3" />
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-between">
             Resolution Efficiency (Avg Hours)
@@ -181,6 +182,29 @@ export default function ReportsOverview() {
                 <Bar dataKey="avgHours" fill="#008540" radius={[8, 8, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Top Resolution Actions */}
+        <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm relative group overflow-hidden">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500 opacity-50 transition-all group-hover:w-3" />
+          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-between">
+            Top Resolution Actions
+            <Activity className="h-4 w-4 text-amber-50" />
+          </h3>
+          <div className="space-y-4">
+            {data?.topActions?.length === 0 ? (
+               <p className="text-sm font-medium text-gray-400">No resolutions logged yet.</p>
+            ) : (
+               data?.topActions?.map((item: any, i: number) => (
+                 <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                   <p className="text-sm font-black text-slate-700 w-3/4 truncate">{item.action}</p>
+                   <span className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-black text-slate-500 shadow-sm">
+                     {item.count} Uses
+                   </span>
+                 </div>
+               ))
+            )}
           </div>
         </div>
       </div>

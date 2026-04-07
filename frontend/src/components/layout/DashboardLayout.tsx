@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, Bell, LogOut, ChevronDown, ShieldCheck, History, Home, Clock, CheckCircle } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, LogOut, ChevronDown, ShieldCheck, History, Home, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function DashboardLayout() {
   const location = useLocation();
@@ -137,9 +138,7 @@ export default function DashboardLayout() {
           </div>
           
           <div className="flex items-center space-x-6 text-[11px] font-bold text-slate-300">
-            <button className="flex items-center gap-2 hover:text-white transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
+            <NotificationDropdown />
             <Link to="/dashboard/profile" className="flex items-center gap-2 hover:text-white transition-colors">
               Change password <ChevronDown className="h-3 w-3" />
             </Link>
