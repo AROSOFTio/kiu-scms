@@ -22,7 +22,7 @@ router.get('/me', requireAuth, getCurrentUser);
 // Temporary hook to safely generate actual valid Bcrypt Hashes and inject into the live server database
 router.get('/fix-passwords', async (req, res) => {
     try {
-        const bcrypt = require('bcryptjs');
+        const bcrypt = require('bcrypt');
         const { db } = require('../../config/database');
         
         const h1 = await bcrypt.hash('Admin@1234', 10);
