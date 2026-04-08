@@ -58,9 +58,11 @@ export default function Login() {
 
           <div className="px-10 py-10">
             {/* Logo area replicating the native Student Portal */}
-            <div className="flex flex-col items-center mb-8 font-['Arial',sans-serif]">
-              <img src="/kiu-logo.png" alt="Kampala International University" className="w-[180px] object-contain mb-4 mix-blend-multiply" />
-              <h1 className="text-[18px] font-bold text-gray-800 mt-5 leading-tight text-center">Centralized SCMS Authentication</h1>
+            <div className="flex flex-col items-center mb-10 font-['Arial',sans-serif]">
+              <img src="/kiu-logo.png" alt="Kampala International University" className="w-[200px] object-contain mix-blend-multiply" />
+              <h1 className="text-[20px] font-black text-slate-800 mt-8 leading-tight text-center uppercase tracking-tighter">
+                Online Student Complaint <br /> Management System
+              </h1>
             </div>
 
             {/* API Error */}
