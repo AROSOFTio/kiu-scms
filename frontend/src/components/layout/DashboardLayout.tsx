@@ -14,7 +14,7 @@ export default function DashboardLayout() {
   // Close sidebar when route changes on mobile
   useEffect(() => {
     setIsSidebarOpen(false);
-  }, [location.pathname]);
+  }, [location]);
 
   // Lock body scroll when mobile sidebar is open
   useEffect(() => {
