@@ -7,12 +7,11 @@ import {
   PlusCircle, 
   ArrowRight,
   AlertCircle,
-  Briefcase,
   History,
   ShieldCheck
 } from 'lucide-react';
 import api from '../../lib/api';
-import { TableRowSkeleton, StatSkeleton } from '../../components/ui/Skeleton';
+import { StatSkeleton } from '../../components/ui/Skeleton';
 
 interface DashboardStats {
   total: number;
