@@ -13,8 +13,10 @@ import {
   History,
   ArrowRight
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { Skeleton } from '../../components/ui/Skeleton';
+import TimeDisplay from '../../components/dashboard/TimeDisplay';
 
 // --- Sub-Components ---
 
@@ -28,7 +30,7 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         </div>
         <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-4 leading-[0.9]">
           Welcome back,<br />
-          <span className="text-emerald-600">Director {user?.lastName}</span>
+          <span className="text-emerald-600">Admin {user?.lastName}</span>
         </h1>
         <p className="text-lg text-slate-500 font-medium leading-relaxed">
           The Student Complaint and Management System is fully operational. 
@@ -36,18 +38,11 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         </p>
       </div>
       
-      <div className="flex flex-col items-end gap-2">
-        <div className="text-[40px] font-black text-slate-900 tracking-tighter tabular-nums leading-none">
-          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">
-          {new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
-        </div>
-      </div>
+      <TimeDisplay />
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden">
+      <Link to="/admin/complaints" className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden text-left">
         <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
           <FileText size={120} />
         </div>
@@ -59,9 +54,9 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         <div className="flex items-center text-sm font-black text-emerald-600 group-hover:gap-2 transition-all">
           Manage Repository <ArrowRight className="h-4 w-4 ml-1" />
         </div>
-      </div>
+      </Link>
 
-      <div className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden">
+      <Link to="/admin/users" className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden text-left">
         <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
           <Users size={120} />
         </div>
@@ -73,7 +68,7 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         <div className="flex items-center text-sm font-black text-emerald-600 group-hover:gap-2 transition-all">
           User Directory <ArrowRight className="h-4 w-4 ml-1" />
         </div>
-      </div>
+      </Link>
 
       <div className="group bg-emerald-600 p-10 rounded-[40px] shadow-2xl shadow-emerald-900/20 text-white transition-all duration-500 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -82,9 +77,9 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         <div className="relative z-10 text-emerald-200 mb-6 font-black text-xs uppercase tracking-widest">System Status: Active</div>
         <h3 className="text-2xl font-black mb-2 tracking-tight">Configuration</h3>
         <p className="text-emerald-100/70 font-medium text-sm mb-6 leading-relaxed">Adjust system thresholds and institutional parameters.</p>
-        <div className="flex items-center text-sm font-black text-white bg-white/10 w-fit px-6 py-3 rounded-2xl hover:bg-white/20 transition-all cursor-pointer">
+        <Link to="/admin/system-config" className="flex items-center text-sm font-black text-white bg-white/10 w-fit px-6 py-3 rounded-2xl hover:bg-white/20 transition-all cursor-pointer">
           Open Settings
-        </div>
+        </Link>
       </div>
     </div>
   </div>

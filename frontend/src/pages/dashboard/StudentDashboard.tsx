@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { StatSkeleton } from '../../components/ui/Skeleton';
+import { useAuth } from '../../context/AuthContext';
+import TimeDisplay from '../../components/dashboard/TimeDisplay';
 
 interface DashboardStats {
   total: number;
@@ -21,8 +23,9 @@ interface DashboardStats {
 }
 
 export default function StudentDashboard() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentView = searchParams.get('view'); // No default 'all'
+  const currentView = searchParams.get('view');
   
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +71,7 @@ export default function StudentDashboard() {
   const filteredComplaints = stats?.recent.filter((c: any) => {
     if (currentView === 'processing') return c.status === 'Pending' || c.status === 'In Progress' || c.status === 'Submitted';
     if (currentView === 'resolved') return c.status === 'Resolved';
-    return true; // 'all' view
+    return true; 
   }) || [];
 
   const viewTitle = 
@@ -86,23 +89,31 @@ export default function StudentDashboard() {
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* Welcome Institutional Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-             <div className="h-1 w-10 bg-[#008540] rounded-full" />
-             <span className="text-[10px] font-black text-[#008540] uppercase tracking-[0.4em]">Administrative Hub</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-6">
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-2">
+               <div className="h-1 w-10 bg-[#008540] rounded-full" />
+               <span className="text-[10px] font-black text-[#008540] uppercase tracking-[0.4em]">Administrative Hub</span>
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight">
+              Welcome back,<br />
+              <span className="text-[#008540]">Student {user?.lastName}</span>
+            </h1>
+            {currentView && (
+              <p className="text-slate-500 mt-2 font-medium text-sm">
+                Currently inspecting: <span className="text-[#008540] font-bold uppercase tracking-widest">{viewTitle}</span>
+              </p>
+            )}
           </div>
-          <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter leading-tight">
-            Institutional <span className="text-[#008540]">Dashboard.</span>
-          </h1>
-          {currentView && (
-            <p className="text-slate-500 mt-2 font-medium text-sm">
-              Currently inspecting: <span className="text-[#008540] font-bold uppercase tracking-widest">{viewTitle}</span>
-            </p>
-          )}
+          <TimeDisplay />
         </div>
+      </div>
+
+      <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl border border-slate-100">
+        <p className="text-sm text-slate-500 font-medium">Monitor your institutional grievances and track resolution progress in real-time.</p>
         <Link
           to="/dashboard/student/complaints/new"
-          className="inline-flex items-center px-10 py-5 bg-[#008540] text-white rounded-[1.2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-900/20 hover:translate-y-[-2px] transition-all group active:scale-95"
+          className="inline-flex items-center px-10 py-5 bg-[#008540] text-white rounded-[1.2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-900/20 hover:translate-y-[-2px] transition-all group active:scale-95 whitespace-nowrap"
         >
           <PlusCircle className="h-4 w-4 mr-3 group-hover:rotate-90 transition-transform duration-500" />
           Log New Complaint
@@ -135,7 +146,6 @@ export default function StudentDashboard() {
         )}
       </div>
 
-      {/* Conditional Recent Activity Section (Only shown on click) */}
       {currentView && (
         <div className="premium-card flex flex-col animate-in slide-in-from-top-4 duration-500">
           <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">

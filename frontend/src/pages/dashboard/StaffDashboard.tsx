@@ -9,6 +9,8 @@ import {
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { CardSkeleton } from '../../components/ui/Skeleton';
+import { useAuth } from '../../context/AuthContext';
+import TimeDisplay from '../../components/dashboard/TimeDisplay';
 
 interface DashboardStats {
   total: number;
@@ -18,6 +20,7 @@ interface DashboardStats {
 }
 
 export default function StaffDashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -80,13 +83,26 @@ export default function StaffDashboard() {
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Staff Resolution Hub</h1>
-          <p className="text-gray-500 mt-1 font-medium">Overview of your assigned institutional grievances.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-px w-6 bg-[#008540]" />
+              <span className="text-[10px] font-black text-[#008540] uppercase tracking-widest">Resolution Hub</span>
+            </div>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tighter">
+              Welcome back,<br />
+              <span className="text-[#008540]">Staff {user?.lastName}</span>
+            </h1>
+          </div>
+          <TimeDisplay />
         </div>
+      </div>
+
+      <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl border border-slate-100">
+        <p className="text-sm text-slate-500 font-medium">Analyze and resolve institutional grievances assigned to your jurisdiction.</p>
         <Link 
           to="/dashboard/staff/worklist"
-          className="inline-flex items-center px-6 py-3 bg-[#008540] text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-900/10 hover:shadow-xl transition-all active:scale-95"
+          className="inline-flex items-center px-6 py-3 bg-[#008540] text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-900/10 hover:shadow-xl transition-all active:scale-95 whitespace-nowrap"
         >
           View Full Worklist
           <ArrowRight className="ml-2 h-4 w-4" />
