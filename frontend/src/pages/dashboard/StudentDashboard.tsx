@@ -186,10 +186,10 @@ export default function StudentDashboard() {
                         </span>
                       </td>
                       <td className="px-10 py-6">
-                         <div className="max-w-xs">
+                         <Link to={`/dashboard/student/complaints/${complaint.id}`} className="max-w-xs block group-hover:translate-x-1 transition-transform">
                             <p className="text-xs font-black text-slate-900 tracking-tight leading-tight group-hover:text-[#008540] transition-colors uppercase truncate">{complaint.title}</p>
                             <p className="text-[9px] text-slate-400 font-bold mt-1 tracking-wider uppercase">{complaint.category_name}</p>
-                         </div>
+                         </Link>
                       </td>
                       <td className="px-10 py-6">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${

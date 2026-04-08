@@ -112,17 +112,17 @@ export default function StaffDashboard() {
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm group hover:shadow-lg transition-all duration-300">
+          <Link to="/dashboard/staff/worklist" key={kpi.label} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm group hover:shadow-lg transition-all duration-300 block text-left">
             <div className="flex justify-between items-start mb-6">
               <div className={`${kpi.bg} ${kpi.color} p-4 rounded-xl group-hover:scale-110 transition-transform`}>
                 <kpi.icon className="h-6 w-6" />
               </div>
-              <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Live Data</span>
+              <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] group-hover:text-emerald-500 transition-colors">Go to worklist</span>
             </div>
             <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{kpi.label}</p>
             <p className="text-4xl font-black text-gray-900 mt-1">{kpi.value}</p>
             <p className="text-xs text-gray-400 mt-4 font-medium">{kpi.description}</p>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -141,7 +141,7 @@ export default function StaffDashboard() {
             {stats?.recentActivity.length === 0 ? (
               <div className="py-12 text-center text-gray-400">No recent activity on your assigned cases.</div>
             ) : stats?.recentActivity.map((act) => (
-              <div key={act.id} className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 group">
+              <Link key={act.id} to={`/dashboard/staff/complaints/${act.case_id || act.id}`} className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 group block text-left">
                 <div className="bg-gray-100 p-3 rounded-xl text-gray-400 group-hover:bg-white group-hover:text-[#008540] transition-all">
                   <Clock className="h-5 w-5" />
                 </div>
@@ -156,7 +156,7 @@ export default function StaffDashboard() {
                     Status updated to <span className="text-[#008540]">"{act.status}"</span> by {act.first_name}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
