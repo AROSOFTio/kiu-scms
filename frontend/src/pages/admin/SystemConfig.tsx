@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { Modal } from '../../components/ui/Modal';
+import { useToast } from '../../context/ToastContext';
 
 export default function SystemConfig() {
   const [activeTab, setActiveTab] = useState<'categories' | 'settings'>('categories');

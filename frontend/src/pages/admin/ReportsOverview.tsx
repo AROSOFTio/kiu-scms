@@ -70,7 +70,7 @@ export default function ReportsOverview() {
   };
 
   const handlePdfGeneration = () => {
-    toast.info('PDF Generation Engine is being initialized for your institution.');
+    toast.success('PDF Generation Engine is being initialized for your institution.');
   };
 
   if (loading) {
