@@ -4,7 +4,8 @@ import {
   Clock, 
   CheckCircle2, 
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
