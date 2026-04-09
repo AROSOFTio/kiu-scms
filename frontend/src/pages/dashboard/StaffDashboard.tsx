@@ -5,7 +5,11 @@ import {
   CheckCircle2, 
   TrendingUp,
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  Star,
+  Zap,
+  PlusCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
@@ -19,6 +23,7 @@ interface DashboardStats {
   byCategory: { category: string; count: number }[];
   recentActivity: any[];
   urgentCases: any[];
+  recentFeedback: any[];
 }
 
 export default function StaffDashboard() {
@@ -112,18 +117,29 @@ export default function StaffDashboard() {
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-[#008540] to-[#006b33] p-8 rounded-2xl shadow-lg shadow-emerald-900/10 text-white relative overflow-hidden group">
+          <Zap className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 opacity-80">Quick Start</p>
+          <h3 className="text-xl font-black mb-6">Staff<br/>Workbench</h3>
+          <Link 
+            to="/dashboard/staff/worklist" 
+            className="inline-flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-xs font-bold transition-all"
+          >
+            Open Worklist
+            <ArrowRight className="ml-2 h-3.5 w-3.5" />
+          </Link>
+        </div>
         {kpis.map((kpi) => (
           <Link to="/dashboard/staff/worklist" key={kpi.label} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm group hover:shadow-lg transition-all duration-300 block text-left">
             <div className="flex justify-between items-start mb-6">
               <div className={`${kpi.bg} ${kpi.color} p-4 rounded-xl group-hover:scale-110 transition-transform`}>
                 <kpi.icon className="h-6 w-6" />
               </div>
-              <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] group-hover:text-emerald-500 transition-colors">Go to worklist</span>
+              <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Live Data</span>
             </div>
             <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{kpi.label}</p>
             <p className="text-4xl font-black text-gray-900 mt-1">{kpi.value}</p>
-            <p className="text-xs text-gray-400 mt-4 font-medium">{kpi.description}</p>
           </Link>
         ))}
       </div>
@@ -206,7 +222,10 @@ export default function StaffDashboard() {
 
         {/* Status Distribution (Personal) */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col">
-          <h2 className="text-lg font-black text-gray-900 tracking-tight mb-8">Resolution Mix</h2>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-lg font-black text-gray-900 tracking-tight">Resolution Mix</h2>
+            <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+          </div>
           <div className="flex-1 space-y-6">
             {stats?.byStatus.map((s) => (
               <div key={s.status} className="space-y-2">
@@ -214,13 +233,13 @@ export default function StaffDashboard() {
                   <span className="font-bold text-gray-500 uppercase tracking-tighter">{s.status === 'Submitted' ? 'Pending' : s.status}</span>
                   <span className="font-black text-gray-900">{s.count}</span>
                 </div>
-                <div className="h-1.5 bg-gray-50 rounded-full overflow-hidden border border-gray-50">
+                <div className="h-1.5 bg-gray-50 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${
                       s.status === 'Resolved' ? 'bg-emerald-500' :
                       s.status === 'Rejected' ? 'bg-red-500' : 
-                      s.status === 'Submitted' ? 'bg-red-500' :
-                      'bg-primary-500'
+                      s.status === 'Submitted' ? 'bg-amber-500' :
+                      'bg-indigo-500'
                     }`}
                     style={{ width: `${(s.count / (stats?.total || 1)) * 100}%` }}
                   />
@@ -229,10 +248,49 @@ export default function StaffDashboard() {
             ))}
           </div>
           <div className="mt-8 pt-8 border-t border-gray-50">
-             <div className="p-4 bg-[#008540]/5 rounded-xl border border-[#008540]/10">
-                <p className="text-[10px] font-black text-[#008540] uppercase tracking-widest mb-1">Success Target</p>
-                <p className="text-xs text-[#008540] font-bold">Always aim for a 100% resolution rate on student inquiries.</p>
+             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center">
+                  <PlusCircle className="h-3 w-3 mr-1" /> Quick Navigation
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link to="/dashboard/staff/worklist?status=Submitted" className="text-[10px] font-black bg-white border border-gray-200 px-2 py-1 rounded hover:border-[#008540] transition-colors">Pending Review</Link>
+                  <Link to="/dashboard/staff/worklist?status=In Progress" className="text-[10px] font-black bg-white border border-gray-200 px-2 py-1 rounded hover:border-[#008540] transition-colors">Active Cases</Link>
+                </div>
              </div>
+          </div>
+        </div>
+
+        {/* Student Voice - Feedback */}
+        <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-lg font-black text-gray-900 tracking-tight flex items-center">
+              <MessageSquare className="h-5 w-5 mr-3 text-indigo-500" />
+              Student Voice
+            </h2>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Latest Feedback</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {stats?.recentFeedback?.length === 0 ? (
+              <div className="md:col-span-3 py-12 text-center text-gray-400 font-medium bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                Awaiting student feedback on your resolved cases.
+              </div>
+            ) : (
+              stats?.recentFeedback?.map((fb) => (
+                <div key={fb.id} className="p-6 rounded-2xl bg-indigo-50/30 border border-indigo-100 relative group">
+                  <div className="flex items-center gap-1 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className={`h-3 w-3 ${star <= fb.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-700 italic leading-relaxed mb-4">"{fb.comments || 'No comments left.'}"</p>
+                  <div className="flex items-center justify-between mt-auto">
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">Case #{fb.reference_number}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">{fb.first_name} {fb.last_name.charAt(0)}.</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

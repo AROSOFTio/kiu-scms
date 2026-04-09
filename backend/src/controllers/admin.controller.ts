@@ -302,6 +302,22 @@ export const getAdminStats = async (req: Request, res: Response) => {
       urgentCases = rows;
     }
 
+    // NEW: Get recent feedback for staff
+    let recentFeedback: any[] = [];
+    if (isStaff) {
+      const [fRows]: any = await db.query(
+        `SELECT f.*, c.reference_number, u.first_name, u.last_name, u.email
+         FROM feedback f
+         JOIN complaints c ON f.complaint_id = c.id
+         JOIN students s ON f.student_id = s.id
+         JOIN users u ON s.user_id = u.id
+         WHERE c.assigned_staff_id = ?
+         ORDER BY f.created_at DESC LIMIT 3`,
+        [userId]
+      );
+      recentFeedback = fRows;
+    }
+
     res.json({
       status: 'success',
       data: {
@@ -312,6 +328,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
         totalUsers: users[0].count,
         recentActivity: recent,
         urgentCases,
+        recentFeedback,
         isStaffSpecific: isStaff
       }
     });
