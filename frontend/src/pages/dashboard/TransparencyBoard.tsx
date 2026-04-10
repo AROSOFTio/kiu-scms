@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { FileText, Search, Filter } from 'lucide-react';
+import { FileText, Search } from 'lucide-react';
 
 interface PublicComplaint {
   id: number;
@@ -97,7 +97,7 @@ export default function TransparencyBoard() {
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {stats.map((entry, index) => (
+                    {stats.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                     ))}
                   </Bar>
