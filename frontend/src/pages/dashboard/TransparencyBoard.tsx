@@ -97,8 +97,8 @@ export default function TransparencyBoard() {
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {stats.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    {stats.map((item, index) => (
+                      <Cell key={`cell-${item.category || index}`} fill={colors[index % colors.length]} />
                     ))}
                   </Bar>
                 </BarChart>
