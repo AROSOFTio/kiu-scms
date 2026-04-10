@@ -278,7 +278,23 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
 
 // @desc    Get all public complaints for transparency board
 export const getPublicComplaints = async (req: Request, res: Response) => {
+  const userId = (req as any).user.userId;
+  const roleId = (req as any).user.roleId;
+
   try {
+    const [roles]: any = await db.query('SELECT name FROM roles WHERE id = ?', [roleId]);
+    const roleName = roles.length > 0 ? roles[0].name : '';
+
+    let studentFilter = '';
+    const queryParams: any[] = [];
+
+    if (roleName === 'Student') {
+      const [students]: any = await db.query('SELECT id FROM students WHERE user_id = ?', [userId]);
+      if (students.length > 0) {
+        studentFilter = 'WHERE c.student_id = ?';
+        queryParams.push(students[0].id);
+      }
+    }
     const [rows]: any = await db.query(
       `SELECT c.id, c.reference_number, c.title, c.status, c.created_at, 
               cc.name as category_name,
@@ -290,14 +306,18 @@ export const getPublicComplaints = async (req: Request, res: Response) => {
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
        LEFT JOIN users su ON c.assigned_staff_id = su.id
-       ORDER BY c.created_at DESC`
+       ${studentFilter}
+       ORDER BY c.created_at DESC`,
+       queryParams
     );
 
     const [stats]: any = await db.query(
       `SELECT cc.name as category, COUNT(c.id) as count 
        FROM complaint_categories cc 
        JOIN complaints c ON cc.id = c.category_id 
-       GROUP BY cc.name`
+       ${studentFilter}
+       GROUP BY cc.name`,
+       queryParams
     );
 
     res.json({ 
