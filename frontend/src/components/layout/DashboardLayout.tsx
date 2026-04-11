@@ -121,7 +121,7 @@ export default function DashboardLayout() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Top Sticky Header */}
-        <header className="h-[64px] bg-[#222] border-b border-white/5 z-30 flex items-center justify-between px-6">
+        <header className="sticky top-0 h-[64px] bg-[#222]/95 backdrop-blur-md border-b border-white/5 z-30 flex items-center justify-between px-6 shadow-sm">
           <div className="flex items-center gap-4">
             <button 
               onClick={toggleSidebar}
