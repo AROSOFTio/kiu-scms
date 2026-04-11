@@ -208,3 +208,28 @@ INSERT INTO system_settings (key_name, value) VALUES
   ('system_email', 'scms@kiu.ac.ug'),
   ('max_file_size_mb', '10'),
   ('allowed_file_types', 'pdf,jpg,jpeg,png,doc,docx');
+-- 11. Seed Initial Roles
+INSERT IGNORE INTO roles (name) VALUES ('Admin'), ('Staff'), ('Student'), ('Department Officer');
+
+-- 12. Seed Demo Data (Password: Admin@123)
+INSERT IGNORE INTO faculties (id, name) VALUES (1, 'Faculty of Computing and Informatics');
+INSERT IGNORE INTO departments (id, faculty_id, name) VALUES (1, 1, 'Computer Science');
+
+-- Admin Account
+INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
+VALUES (1, 'System', 'Administrator', 'admin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
+
+-- Dept Officer
+INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
+VALUES (4, 'John', 'Officer', 'officer@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
+INSERT IGNORE INTO staff (user_id, staff_number, department_id, role_id) VALUES (2, 'OFF-001', 1, 4);
+
+-- Regular Staff
+INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
+VALUES (2, 'Sarah', 'Staff', 'staff@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
+INSERT IGNORE INTO staff (user_id, staff_number, department_id, role_id) VALUES (3, 'STF-001', 1, 2);
+
+-- Test Student
+INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
+VALUES (3, 'Enoch', 'Student', 'student@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
+INSERT IGNORE INTO students (user_id, student_number, department_id) VALUES (4, '2026/KIU/001', 1);
