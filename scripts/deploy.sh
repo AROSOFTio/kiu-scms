@@ -21,7 +21,11 @@ git pull origin main
 echo "🏗️ Rebuilding production containers..."
 docker-compose -f docker-compose.prod.yml up -d --build
 
-# 4. Clean up unused and dangling images to save server disk space
+# 4. Apply Database Migrations (Staff Roles & Dept Officer)
+echo "📥 Applying database schema updates..."
+docker exec -i scms-db-prod mysql -u root -pkiudbpass!23 scms_db < database/migrations/001_add_dept_officer.sql
+
+# 5. Clean up unused and dangling images to save server disk space
 echo "🧹 Cleaning up old Docker images..."
 docker image prune -f
 
