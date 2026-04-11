@@ -10,7 +10,13 @@ git pull origin main
 docker-compose down
 docker-compose up --build -d
 
-# Apply database migration (Safe for existing databases)
+# Wait for database to be ready
+echo "⏳ Waiting for database to initialize..."
+until docker exec scms-db mysqladmin ping -h localhost --silent; do
+    sleep 2
+done
+
+# Apply database migration
 echo "📥 Applying Staff Role migration..."
 docker exec -i scms-db mysql -u root -pkiudbpass!23 scms_db < database/migrations/001_add_dept_officer.sql
 
