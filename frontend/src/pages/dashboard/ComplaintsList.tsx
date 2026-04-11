@@ -141,19 +141,7 @@ export default function ComplaintsList() {
     }
   };
 
-  const handleClaim = async (complaintId: number) => {
-    if (!user?.id) return;
-    setSubmitting(true);
-    try {
-      await api.patch(`/admin/complaints/${complaintId}/assign`, { staffId: user.id });
-      const res = await api.get('/admin/complaints', { params: { search, status, priority, page, limit } });
-      setComplaints(res.data.data);
-    } catch (err) {
-      alert('Failed to claim the task');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
