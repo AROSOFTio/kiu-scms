@@ -4,7 +4,6 @@ import {
   Clock, 
   User, 
   CheckCircle2, 
-  XCircle, 
   Loader2,
   Plus,
   History,
