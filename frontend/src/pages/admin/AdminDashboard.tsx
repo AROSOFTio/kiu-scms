@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Clock,
-  ShieldAlert,
   History,
   ArrowRight
 } from 'lucide-react';

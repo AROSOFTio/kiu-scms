@@ -5,9 +5,7 @@ import {
   User, 
   CheckCircle2, 
   XCircle, 
-  AlertCircle,
   Loader2,
-  ChevronRight,
   Plus
 } from 'lucide-react';
 import api from '../../lib/api';
@@ -52,9 +50,6 @@ export default function Appointments() {
   const [reason, setReason] = useState('');
   const [timeSlot, setTimeSlot] = useState('10:00 - 11:00 AM');
   const [isBooking, setIsBooking] = useState(false);
-
-  // HOD specific state
-  const [isUpdatingAvailability, setIsUpdatingAvailability] = useState(false);
 
   const isHOD = user?.role === 'Admin';
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, LogOut, ChevronDown, ShieldCheck, History, Home, Clock, CheckCircle, Calendar } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, Users, BarChart3, ClipboardList, Menu, LogOut, ChevronDown, ShieldCheck, History, Home, Clock, CheckCircle, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
 
