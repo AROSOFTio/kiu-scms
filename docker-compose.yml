@@ -37,6 +37,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-PROD_SECURE_TOKEN_REPLACE_ME}
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/src:/app/src
     depends_on:
       db:
         condition: service_healthy
