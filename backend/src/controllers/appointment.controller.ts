@@ -1,9 +1,46 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
 
+// Helper to ensure tables exist (Production self-healing)
+const ensureTablesExist = async () => {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS hod_availability (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                hod_id INT NOT NULL,
+                available_date DATE NOT NULL,
+                start_time TIME DEFAULT '09:00:00',
+                end_time TIME DEFAULT '17:00:00',
+                is_available BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY (hod_id, available_date),
+                FOREIGN KEY (hod_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS appointments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                student_id INT NOT NULL,
+                hod_id INT NOT NULL,
+                appointment_date DATE NOT NULL,
+                time_slot VARCHAR(50) NOT NULL,
+                reason TEXT NOT NULL,
+                status ENUM('Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected') DEFAULT 'Pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (hod_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+    } catch (err) {
+        console.error('Migration Check Failed:', err);
+    }
+};
+
 // @desc    Get HOD availability
 // @route   GET /api/v1/appointments/availability/:hodId
 export const getHODAvailability = async (req: Request, res: Response) => {
+  await ensureTablesExist();
   const { hodId } = req.params;
   try {
     const [availability]: any = await db.query(
@@ -24,6 +61,7 @@ export const getHODAvailability = async (req: Request, res: Response) => {
 // @desc    Update HOD availability (Toggle specific date)
 // @route   PUT /api/v1/appointments/availability
 export const updateHODAvailability = async (req: Request, res: Response) => {
+  await ensureTablesExist();
   const hodId = (req as any).user.userId;
   const { date, isAvailable } = req.body; 
 
@@ -52,6 +90,7 @@ export const updateHODAvailability = async (req: Request, res: Response) => {
 // @desc    Book an appointment
 // @route   POST /api/v1/appointments
 export const bookAppointment = async (req: Request, res: Response) => {
+  await ensureTablesExist();
   const studentId = (req as any).user.userId;
   const { hodId, date, timeSlot, reason } = req.body;
 
@@ -80,6 +119,7 @@ export const bookAppointment = async (req: Request, res: Response) => {
 // @desc    Get appointments for current user
 // @route   GET /api/v1/appointments
 export const getMyAppointments = async (req: Request, res: Response) => {
+  await ensureTablesExist();
   const userId = (req as any).user.userId;
   const roleId = (req as any).user.roleId;
 
