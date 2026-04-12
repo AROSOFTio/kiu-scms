@@ -7,41 +7,45 @@ export const getHODAvailability = async (req: Request, res: Response) => {
   const { hodId } = req.params;
   try {
     const [availability]: any = await db.query(
-      'SELECT day_of_week, start_time, end_time, is_available FROM hod_availability WHERE hod_id = ?',
+      'SELECT available_date, start_time, end_time, is_available FROM hod_availability WHERE hod_id = ? AND is_available = TRUE',
       [hodId]
     );
-    res.json({ status: 'success', data: availability });
+    // Convert dates to YYYY-MM-DD strings for easier frontend handling
+    const formatted = availability.map((a: any) => ({
+        ...a,
+        available_date: a.available_date.toISOString().split('T')[0]
+    }));
+    res.json({ status: 'success', data: formatted });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
-// @desc    Update HOD availability
+// @desc    Update HOD availability (Toggle specific date)
 // @route   PUT /api/v1/appointments/availability
 export const updateHODAvailability = async (req: Request, res: Response) => {
   const hodId = (req as any).user.userId;
-  const { schedules } = req.body; // Array of {day_of_week, start_time, end_time, is_available}
+  const { date, isAvailable } = req.body; 
 
-  const connection = await db.getConnection();
   try {
-    await connection.beginTransaction();
-
-    for (const schedule of schedules) {
-      await connection.query(
-        `INSERT INTO hod_availability (hod_id, day_of_week, start_time, end_time, is_available) 
-         VALUES (?, ?, ?, ?, ?) 
-         ON DUPLICATE KEY UPDATE start_time = VALUES(start_time), end_time = VALUES(end_time), is_available = VALUES(is_available)`,
-        [hodId, schedule.day_of_week, schedule.start_time, schedule.end_time, schedule.is_available]
+    if (isAvailable) {
+      await db.query(
+        `INSERT INTO hod_availability (hod_id, available_date, is_available) 
+         VALUES (?, ?, TRUE) 
+         ON DUPLICATE KEY UPDATE is_available = TRUE`,
+        [hodId, date]
+      );
+    } else {
+      await db.query(
+        `DELETE FROM hod_availability WHERE hod_id = ? AND available_date = ?`,
+        [hodId, date]
       );
     }
 
-    await connection.commit();
     res.json({ status: 'success', message: 'Availability updated successfully' });
   } catch (err: any) {
-    await connection.rollback();
+    console.error('Database Error in updateHODAvailability:', err);
     res.status(500).json({ status: 'error', message: err.message });
-  } finally {
-    connection.release();
   }
 };
 
@@ -54,7 +58,7 @@ export const bookAppointment = async (req: Request, res: Response) => {
   try {
     // Check if slot is already taken
     const [existing]: any = await db.query(
-      'SELECT id FROM appointments WHERE hod_id = ? AND appointment_date = ? AND time_slot = ? AND status NOT IN ("Cancelled")',
+      'SELECT id FROM appointments WHERE hod_id = ? AND appointment_date = ? AND time_slot = ? AND status NOT IN ("Cancelled", "Rejected")',
       [hodId, date, timeSlot]
     );
 
@@ -83,7 +87,8 @@ export const getMyAppointments = async (req: Request, res: Response) => {
     let query = '';
     let params: any[] = [];
 
-    if (roleId === 1) { // HOD/Admin
+    // roleId 1 is Admin (HOD)
+    if (roleId === 1) { 
       query = `
         SELECT a.*, u.first_name as student_first_name, u.last_name as student_last_name 
         FROM appointments a 
@@ -91,7 +96,7 @@ export const getMyAppointments = async (req: Request, res: Response) => {
         WHERE a.hod_id = ? 
         ORDER BY a.appointment_date DESC, a.time_slot ASC`;
       params = [userId];
-    } else { // Student
+    } else { 
       query = `
         SELECT a.*, u.first_name as hod_first_name, u.last_name as hod_last_name 
         FROM appointments a 
@@ -102,7 +107,14 @@ export const getMyAppointments = async (req: Request, res: Response) => {
     }
 
     const [appointments]: any = await db.query(query, params);
-    res.json({ status: 'success', data: appointments });
+    
+    // Format dates for frontend
+    const formatted = appointments.map((a: any) => ({
+        ...a,
+        appointment_date: a.appointment_date.toISOString().split('T')[0]
+    }));
+
+    res.json({ status: 'success', data: formatted });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
@@ -116,7 +128,6 @@ export const updateAppointmentStatus = async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
 
   try {
-    // Only HOD or the Student who booked can change status (with logic checks)
     await db.query(
       'UPDATE appointments SET status = ? WHERE id = ? AND (hod_id = ? OR student_id = ?)',
       [status, id, userId, userId]

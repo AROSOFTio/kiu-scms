@@ -6,7 +6,9 @@ import {
   CheckCircle2, 
   XCircle, 
   Loader2,
-  Plus
+  Plus,
+  History,
+  Info
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
@@ -32,7 +34,7 @@ interface Appointment {
 }
 
 interface Availability {
-  day_of_week: string;
+  available_date: string;
   start_time: string;
   end_time: string;
   is_available: boolean;
@@ -134,20 +136,13 @@ export default function Appointments() {
     }
   };
 
-  const toggleDayAvailability = async (day: string, current: boolean) => {
-    const updatedSchedules = [{
-        day_of_week: day,
-        start_time: '09:00:00',
-        end_time: '17:00:00',
-        is_available: !current
-    }];
-
+  const handleToggleAvailability = async (date: string, isAvailable: boolean) => {
     try {
-        await api.put('/appointments/availability', { schedules: updatedSchedules });
+        await api.put('/appointments/availability', { date, isAvailable });
         fetchAvailability(user!.id);
-        toast.success('Availability updated');
-    } catch (err) {
-        toast.error('Failed to update availability');
+        toast.success(`Office presence updated for ${date}`);
+    } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to update availability');
     }
   };
 
@@ -159,207 +154,204 @@ export default function Appointments() {
     );
   }
 
-  const availableDayNames = availability.filter(a => a.is_available).map(a => a.day_of_week);
+  const availableDateStrings = availability.map(a => a.available_date);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700 pb-24">
+    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700 pb-24">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-            {isHOD ? 'Appointment Management' : 'Book HOD Appointment'}
+            {isHOD ? 'HOD Scheduler' : 'Book HOD Appointment'}
           </h1>
           <p className="text-slate-500 font-medium mt-2">
             {isHOD 
-              ? 'Manage consultation sessions and set your office availability.' 
+              ? 'Click on the calendar to mark your office presence for students.' 
               : 'Schedule a formal session with your Head of Department.'}
           </p>
         </div>
+        <div className="hidden sm:flex items-center gap-3 px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+           <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Institutional Calendar Live</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Left Column: Calendar & Booking (Student) / Availability (HOD) */}
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Left Column: Calendar Interaction */}
+        <div className="lg:col-span-8 space-y-8">
           {!isHOD && (
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Select HOD / Officer</label>
-              <div className="flex flex-wrap gap-3">
-                {hods.map(h => (
-                  <button
-                    key={h.id}
-                    onClick={() => setSelectedHOD(h)}
-                    className={`px-6 py-3 rounded-2xl text-xs font-black transition-all border ${
-                      selectedHOD?.id === h.id 
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-900/20' 
-                        : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-emerald-200'
-                    }`}
-                  >
-                    HOD {h.first_name} {h.last_name}
-                  </button>
-                ))}
-              </div>
+            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-wrap gap-3 items-center">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 border-r border-slate-100">Select Department</span>
+              {hods.map(h => (
+                <button
+                  key={h.id}
+                  onClick={() => setSelectedHOD(h)}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black transition-all border uppercase tracking-widest ${
+                    selectedHOD?.id === h.id 
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-900/20' 
+                      : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-white hover:border-emerald-200'
+                  }`}
+                >
+                  {h.first_name} {h.last_name}
+                </button>
+              ))}
             </div>
           )}
 
-          {isHOD ? (
-            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Office Day Settings</h3>
-              <p className="text-sm text-slate-500 font-medium">Set which days you are available for student consultations in office.</p>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => {
-                  const schedule = availability.find(a => a.day_of_week === day);
-                  const active = schedule?.is_available || false;
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => toggleDayAvailability(day, active)}
-                      className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all group ${
-                        active 
-                          ? 'border-emerald-500 bg-emerald-50/30' 
-                          : 'border-slate-100 bg-white hover:border-emerald-200'
-                      }`}
-                    >
-                      <span className={`text-[10px] font-black uppercase tracking-widest mb-2 ${active ? 'text-emerald-600' : 'text-slate-400'}`}>{day}</span>
-                      <div className={`p-2 rounded-xl transition-colors ${active ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-300 group-hover:bg-emerald-100 group-hover:text-emerald-600'}`}>
-                        {active ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <Calendar 
-              availableDays={availableDayNames} 
-              onDateSelect={setSelectedDate} 
-              selectedDate={selectedDate}
-            />
-          )}
+          <Calendar 
+            availableDates={availableDateStrings} 
+            onDateSelect={setSelectedDate} 
+            selectedDate={selectedDate}
+            mode={isHOD ? 'hod' : 'student'}
+            onToggleAvailability={isHOD ? handleToggleAvailability : undefined}
+          />
 
           {!isHOD && selectedDate && (
-             <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm animate-in slide-in-from-bottom-4">
-                <h3 className="text-xl font-black text-slate-900 tracking-tight mb-8">Booking Details</h3>
-                <form onSubmit={handleBook} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Appointment Time</label>
-                      <select 
-                        value={timeSlot}
-                        onChange={(e) => setTimeSlot(e.target.value)}
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-emerald-500 font-bold text-sm"
-                      >
-                        <option>09:00 - 10:00 AM</option>
-                        <option>10:00 - 11:00 AM</option>
-                        <option>11:00 - 12:00 PM</option>
-                        <option>02:00 - 03:00 PM</option>
-                        <option>03:00 - 04:00 PM</option>
-                      </select>
+             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/20 animate-in slide-in-from-bottom-6 duration-500">
+                <div className="flex items-center gap-4 mb-10">
+                   <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <Plus className="h-6 w-6" />
+                   </div>
+                   <div>
+                      <h3 className="text-xl font-black text-slate-900 tracking-tight">Finalize Booking</h3>
+                      <p className="text-xs text-slate-400 font-medium tracking-wide">Enter session details for the selected slot.</p>
+                   </div>
+                </div>
+                
+                <form onSubmit={handleBook} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">Time Window</label>
+                      <div className="relative">
+                         <Clock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />
+                         <select 
+                           value={timeSlot}
+                           onChange={(e) => setTimeSlot(e.target.value)}
+                           className="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-100 rounded-[1.5rem] outline-none focus:border-emerald-500 font-black text-xs uppercase tracking-widest appearance-none"
+                         >
+                           <option>09:00 - 10:00 AM</option>
+                           <option>10:00 - 11:00 AM</option>
+                           <option>11:00 - 12:00 PM</option>
+                           <option>02:00 - 03:00 PM</option>
+                           <option>03:00 - 04:00 PM</option>
+                         </select>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Selected Date</label>
-                       <div className="w-full px-5 py-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black text-sm text-emerald-700">
-                          {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    <div className="space-y-3">
+                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">Selected Engagement Date</label>
+                       <div className="w-full px-6 py-5 bg-emerald-50/50 border border-emerald-100 rounded-[1.5rem] font-black text-xs text-emerald-700 uppercase tracking-widest flex items-center gap-3">
+                          <CheckCircle2 className="h-4 w-4" />
+                          {selectedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                        </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reason for Session</label>
+                  <div className="space-y-3">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">Context of Consultation</label>
                     <textarea 
                       required
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
-                      placeholder="Briefly describe what you would like to discuss..."
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-emerald-500 font-medium text-sm resize-none h-32"
+                      placeholder="Institutional context or specific academic issue..."
+                      className="w-full px-6 py-6 bg-slate-50/50 border border-slate-100 rounded-[1.5rem] outline-none focus:border-emerald-500 font-medium text-sm resize-none h-40 leading-relaxed"
                     />
                   </div>
-                  <button 
-                    disabled={isBooking}
-                    type="submit"
-                    className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-900/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-3 active:scale-95"
-                  >
-                    {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Booking Request'}
-                  </button>
+                  <div className="flex items-center justify-end gap-6 pt-4">
+                     <button type="button" onClick={() => setSelectedDate(null)} className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] hover:text-slate-900 transition-colors">Discard Draft</button>
+                     <button 
+                       disabled={isBooking}
+                       type="submit"
+                       className="px-14 py-6 bg-slate-900 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-slate-900/30 hover:bg-emerald-600 transition-all flex items-center justify-center gap-4 active:scale-95 disabled:bg-slate-200"
+                     >
+                       {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Engagement Request'}
+                     </button>
+                  </div>
                 </form>
              </div>
           )}
         </div>
 
-        {/* Right Column: Appointment List */}
-        <div className="space-y-6">
-          <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-6 opacity-10">
-                <CalendarIcon size={100} />
-             </div>
-             <h3 className="text-xl font-black tracking-tight mb-2">My Sessions</h3>
-             <p className="text-slate-400 text-xs font-medium">Track your upcoming consultations.</p>
-          </div>
+        {/* Right Column: List of Appointments */}
+        <div className="lg:col-span-4 space-y-8">
+           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden h-fit">
+              <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+                 <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">My Session History</h3>
+                    <p className="text-[10px] text-slate-400 font-bold mt-1">Timeline of engagements</p>
+                 </div>
+                 <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                    <History className="h-4 w-4 text-emerald-600" />
+                 </div>
+              </div>
 
-          <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-            {appointments.map((appt) => (
-              <div key={appt.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group hover:shadow-md transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                    appt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600' :
-                    appt.status === 'Pending' ? 'bg-amber-50 text-amber-600' :
-                    appt.status === 'Cancelled' ? 'bg-rose-50 text-rose-600' :
-                    'bg-slate-100 text-slate-500'
-                  }`}>
-                    {appt.status}
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-bold">{appt.appointment_date}</span>
-                </div>
-                
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">
-                      {isHOD ? `${appt.student_first_name} ${appt.student_last_name}` : `HOD ${appt.hod_first_name} ${appt.hod_last_name}`}
+              <div className="divide-y divide-slate-50 max-h-[1000px] overflow-y-auto custom-scrollbar">
+                {appointments.map((appt) => (
+                  <div key={appt.id} className="p-8 hover:bg-slate-50/50 transition-all group">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
+                        appt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                        appt.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                        appt.status === 'Cancelled' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                        'bg-slate-100 text-slate-400 border-slate-200'
+                      }`}>
+                        {appt.status}
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-black tabular-nums">{appt.appointment_date}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="h-12 w-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-emerald-50 group-hover:text-emerald-600 group-hover:border-emerald-100 transition-all">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 uppercase tracking-tight">
+                          {isHOD ? `${appt.student_first_name} ${appt.student_last_name}` : `HOD ${appt.hod_first_name} ${appt.hod_last_name}`}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-bold mt-1 flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" /> {appt.time_slot}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-[12px] text-slate-500 font-medium mb-6 leading-relaxed italic border-l-2 border-slate-100 pl-4">
+                      "{appt.reason}"
                     </p>
-                    <p className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {appt.time_slot}
-                    </p>
+
+                    {isHOD && appt.status === 'Pending' && (
+                      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-50">
+                        <button 
+                          onClick={() => handleStatusUpdate(appt.id, 'Confirmed')}
+                          className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-900/10 transition-all active:scale-95"
+                        >
+                           Confirm
+                        </button>
+                        <button 
+                          onClick={() => handleStatusUpdate(appt.id, 'Cancelled')}
+                          className="flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-95"
+                        >
+                           Reject
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
+                ))}
 
-                <p className="text-[11px] text-slate-500 font-medium mb-6 line-clamp-2 italic leading-relaxed">
-                  "{appt.reason}"
-                </p>
-
-                {isHOD && appt.status === 'Pending' && (
-                  <div className="grid grid-cols-2 gap-2 mt-auto pt-4 border-t border-slate-50">
-                    <button 
-                      onClick={() => handleStatusUpdate(appt.id, 'Confirmed')}
-                      className="flex items-center justify-center gap-1 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-100 transition-colors"
-                    >
-                      <CheckCircle2 className="h-3 w-3" /> Confirm
-                    </button>
-                    <button 
-                      onClick={() => handleStatusUpdate(appt.id, 'Cancelled')}
-                      className="flex items-center justify-center gap-1 py-2 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black uppercase hover:bg-rose-100 transition-colors"
-                    >
-                      <XCircle className="h-3 w-3" /> Cancel
-                    </button>
+                {appointments.length === 0 && (
+                  <div className="p-20 text-center">
+                    <CalendarIcon className="h-10 w-10 text-slate-100 mx-auto mb-4" />
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No engagements recorded</p>
                   </div>
                 )}
-
-                {appt.status === 'Confirmed' && (
-                   <div className="mt-4 p-3 bg-slate-50 rounded-2xl flex items-center gap-3">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Scheduled Session</span>
-                   </div>
-                )}
               </div>
-            ))}
+           </div>
 
-            {appointments.length === 0 && (
-              <div className="text-center py-20 bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-100">
-                <CalendarIcon className="h-8 w-8 text-slate-200 mx-auto mb-3" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No appointments found</p>
+           <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6 opacity-10">
+                 <Info size={100} />
               </div>
-            )}
-          </div>
+              <h4 className="text-sm font-black uppercase tracking-widest mb-4">Scheduling Protocol</h4>
+              <p className="text-[11px] text-emerald-50/70 font-medium leading-relaxed">
+                 Sessions are strictly academic. Please ensure you are present at the HOD's office 5 minutes before your scheduled window.
+              </p>
+           </div>
         </div>
       </div>
     </div>
