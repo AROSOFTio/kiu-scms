@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 const loginSchema = z.object({
   identifier: z.string().min(1, 'Institutional Email, Staff ID, or Student Reg Number is required'),
   password: z.string().min(1, 'Password is required'),
+  role: z.string().min(1, 'Please select your role'),
+  facultyId: z.string().min(1, 'Please select your College/School'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -17,8 +19,15 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [faculties, setFaculties] = useState<{id: number, name: string}[]>([]);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get('/auth/faculties').then(res => {
+      if (res.data.data) setFaculties(res.data.data);
+    }).catch(err => console.error('Failed to fetch faculties', err));
+  }, []);
 
   const {
     register,
@@ -113,6 +122,44 @@ export default function Login() {
                 {errors.password && (
                   <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.password.message}</p>
                 )}
+              </div>
+
+              {/* Role Selection */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <select
+                    {...register('role')}
+                    className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors bg-white ${
+                      errors.role ? 'border-red-500' : 'border-[#d0d0d0]'
+                    }`}
+                  >
+                    <option value="">-- Role --</option>
+                    <option value="Student">Student</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                  {errors.role && (
+                    <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.role.message}</p>
+                  )}
+                </div>
+
+                {/* College Selection */}
+                <div>
+                  <select
+                    {...register('facultyId')}
+                    className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors bg-white ${
+                      errors.facultyId ? 'border-red-500' : 'border-[#d0d0d0]'
+                    }`}
+                  >
+                    <option value="">-- College --</option>
+                    {faculties.map(f => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+                  {errors.facultyId && (
+                    <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.facultyId.message}</p>
+                  )}
+                </div>
               </div>
 
               {/* Submit */}

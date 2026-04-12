@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 // @desc    Login a user
 export const loginUser = async (req: Request, res: Response) => {
-  const { identifier, password } = req.body;
+  const { identifier, password, role, facultyId } = req.body;
 
   try {
     const [users]: any = await db.query(
@@ -27,6 +27,31 @@ export const loginUser = async (req: Request, res: Response) => {
 
     if (!isMatch) {
       return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
+    }
+
+    // Role Validation (if provided)
+    if (role && user.role_name !== role) {
+      // Allow 'Department Officer' to login as 'Staff' or 'Admin' as special cases if needed, 
+      // but generally we expect a match or a compatible role.
+      if (!(user.role_name === 'Department Officer' && role === 'Staff')) {
+         return res.status(401).json({ status: 'error', message: `Unauthorized: You are registered as ${user.role_name}, not ${role}` });
+      }
+    }
+
+    // Faculty/College Validation (if provided and user is not Admin)
+    if (facultyId && user.role_name !== 'Admin') {
+        let userFacultyId = null;
+        if (user.role_name === 'Student') {
+            const [student]: any = await db.query('SELECT d.faculty_id FROM students s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?', [user.id]);
+            if (student.length > 0) userFacultyId = student[0].faculty_id;
+        } else {
+            const [staff]: any = await db.query('SELECT d.faculty_id FROM staff s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?', [user.id]);
+            if (staff.length > 0) userFacultyId = staff[0].faculty_id;
+        }
+
+        if (userFacultyId && userFacultyId.toString() !== facultyId.toString()) {
+            return res.status(401).json({ status: 'error', message: 'Incorrect College/School selected for this account' });
+        }
     }
 
     if (!user.is_active) {
@@ -163,6 +188,17 @@ export const getPublicDepartments = async (req: Request, res: Response) => {
        ORDER BY f.name, d.name`
     );
     res.json({ status: 'success', data: departments });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+// @desc    Get public faculties/colleges for login/registration
+export const getPublicFaculties = async (req: Request, res: Response) => {
+  try {
+    const [faculties]: any = await db.query(
+      `SELECT id, name FROM faculties ORDER BY name`
+    );
+    res.json({ status: 'success', data: faculties });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
