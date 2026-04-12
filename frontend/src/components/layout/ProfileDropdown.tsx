@@ -37,7 +37,7 @@ export default function ProfileDropdown() {
         </div>
         <div className="hidden md:block text-left">
           <p className="text-[11px] font-black uppercase text-white/70 tracking-widest leading-none mb-1">
-            {user?.role}
+            {user?.role === 'Admin' ? 'HOD' : user?.role || 'User'}
           </p>
           <p className="text-xs font-bold text-white leading-none">
             {user?.firstName} {user?.lastName}

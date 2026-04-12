@@ -67,7 +67,7 @@ export default function StaffDashboard() {
       icon: FileText, 
       bg: 'bg-emerald-50', 
       color: 'text-emerald-600',
-      description: user?.role === 'Department Officer' ? 'Grand total of grievances in department' : 'Total grievances assigned to you'
+      description: user?.role === 'Department Officer' ? 'Grand total of Complaints in department' : 'Total Complaints assigned to you'
     },
     { 
       label: 'Pending Resolution', 
@@ -106,7 +106,7 @@ export default function StaffDashboard() {
       </div>
 
       <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl border border-slate-100">
-        <p className="text-sm text-slate-500 font-medium">Analyze and resolve institutional grievances assigned to your jurisdiction.</p>
+        <p className="text-sm text-slate-500 font-medium">Analyze and resolve institutional Complaints assigned to your jurisdiction.</p>
         <Link 
           to="/dashboard/staff/worklist"
           className="inline-flex items-center px-6 py-3 bg-[#008540] text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-900/10 hover:shadow-xl transition-all active:scale-95 whitespace-nowrap"

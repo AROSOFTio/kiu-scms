@@ -136,7 +136,7 @@ export default function Login() {
                     <option value="">-- Role --</option>
                     <option value="Student">Student</option>
                     <option value="Staff">Staff</option>
-                    <option value="Admin">Admin</option>
+                    <option value="Admin">HOD</option>
                   </select>
                   {errors.role && (
                     <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.role.message}</p>
@@ -174,7 +174,7 @@ export default function Login() {
 
             {/* Bottom text info recreating the student portal footer */}
             <div className="mt-8 text-[11px] leading-tight text-[#666] font-['Arial',sans-serif] px-1">
-              Please use your assigned organizational credentials. <strong>Students</strong> can use their Registration Number or KIU student email. <strong>Administrators & Staff</strong> should use their assigned institutional emails. For technical assistance, please visit the ICT office.
+              Please use your assigned organizational credentials. <strong>Students</strong> can use their Registration Number or KIU student email. <strong>HODs & Staff</strong> should use their assigned institutional emails. For technical assistance, please visit the ICT office.
               <div className="mt-4 flex justify-between">
                 <Link to="/forgot-password" className="text-[#2ea84b] hover:underline">Forgot password?</Link>
                 <Link to="/register" className="text-[#2ea84b] hover:underline">Register for SCMS</Link>

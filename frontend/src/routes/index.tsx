@@ -24,6 +24,7 @@ import OrgManagement from '../pages/admin/OrgManagement';
 import SystemConfig from '../pages/admin/SystemConfig';
 import AuditLogs from '../pages/admin/AuditLogs';
 import ReportsOverview from '../pages/admin/ReportsOverview';
+import Appointments from '../pages/appointments/Appointments';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -68,6 +69,7 @@ export default function AppRoutes() {
         
         {/* Common Routes */}
         <Route path="public-board" element={<TransparencyBoard />} />
+        <Route path="appointments" element={<Appointments />} />
         
         {/* Student Routes */}
         <Route path="student" element={

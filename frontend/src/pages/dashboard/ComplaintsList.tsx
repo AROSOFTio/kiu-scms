@@ -153,12 +153,12 @@ export default function ComplaintsList() {
              <span className="text-[10px] font-black text-[#008540] uppercase tracking-[0.4em]">Case Repository</span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-            {isWorklist ? 'Resolution Worklist' : 'Grievance Intelligence'}
+            {isWorklist ? 'Resolution Worklist' : 'Complaint Intelligence'}
           </h1>
           <p className="text-slate-500 mt-3 font-medium max-w-2xl leading-relaxed">
             {isWorklist 
               ? 'Managed workspace for cases explicitly assigned to your jurisdiction.' 
-              : 'End-to-end audit trail of all institutional grievances logged across Kampala International University.'}
+              : 'End-to-end audit trail of all institutional Complaints logged across Kampala International University.'}
           </p>
         </div>
         {isDeptOfficer && !isWorklist && (
@@ -231,7 +231,7 @@ export default function ComplaintsList() {
             <thead>
               <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] border-b border-slate-50">
                 <th className="px-10 py-6">Identity Reference</th>
-                <th className="px-10 py-6">Grievance Origin</th>
+                <th className="px-10 py-6">Complaint Origin</th>
                 <th className="px-10 py-6">Intellectual Map</th>
                 <th className="px-10 py-6">Assigned Jurisdiction</th>
                 <th className="px-10 py-6">Lifecycle Status</th>

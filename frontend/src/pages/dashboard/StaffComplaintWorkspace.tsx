@@ -250,7 +250,7 @@ export default function StaffComplaintWorkspace() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-50 pb-2">Grievance Details</h2>
+            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-50 pb-2">Complaint Details</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
@@ -402,7 +402,7 @@ export default function StaffComplaintWorkspace() {
                   </div>
                   <div>
                     <h3 className="text-xl font-black text-gray-900 tracking-tight">Handover Case</h3>
-                    <p className="text-sm text-gray-500 font-medium mt-2">Reassign this grievance to a different department or staff member for specialized handling.</p>
+                    <p className="text-sm text-gray-500 font-medium mt-2">Reassign this Complaint to a different department or staff member for specialized handling.</p>
                   </div>
 
                   <div className="space-y-4">

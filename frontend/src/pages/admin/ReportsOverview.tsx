@@ -61,7 +61,7 @@ export default function ReportsOverview() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('Grievance export complete');
+      toast.success('Complaint export complete');
     } catch (err) {
       toast.error('Export failed');
     } finally {
@@ -145,7 +145,7 @@ export default function ReportsOverview() {
         <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm relative group overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-red-600 opacity-50 transition-all group-hover:w-3" />
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-between">
-            Grievance Intake Trends
+            Complaint Intake Trends
             <TrendingUp className="h-4 w-4 text-red-50" />
           </h3>
           <div className="h-[350px] w-full">

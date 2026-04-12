@@ -71,7 +71,7 @@ export default function TransparencyBoard() {
         <h1 className="text-4xl font-black text-gray-900 tracking-tighter">
           Transparency <span className="text-[#008540]">Board</span>
         </h1>
-        <p className="text-sm text-slate-500 font-medium mt-2">A public overview of all submitted grievances, categories, and their current resolution status.</p>
+        <p className="text-sm text-slate-500 font-medium mt-2">A public overview of all submitted Complaints, categories, and their current resolution status.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

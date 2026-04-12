@@ -37,7 +37,7 @@ export class NotificationService {
 <div style="font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#f8fafc;padding:40px 20px;">
   <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);">
     <div style="background-color:#008540;padding:30px;text-align:center;">
-      <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">KIU Grievance Portal</h1>
+      <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">KIU Complaint Portal</h1>
     </div>
     <div style="padding:40px 30px;">
       <h2 style="color:#1e293b;font-size:18px;margin-top:0;font-weight:800;border-bottom:2px solid #f1f5f9;padding-bottom:15px;">${title}</h2>

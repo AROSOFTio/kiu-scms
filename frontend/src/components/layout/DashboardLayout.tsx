@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, LogOut, ChevronDown, ShieldCheck, History, Home, Clock, CheckCircle } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, Settings, Users, Building2, ShieldAlert, BarChart3, ClipboardList, Menu, LogOut, ChevronDown, ShieldCheck, History, Home, Clock, CheckCircle, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
 
@@ -31,23 +31,23 @@ export default function DashboardLayout() {
   
   const navigation = user?.role === 'Admin' ? [
     { name: 'Welcome Home', href: '/dashboard/admin?view=welcome', icon: Home },
-    { name: 'Institutional Command', href: '/dashboard/admin?view=command', icon: ShieldCheck },
+    { name: 'HOD Oversight', href: '/dashboard/admin?view=command', icon: ShieldCheck },
+    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Activity Logs', href: '/dashboard/admin?view=activity', icon: History },
-    { name: 'Grievance Records', href: '/dashboard/admin/complaints', icon: FileText },
+    { name: 'Complaint Records', href: '/dashboard/admin/complaints', icon: FileText },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
-    { name: 'Organizational Structure', href: '/dashboard/admin/org', icon: Building2 },
-    { name: 'System Configuration', href: '/dashboard/admin/config', icon: Settings },
-    { name: 'Audit Logs', href: '/dashboard/admin/logs', icon: ShieldAlert },
     { name: 'Institutional Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
     { name: 'Transparency Board', href: '/dashboard/public-board', icon: BarChart3 },
   ] : (user?.role === 'Staff' || user?.role === 'Department Officer') ? [
     { name: user?.role === 'Department Officer' ? 'Department Dashboard' : 'Staff Dashboard', href: '/dashboard/staff', icon: LayoutDashboard },
     { name: 'Resolution Hub', href: '/dashboard/staff/worklist', icon: ClipboardList },
+    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Transparency Board', href: '/dashboard/public-board', icon: BarChart3 },
   ] : [
     { name: 'My Dashboard', href: '/dashboard/student', icon: Home },
     { name: 'Submit Complaint', href: '/dashboard/student/complaints/new', icon: PlusCircle, color: 'border-[#008540]' },
     { name: 'My Complaints', href: '/dashboard/student/complaints', icon: FileText },
+    { name: 'Book Appointment', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Tracked Cases', href: '/dashboard/student?view=all', icon: Clock },
     { name: 'Resolution Archive', href: '/dashboard/student?view=resolved', icon: CheckCircle },
     { name: 'Transparency Board', href: '/dashboard/public-board', icon: BarChart3 },
@@ -82,7 +82,7 @@ export default function DashboardLayout() {
           </div>
           <div className="text-center">
             <h3 className="text-white font-bold text-sm tracking-wide uppercase leading-tight">{userName}</h3>
-            <p className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">{user?.role || 'User'}</p>
+            <p className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">{user?.role === 'Admin' ? 'HOD' : user?.role || 'User'}</p>
           </div>
         </div>
 

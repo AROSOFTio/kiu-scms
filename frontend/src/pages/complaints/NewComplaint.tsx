@@ -90,11 +90,11 @@ export default function NewComplaint() {
         },
       });
 
-      toast.success('Grievance logged successfully.');
+      toast.success('Complaint logged successfully.');
       setSuccess(true);
       setTimeout(() => navigate('/dashboard/student/complaints'), 2500);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit grievance. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to submit Complaint. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -111,7 +111,7 @@ export default function NewComplaint() {
         </div>
         <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter">Submission Successful.</h2>
         <p className="text-slate-500 mb-10 text-center max-w-md font-medium px-4 leading-relaxed">
-          Your grievance has been successfully logged within the KIU Institutional framework. A staff member will be assigned shortly.
+          Your Complaint has been successfully logged within the KIU Institutional framework. A staff member will be assigned shortly.
         </p>
         <button 
            onClick={() => navigate('/dashboard/student/complaints')}
@@ -135,7 +135,7 @@ export default function NewComplaint() {
               <ChevronLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
               Return to Safety
             </button>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Log Institutional <span className="text-[#008540]">Grievance</span></h1>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Log Institutional <span className="text-[#008540]">Complaint</span></h1>
             <p className="text-slate-500 mt-2 font-medium">Empowering student voices through structured, trackable resolution.</p>
         </div>
         <div className="hidden lg:block">
@@ -153,7 +153,7 @@ export default function NewComplaint() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Assessment Category</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Complaint Category</label>
               <select
                 {...register('categoryId')}
                 className={`premium-input py-5 bg-white ${errors.categoryId ? 'border-red-300 ring-4 ring-red-50' : 'focus:border-[#008540]'}`}
@@ -167,7 +167,7 @@ export default function NewComplaint() {
             </div>
 
             <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Grievance Priority</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Complaint Priority</label>
               <select
                 {...register('priority')}
                 className="premium-input py-5 bg-white focus:border-[#008540]"
@@ -201,7 +201,7 @@ export default function NewComplaint() {
             <textarea
               {...register('description')}
               rows={8}
-              placeholder="Provide a comprehensive narrative of the grievance, including specific environmental context, temporal data, and any participating entities."
+              placeholder="Provide a comprehensive narrative of the Complaint, including specific environmental context, temporal data, and any participating entities."
               className={`premium-input py-6 resize-none leading-relaxed bg-white ${errors.description ? 'border-red-300 ring-4 ring-red-50' : 'focus:border-[#008540]'}`}
             />
             {errors.description && <p className="text-red-500 text-[10px] font-black uppercase tracking-tight ml-2">{errors.description.message}</p>}

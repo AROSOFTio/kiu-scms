@@ -110,7 +110,7 @@ export default function StudentDashboard() {
       </div>
 
       <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl border border-slate-100">
-        <p className="text-sm text-slate-500 font-medium">Monitor your institutional grievances and track resolution progress in real-time.</p>
+        <p className="text-sm text-slate-500 font-medium">Monitor your institutional Complaints and track resolution progress in real-time.</p>
         <Link
           to="/dashboard/student/complaints/new"
           className="inline-flex items-center px-10 py-5 bg-[#008540] text-white rounded-[1.2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-900/20 hover:translate-y-[-2px] transition-all group active:scale-95 whitespace-nowrap"
@@ -246,7 +246,7 @@ export default function StudentDashboard() {
             <div>
                <h2 className="text-xl font-black text-white tracking-tighter leading-none mb-1">Privacy is our <span className="text-emerald-500">Foundation.</span></h2>
                <p className="text-emerald-100/50 font-medium text-[11px] uppercase tracking-wider">
-                  Every grievance is end-to-end audit-protected and structurally managed.
+                  Every Complaint is end-to-end audit-protected and structurally managed.
                </p>
             </div>
          </div>

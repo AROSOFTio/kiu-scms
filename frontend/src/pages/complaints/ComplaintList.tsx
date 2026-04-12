@@ -77,7 +77,7 @@ export default function ComplaintList() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Grievance Records</h1>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Complaint Records</h1>
           <p className="text-slate-500 mt-2 font-medium">Manage and track your submitted complaints.</p>
         </div>
       </div>
@@ -184,7 +184,7 @@ export default function ComplaintList() {
             <div className="p-20">
                <EmptyState 
                 icon={FileText}
-                title="No grievances found"
+                title="No Complaints found"
                 description="Your search did not match any of your submitted records. Try clearing filters or submit a new case."
                 actionLabel="Submit New Complaint"
                 actionLink="/dashboard/student/complaints/new"
