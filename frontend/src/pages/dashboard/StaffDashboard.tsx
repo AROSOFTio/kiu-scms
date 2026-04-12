@@ -9,7 +9,8 @@ import {
   MessageSquare,
   Star,
   Zap,
-  PlusCircle
+  PlusCircle,
+  Calendar
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
@@ -116,20 +117,33 @@ export default function StaffDashboard() {
         </Link>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="bg-gradient-to-br from-[#008540] to-[#006b33] p-8 rounded-2xl shadow-lg shadow-emerald-900/10 text-white relative overflow-hidden group">
           <Zap className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 opacity-80">Quick Start</p>
-          <h3 className="text-xl font-black mb-6">{user?.role === 'Department Officer' ? 'Supervisor' : 'Staff'}<br/>Workbench</h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 opacity-80">Resolution Hub</p>
+          <h3 className="text-xl font-black mb-6">Staff<br/>Workbench</h3>
           <Link 
             to="/dashboard/staff/worklist" 
             className="inline-flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-xs font-bold transition-all"
           >
-            Open Worklist
+            Resolution HUB
             <ArrowRight className="ml-2 h-3.5 w-3.5" />
           </Link>
         </div>
+
+        <div className="bg-slate-900 p-8 rounded-2xl shadow-lg shadow-slate-900/20 text-white relative overflow-hidden group">
+          <Calendar className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 opacity-80">Institutional Scheduler</p>
+          <h3 className="text-xl font-black mb-6">Appointments<br/>Control</h3>
+          <Link 
+            to="/dashboard/appointments" 
+            className="inline-flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-xs font-bold transition-all"
+          >
+            Engagement View
+            <ArrowRight className="ml-2 h-3.5 w-3.5" />
+          </Link>
+        </div>
+
         {kpis.map((kpi) => (
           <Link to="/dashboard/staff/worklist" key={kpi.label} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm group hover:shadow-lg transition-all duration-300 block text-left">
             <div className="flex justify-between items-start mb-6">

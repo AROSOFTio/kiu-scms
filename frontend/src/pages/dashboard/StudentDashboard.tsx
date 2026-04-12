@@ -8,7 +8,8 @@ import {
   ArrowRight,
   AlertCircle,
   History,
-  ShieldCheck
+  ShieldCheck,
+  Calendar
 } from 'lucide-react';
 import api from '../../lib/api';
 import { StatSkeleton } from '../../components/ui/Skeleton';
@@ -109,15 +110,40 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl border border-slate-100">
-        <p className="text-sm text-slate-500 font-medium">Monitor your institutional Complaints and track resolution progress in real-time.</p>
-        <Link
-          to="/dashboard/student/complaints/new"
-          className="inline-flex items-center px-10 py-5 bg-[#008540] text-white rounded-[1.2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-900/20 hover:translate-y-[-2px] transition-all group active:scale-95 whitespace-nowrap"
-        >
-          <PlusCircle className="h-4 w-4 mr-3 group-hover:rotate-90 transition-transform duration-500" />
-          Log New Complaint
-        </Link>
+      <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6">
+        <div className="flex-1 flex items-center justify-between bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity">
+            <PlusCircle size={80} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">Need Assistance?</h3>
+            <p className="text-sm text-slate-500 font-medium mb-6">Log a new institutional Complaint for review.</p>
+            <Link
+              to="/dashboard/student/complaints/new"
+              className="inline-flex items-center px-8 py-4 bg-[#008540] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-900/10 hover:translate-y-[-2px] transition-all group active:scale-95"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Case
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-between bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity">
+            <Calendar size={80} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">HOD Engagement</h3>
+            <p className="text-sm text-slate-500 font-medium mb-6">Schedule a formal session with the HOD.</p>
+            <Link
+              to="/dashboard/appointments"
+              className="inline-flex items-center px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:translate-y-[-2px] transition-all group active:scale-95"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Book Session
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
