@@ -419,10 +419,23 @@ export const getInternalNotes = async (req: Request, res: Response) => {
 export const getAllUsers = async (req: Request, res: Response) => {
   const { role, search, status, page = '1', limit = '20' } = req.query as any;
   const offset = (parseInt(page) - 1) * parseInt(limit);
+  const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
 
   try {
     let where = 'WHERE 1=1';
     const params: any[] = [];
+
+    // HOD Faculty Filtering
+    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    if (facultyId) {
+      where += ` AND (
+        u.id IN (SELECT user_id FROM students WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?))
+        OR 
+        u.id IN (SELECT user_id FROM staff WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?))
+      )`;
+      params.push(facultyId, facultyId);
+    }
 
     if (role) { where += ' AND r.name = ?'; params.push(role); }
     if (status) { where += ' AND u.is_active = ?'; params.push(status === 'active' ? 1 : 0); }
@@ -467,8 +480,18 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
   const { roleName, firstName, lastName, email, password, idNumber, departmentId } = req.body;
   const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
 
   try {
+    // 0. Scope Verification: Ensure HOD is only creating within their Faculty
+    const hFacultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    if (hFacultyId && departmentId) {
+      const [deptRows]: any = await db.query('SELECT faculty_id FROM departments WHERE id = ?', [departmentId]);
+      if (deptRows.length === 0 || deptRows[0].faculty_id !== hFacultyId) {
+        return res.status(403).json({ status: 'error', message: 'Forbidden: You can only create users within your own Faculty' });
+      }
+    }
+
     // 1. Get role ID
     const [roles]: any = await db.query('SELECT id FROM roles WHERE name = ?', [roleName]);
     if (roles.length === 0) return res.status(400).json({ status: 'error', message: 'Invalid role' });
@@ -508,8 +531,23 @@ export const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { firstName, lastName, email, roleName, idNumber, departmentId } = req.body;
   const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
 
   try {
+    // 0. Scope Verification: Ensure HOD has jurisdiction over the TARGET user
+    if (!await verifyUserScope(adminId, adminRole, parseInt(id))) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage this user' });
+    }
+
+    // 0.1 If changing department, ensure it remains within HOD's faculty
+    const hFacultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    if (hFacultyId && departmentId) {
+      const [deptRows]: any = await db.query('SELECT faculty_id FROM departments WHERE id = ?', [departmentId]);
+      if (deptRows.length === 0 || deptRows[0].faculty_id !== hFacultyId) {
+        return res.status(403).json({ status: 'error', message: 'Forbidden: You can only assign users to departments within your own Faculty' });
+      }
+    }
+
     // 1. Get role ID
     const [roles]: any = await db.query('SELECT id FROM roles WHERE name = ?', [roleName]);
     if (roles.length === 0) return res.status(400).json({ status: 'error', message: 'Invalid role' });
@@ -583,9 +621,24 @@ export const updateSettings = async (req: Request, res: Response) => {
 export const getAuditLogs = async (req: Request, res: Response) => {
   const { page = '1', limit = '50' } = req.query as any;
   const offset = (parseInt(page) - 1) * parseInt(limit);
+  const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
 
   try {
-    const [countRows]: any = await db.query('SELECT COUNT(*) as total FROM audit_logs');
+    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+
+    if (facultyId) {
+      where += ` AND u.id IN (
+        SELECT user_id FROM staff WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?)
+        UNION
+        SELECT user_id FROM students WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?)
+      )`;
+      params.push(facultyId, facultyId);
+    }
+
+    const [countRows]: any = await db.query(`SELECT COUNT(*) as total FROM audit_logs al JOIN users u ON al.user_id = u.id ${where}`, params);
     const total = countRows[0].total;
 
     const [rows]: any = await db.query(
@@ -593,8 +646,9 @@ export const getAuditLogs = async (req: Request, res: Response) => {
        FROM audit_logs al
        JOIN users u ON al.user_id = u.id
        JOIN roles r ON u.role_id = r.id
+       ${where}
        ORDER BY al.created_at DESC LIMIT ? OFFSET ?`,
-      [parseInt(limit), offset]
+      [...params, parseInt(limit), offset]
     );
 
     res.json({ status: 'success', data: rows, total });
@@ -606,26 +660,56 @@ export const getAuditLogs = async (req: Request, res: Response) => {
 // @desc    Manage Organizational Structure (Faculties/Departments/Categories)
 export const manageOrg = {
   getFaculties: async (req: Request, res: Response) => {
+    const adminId = (req as any).user?.userId;
+    const adminRole = (req as any).user?.roleName;
+
     try {
-      const [rows]: any = await db.query('SELECT * FROM faculties ORDER BY name');
+      const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+      let query = 'SELECT * FROM faculties';
+      const params: any[] = [];
+      if (facultyId) {
+        query += ' WHERE id = ?';
+        params.push(facultyId);
+      }
+      query += ' ORDER BY name';
+      const [rows]: any = await db.query(query, params);
       res.json({ status: 'success', data: rows });
     } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
   },
   createFaculty: async (req: Request, res: Response) => {
+    const adminRole = (req as any).user?.roleName;
+    if (adminRole === 'Admin') return res.status(403).json({ status: 'error', message: 'Forbidden: HODs cannot create faculties' });
     try {
       await db.query('INSERT INTO faculties (name) VALUES (?)', [req.body.name]);
       res.json({ status: 'success', message: 'Faculty created' });
     } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
   },
   getDepartments: async (req: Request, res: Response) => {
+    const adminId = (req as any).user?.userId;
+    const adminRole = (req as any).user?.roleName;
     try {
-      const [rows]: any = await db.query('SELECT d.*, f.name as faculty_name FROM departments d JOIN faculties f ON d.faculty_id = f.id ORDER BY f.name, d.name');
+      const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+      let query = 'SELECT d.*, f.name as faculty_name FROM departments d JOIN faculties f ON d.faculty_id = f.id';
+      const params: any[] = [];
+      if (facultyId) {
+        query += ' WHERE f.id = ?';
+        params.push(facultyId);
+      }
+      query += ' ORDER BY f.name, d.name';
+      const [rows]: any = await db.query(query, params);
       res.json({ status: 'success', data: rows });
     } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
   },
   createDepartment: async (req: Request, res: Response) => {
+    const adminId = (req as any).user?.userId;
+    const adminRole = (req as any).user?.roleName;
     try {
-      await db.query('INSERT INTO departments (faculty_id, name) VALUES (?, ?)', [req.body.facultyId, req.body.name]);
+      const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+      const targetFacultyId = req.body.facultyId;
+      if (facultyId && parseInt(targetFacultyId) !== facultyId) {
+        return res.status(403).json({ status: 'error', message: 'Forbidden: You can only create departments in your own Faculty' });
+      }
+      await db.query('INSERT INTO departments (faculty_id, name) VALUES (?, ?)', [targetFacultyId, req.body.name]);
       res.json({ status: 'success', message: 'Department created' });
     } catch (err: any) { res.status(500).json({ status: 'error', message: err.message }); }
   },
@@ -683,12 +767,13 @@ export const manageOrg = {
 export const toggleUserStatus = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { isActive } = req.body;
-  const userId = (req as any).user?.userId;
+  const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
 
   try {
-    // 0. Scope Verification: Ensure HOD has permission for this complaint (Faculty-level check)
-    if (!await verifyHODScope(userId, (req as any).user?.roleName, parseInt(id))) {
-      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage complaints outside your Faculty.' });
+    // 0. Scope Verification: Ensure HOD has permission for this USER (Faculty-level check)
+    if (!await verifyUserScope(adminId, adminRole, parseInt(id))) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage users outside your Faculty.' });
     }
 
     await db.query('UPDATE users SET is_active = ? WHERE id = ?', [isActive ? 1 : 0, id]);
@@ -702,9 +787,20 @@ export const toggleUserStatus = async (req: Request, res: Response) => {
 export const getFeedback = async (req: Request, res: Response) => {
   const { page = '1', limit = '20' } = req.query as any;
   const offset = (parseInt(page) - 1) * parseInt(limit);
+  const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
 
   try {
-    const [countRows]: any = await db.query('SELECT COUNT(*) as total FROM feedback');
+    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+
+    if (facultyId) {
+      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+      params.push(facultyId);
+    }
+
+    const [countRows]: any = await db.query(`SELECT COUNT(*) as total FROM feedback f JOIN complaints c ON f.complaint_id = c.id ${where}`, params);
     const total = countRows[0].total;
 
     const [rows]: any = await db.query(
@@ -714,8 +810,9 @@ export const getFeedback = async (req: Request, res: Response) => {
        JOIN complaints c ON f.complaint_id = c.id
        JOIN students s ON f.student_id = s.id
        JOIN users u ON s.user_id = u.id
+       ${where}
        ORDER BY f.created_at DESC LIMIT ? OFFSET ?`,
-      [parseInt(limit), offset]
+      [...params, parseInt(limit), offset]
     );
 
     res.json({ status: 'success', data: rows, total });
@@ -726,9 +823,21 @@ export const getFeedback = async (req: Request, res: Response) => {
 
 // @desc    Get feedback summary stats
 export const getFeedbackStats = async (req: Request, res: Response) => {
+  const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
+
   try {
-    const [avg]: any = await db.query('SELECT AVG(rating) as averageRating, COUNT(*) as totalFeedback FROM feedback');
-    const [distribution]: any = await db.query('SELECT rating, COUNT(*) as count FROM feedback GROUP BY rating ORDER BY rating DESC');
+    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+
+    if (facultyId) {
+      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+      params.push(facultyId);
+    }
+
+    const [avg]: any = await db.query(`SELECT AVG(f.rating) as averageRating, COUNT(f.id) as totalFeedback FROM feedback f JOIN complaints c ON f.complaint_id = c.id ${where}`, params);
+    const [distribution]: any = await db.query(`SELECT f.rating, COUNT(f.id) as count FROM feedback f JOIN complaints c ON f.complaint_id = c.id ${where} GROUP BY f.rating ORDER BY f.rating DESC`, params);
     
     res.json({ 
       status: 'success', 
@@ -745,26 +854,40 @@ export const getFeedbackStats = async (req: Request, res: Response) => {
 
 // @desc    Get detailed analytical reports
 export const getDetailedReports = async (req: Request, res: Response) => {
+  const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
+
   try {
+    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+    if (facultyId) {
+      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+      params.push(facultyId);
+    }
+
     // 1. Distribution by Category
     const [byCategory]: any = await db.query(
       `SELECT cc.name as name, COUNT(c.id) as value 
        FROM complaint_categories cc 
-       LEFT JOIN complaints c ON cc.id = c.category_id 
-       GROUP BY cc.name`
+       LEFT JOIN complaints c ON cc.id = c.category_id ${where}
+       GROUP BY cc.name`,
+      params
     );
 
     // 2. Distribution by Status
     const [byStatus]: any = await db.query(
-      `SELECT status as name, COUNT(*) as value FROM complaints GROUP BY status`
+      `SELECT status as name, COUNT(*) as value FROM complaints c ${where} GROUP BY status`,
+      params
     );
 
     // 3. Trend analysis (Monthly volume for last 12 months)
     const [trends]: any = await db.query(
       `SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as count 
-       FROM complaints 
-       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-       GROUP BY month ORDER BY MIN(created_at)`
+       FROM complaints c
+       ${where} AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+       GROUP BY month ORDER BY MIN(created_at)`,
+      params
     );
 
     // 4. Resolution Efficiency (Avg hours to resolve)
@@ -773,18 +896,21 @@ export const getDetailedReports = async (req: Request, res: Response) => {
               ROUND(AVG(TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at)), 1) as avgHours
        FROM complaints c
        JOIN complaint_categories cc ON c.category_id = cc.id
-       WHERE c.status IN ('Resolved', 'Closed')
-       GROUP BY cc.name`
+       ${where} AND c.status IN ('Resolved', 'Closed')
+       GROUP BY cc.name`,
+      params
     );
 
     // 5. Top Resolution Actions
     const [topActions]: any = await db.query(
       `SELECT remarks as action, COUNT(*) as count 
-       FROM complaint_status_history 
-       WHERE status = 'Resolved' 
+       FROM complaint_status_history csh
+       JOIN complaints c ON csh.complaint_id = c.id
+       ${where} AND csh.status = 'Resolved' 
        GROUP BY remarks 
        ORDER BY count DESC 
-       LIMIT 5`
+       LIMIT 5`,
+      params
     );
 
     res.json({
@@ -804,7 +930,18 @@ export const getDetailedReports = async (req: Request, res: Response) => {
 
 // @desc    Export complaints as CSV
 export const exportComplaintsCsv = async (req: Request, res: Response) => {
+  const adminId = (req as any).user?.userId;
+  const adminRole = (req as any).user?.roleName;
+
   try {
+    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+    if (facultyId) {
+      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+      params.push(facultyId);
+    }
+
     const [rows]: any = await db.query(
       `SELECT c.reference_number, c.title, c.status, c.priority, 
               cc.name as category, u.first_name as student_first, u.last_name as student_last,
@@ -813,7 +950,9 @@ export const exportComplaintsCsv = async (req: Request, res: Response) => {
        JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
-       ORDER BY c.created_at DESC`
+       ${where}
+       ORDER BY c.created_at DESC`,
+      params
     );
 
     let csv = 'Reference,Title,Status,Priority,Category,Student,Date\n';
@@ -825,6 +964,7 @@ export const exportComplaintsCsv = async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', 'attachment; filename=complaints_report_all.csv');
     res.status(200).send(csv);
   } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
@@ -842,7 +982,7 @@ const getHODFacultyId = async (userId: number): Promise<number | null> => {
 
 // HELPER: Verify if an HOD has permission to manage a specific complaint (within their Faculty)
 const verifyHODScope = async (userId: number, roleName: string, complaintId: number): Promise<boolean> => {
-  if (roleName !== 'Admin') return true; // Global admin (no staff record) or Staff handled by other logic
+  if (roleName !== 'Admin') return true; 
   
   const facultyId = await getHODFacultyId(userId);
   if (!facultyId) return true; // Global Admin (not assigned to a department)
@@ -852,6 +992,24 @@ const verifyHODScope = async (userId: number, roleName: string, complaintId: num
      JOIN departments d ON c.department_id = d.id 
      WHERE c.id = ? AND d.faculty_id = ?`, 
     [complaintId, facultyId]
+  );
+  return rows.length > 0;
+};
+
+// HELPER: Verify if an HOD has permission to manage a specific USER (within their Faculty)
+const verifyUserScope = async (adminId: number, adminRole: string, targetUserId: number): Promise<boolean> => {
+  if (adminRole !== 'Admin') return true;
+  
+  const facultyId = await getHODFacultyId(adminId);
+  if (!facultyId) return true;
+
+  const [rows]: any = await db.query(
+    `SELECT 1 FROM users u 
+     LEFT JOIN students s ON u.id = s.user_id 
+     LEFT JOIN staff st ON u.id = st.user_id 
+     LEFT JOIN departments d ON (s.department_id = d.id OR st.department_id = d.id)
+     WHERE u.id = ? AND d.faculty_id = ?`,
+    [targetUserId, facultyId]
   );
   return rows.length > 0;
 };

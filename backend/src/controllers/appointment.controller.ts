@@ -105,6 +105,17 @@ export const bookAppointment = async (req: Request, res: Response) => {
       return res.status(400).json({ status: 'error', message: 'This time slot is already booked' });
     }
 
+    // SCOPE CHECK: Ensure student is booking with an HOD in their own Faculty
+    const [sc]: any = await db.query(
+      `SELECT (SELECT d.faculty_id FROM students s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?) as studentFaculty,
+              (SELECT d.faculty_id FROM staff st JOIN departments d ON st.department_id = d.id WHERE st.user_id = ?) as hodFaculty`,
+      [studentId, hodId]
+    );
+    
+    if (sc.length > 0 && sc[0].studentFaculty && sc[0].hodFaculty && sc[0].studentFaculty !== sc[0].hodFaculty) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You can only book appointments with HODs in your own Faculty' });
+    }
+
     await db.query(
       'INSERT INTO appointments (student_id, hod_id, appointment_date, time_slot, reason) VALUES (?, ?, ?, ?, ?)',
       [studentId, hodId, date, timeSlot, reason]
@@ -181,10 +192,29 @@ export const updateAppointmentStatus = async (req: Request, res: Response) => {
 // @desc    Get all HODs for selection
 // @route   GET /api/v1/appointments/hods
 export const getHODs = async (req: Request, res: Response) => {
+    const userId = (req as any).user.userId;
     try {
-        const [hods]: any = await db.query(
-            'SELECT users.id, users.first_name, users.last_name, roles.name as role_name FROM users JOIN roles ON users.role_id = roles.id WHERE roles.name = "Admin"'
+        // 1. Get student's faculty
+        const [si]: any = await db.query(
+            `SELECT d.faculty_id FROM students s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?`,
+            [userId]
         );
+        
+        let query = `
+            SELECT u.id, u.first_name, u.last_name, r.name as role_name 
+            FROM users u 
+            JOIN roles r ON u.role_id = r.id 
+            JOIN staff s ON u.id = s.user_id
+            JOIN departments d ON s.department_id = d.id
+            WHERE r.name = "Admin"`;
+        const params: any[] = [];
+
+        if (si.length > 0) {
+            query += ' AND d.faculty_id = ?';
+            params.push(si[0].faculty_id);
+        }
+
+        const [hods]: any = await db.query(query, params);
         res.json({ status: 'success', data: hods });
     } catch (err: any) {
         res.status(500).json({ status: 'error', message: err.message });

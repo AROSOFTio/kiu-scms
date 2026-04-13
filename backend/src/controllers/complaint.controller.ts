@@ -310,6 +310,16 @@ export const getPublicComplaints = async (req: Request, res: Response) => {
         studentFilter = 'WHERE c.student_id = ?';
         queryParams.push(students[0].id);
       }
+    } else if (roleName === 'Admin') {
+      // HOD Faculty Filter: Restrict transparency board to their own faculty
+      const [staff]: any = await db.query(
+        'SELECT d.faculty_id FROM staff s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?',
+        [userId]
+      );
+      if (staff.length > 0) {
+        studentFilter = 'WHERE c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        queryParams.push(staff[0].faculty_id);
+      }
     }
     const [rows]: any = await db.query(
       `SELECT c.id, c.reference_number, c.title, c.status, c.created_at, 
