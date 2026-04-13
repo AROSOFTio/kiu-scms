@@ -255,17 +255,18 @@ export const getAdminStats = async (req: Request, res: Response) => {
     let slaQuery = '';
     let params: any[] = [];
 
-    if (roleName === 'Staff' || roleName === 'Department Officer') {
-      statsQuery = roleName === 'Staff' ? 'SELECT COUNT(*) as count FROM complaints WHERE assigned_staff_id = ?' : 'SELECT COUNT(*) as count FROM complaints WHERE department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
-      statusQuery = roleName === 'Staff' ? 'SELECT status, COUNT(*) as count FROM complaints WHERE assigned_staff_id = ? GROUP BY status' : 'SELECT status, COUNT(*) as count FROM complaints WHERE department_id = (SELECT department_id FROM staff WHERE user_id = ?) GROUP BY status';
-      categoryQuery = roleName === 'Staff' ? `SELECT cc.name as category, COUNT(c.id) as count FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id AND c.assigned_staff_id = ? GROUP BY cc.name` : `SELECT cc.name as category, COUNT(c.id) as count FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id AND c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) GROUP BY cc.name`;
-      slaQuery = roleName === 'Staff' ? `SELECT 
+    const isDepartmentRestracted = roleName === 'Department Officer' || (roleName === 'Admin' && await isDeptHOD(userId));
+
+    if (roleName === 'Staff' || isDepartmentRestracted) {
+      const filterSQL = roleName === 'Staff' ? 'assigned_staff_id = ?' : 'department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
+      
+      statsQuery = `SELECT COUNT(*) as count FROM complaints WHERE ${filterSQL}`;
+      statusQuery = `SELECT status, COUNT(*) as count FROM complaints WHERE ${filterSQL} GROUP BY status`;
+      categoryQuery = `SELECT cc.name as category, COUNT(c.id) as count FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id AND c.${filterSQL} GROUP BY cc.name`;
+      slaQuery = `SELECT 
                     SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
                     SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
-                  FROM complaints WHERE assigned_staff_id = ?` : `SELECT 
-                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
-                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
-                  FROM complaints WHERE department_id = (SELECT department_id FROM staff WHERE user_id = ?)`;
+                  FROM complaints WHERE ${filterSQL}`;
       params = [userId];
     } else {
       statsQuery = 'SELECT COUNT(*) as count FROM complaints';
@@ -290,27 +291,27 @@ export const getAdminStats = async (req: Request, res: Response) => {
                          JOIN users u ON csh.changed_by_user_id = u.id `;
     
     if (roleName === 'Staff') activityQuery += 'WHERE c.assigned_staff_id = ? OR csh.changed_by_user_id = ? ';
-    else if (roleName === 'Department Officer') activityQuery += 'WHERE c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) OR csh.changed_by_user_id = ? ';
+    else if (isDepartmentRestracted) activityQuery += 'WHERE c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) OR csh.changed_by_user_id = ? ';
     
     activityQuery += 'ORDER BY csh.changed_at DESC LIMIT 15';
     
-    const [recent]: any = await db.query(activityQuery, (roleName === 'Staff' || roleName === 'Department Officer') ? [userId, userId] : []);
+    const [recent]: any = await db.query(activityQuery, (roleName === 'Staff' || isDepartmentRestracted) ? [userId, userId] : []);
 
     let urgentCases: any[] = [];
-    if (roleName === 'Staff' || roleName === 'Department Officer') {
+    if (roleName === 'Staff' || isDepartmentRestracted) {
       let uQuery = `SELECT id, reference_number, title, priority, status, created_at FROM complaints WHERE status NOT IN ('Resolved', 'Closed', 'Rejected') AND (priority IN ('High', 'Critical') OR created_at < DATE_SUB(NOW(), INTERVAL 72 HOUR))`;
-      if (roleName === 'Staff') uQuery += ' AND assigned_staff_id = ?';
-      if (roleName === 'Department Officer') uQuery += ' AND department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
+       if (roleName === 'Staff') uQuery += ' AND assigned_staff_id = ?';
+       else uQuery += ' AND department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
       uQuery += ' ORDER BY priority DESC, created_at ASC LIMIT 5';
       const [rows]: any = await db.query(uQuery, [userId]);
       urgentCases = rows;
     }
 
     let recentFeedback: any[] = [];
-    if (roleName === 'Staff' || roleName === 'Department Officer') {
+    if (roleName === 'Staff' || isDepartmentRestracted) {
       let fQuery = `SELECT f.*, c.reference_number, u.first_name, u.last_name, u.email FROM feedback f JOIN complaints c ON f.complaint_id = c.id JOIN students s ON f.student_id = s.id JOIN users u ON s.user_id = u.id`;
       if (roleName === 'Staff') fQuery += ' WHERE c.assigned_staff_id = ?';
-      if (roleName === 'Department Officer') fQuery += ' WHERE c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
+      else fQuery += ' WHERE c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
       fQuery += ' ORDER BY f.created_at DESC LIMIT 3';
       const [fRows]: any = await db.query(fQuery, [userId]);
       recentFeedback = fRows;
@@ -781,6 +782,11 @@ export const exportComplaintsCsv = async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', 'attachment; filename=complaints_report_all.csv');
     res.status(200).send(csv);
   } catch (err: any) {
-    res.status(500).json({ status: 'error', message: err.message });
   }
+};
+
+// HELPER: Check if a user (Admin/HOD) is assigned to a specific department in staff table
+const isDeptHOD = async (userId: number): Promise<boolean> => {
+  const [rows]: any = await db.query('SELECT 1 FROM staff WHERE user_id = ? AND department_id IS NOT NULL', [userId]);
+  return rows.length > 0;
 };
