@@ -19,7 +19,6 @@ import TransparencyBoard from '../pages/dashboard/TransparencyBoard';
 
 // Phase 5: Administrative Control Panel
 import AdminDashboard from '../pages/admin/AdminDashboard';
-import UserManagement from '../pages/admin/UserManagement';
 import OrgManagement from '../pages/admin/OrgManagement';
 import SystemConfig from '../pages/admin/SystemConfig';
 import AuditLogs from '../pages/admin/AuditLogs';

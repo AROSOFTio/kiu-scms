@@ -10,7 +10,8 @@ import {
   ArrowDownRight,
   Clock,
   History,
-  ArrowRight
+  ArrowRight,
+  BarChart3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
