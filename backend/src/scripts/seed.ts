@@ -39,7 +39,7 @@ async function seed() {
     console.log('👤 Creating Admin...');
     await db.query(
       'INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-      [adminRoleId, 'System', 'Administrator', 'admin@kiu.ac.ug', adminHash, 1]
+      [adminRoleId, 'HOD', '', 'admin@kiu.ac.ug', adminHash, 1]
     );
 
     // 6. Create Dept Officer (officer@kiu.ac.ug / Admin@1234)

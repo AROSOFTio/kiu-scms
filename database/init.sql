@@ -187,7 +187,7 @@ INSERT INTO complaint_categories (name, description) VALUES
 -- Super Admin User Seed (password: Admin@1234)
 -- bcrypt hash generated for "Admin@1234" with saltRounds=10
 INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES 
-  (1, 'System', 'Administrator', 'admin@kiu.ac.ug', '$2b$10$rOzJqhiXH8vB5Y1L2K3M4ePQzXwA7bVnCgDsEfGhIjKlMnOpQrSt2', TRUE);
+  (1, 'HOD', '', 'admin@kiu.ac.ug', '$2b$10$rOzJqhiXH8vB5Y1L2K3M4ePQzXwA7bVnCgDsEfGhIjKlMnOpQrSt2', TRUE);
 
 -- Staff User Seed (password: Staff@1234)
 INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES 
@@ -217,7 +217,7 @@ INSERT IGNORE INTO departments (id, faculty_id, name) VALUES (1, 1, 'Computer Sc
 
 -- Admin Account
 INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
-VALUES (1, 'System', 'Administrator', 'admin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
+VALUES (1, 'HOD', '', 'admin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
 
 -- Dept Officer
 INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
