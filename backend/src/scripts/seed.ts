@@ -31,61 +31,68 @@ async function seed() {
     const studentHash = await bcrypt.hash('Student@1234', saltRounds);
     const enochHash = await bcrypt.hash('Enoch@2023', saltRounds);
 
-    // 4. Clear existing users to avoid UNIQUE constraints
-    console.log('🧹 Cleaning old test data...');
-    const testEmails = ['admin@kiu.ac.ug', 'officer@kiu.ac.ug', 'staff@kiu.ac.ug', 'student@student.kiu.ac.ug', 'student@kiu.ac.ug', 'enoch@kiu.ac.ug'];
-    await db.query('DELETE FROM users WHERE email IN (?)', [testEmails]);
+    // 4. Ensure Test Users (Using INSERT IGNORE to prevent overwriting existing custom credentials)
+    console.log('👤 Ensuring standard test users exist...');
+
 
     // 5. Create Admin (admin@kiu.ac.ug / Admin@1234)
     console.log('👤 Creating Admin...');
     await db.query(
-      'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [adminRoleId, 'System', 'Administrator', 'admin@kiu.ac.ug', adminHash, 1]
     );
 
     // 6. Create Dept Officer (officer@kiu.ac.ug / Admin@1234)
     console.log('👤 Creating Department Officer...');
     const [offResult]: any = await db.query(
-      'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [officerRoleId, 'John', 'Officer', 'officer@kiu.ac.ug', adminHash, 1]
     );
-    await db.query(
-      'INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
-      [offResult.insertId, 'OFF-001/2026', 1, officerRoleId]
-    );
+    if (offResult.insertId) {
+      await db.query(
+        'INSERT IGNORE INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
+        [offResult.insertId, 'OFF-001/2026', 1, officerRoleId]
+      );
+    }
 
     // 7. Create Staff (staff@kiu.ac.ug / Staff@1234)
     console.log('👤 Creating Staff (Michael)...');
     const [stfResult]: any = await db.query(
-      'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [staffRoleId, 'Michael', 'Staff', 'staff@kiu.ac.ug', staffHash, 1]
     );
-    await db.query(
-      'INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
-      [stfResult.insertId, 'STAFF/001/2026', 1, staffRoleId]
-    );
+    if (stfResult.insertId) {
+      await db.query(
+        'INSERT IGNORE INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
+        [stfResult.insertId, 'STAFF/001/2026', 1, staffRoleId]
+      );
+    }
 
     // 8. Create Staff (enoch@kiu.ac.ug / Enoch@2023)
     console.log('👤 Creating Staff (Enoch)...');
     const [enochResult]: any = await db.query(
-      'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [staffRoleId, 'Enoch', 'Staff', 'enoch@kiu.ac.ug', enochHash, 1]
     );
-    await db.query(
-      'INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
-      [enochResult.insertId, 'STAFF/002/2026', 1, staffRoleId]
-    );
+    if (enochResult.insertId) {
+      await db.query(
+        'INSERT IGNORE INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
+        [enochResult.insertId, 'STAFF/002/2026', 1, staffRoleId]
+      );
+    }
 
     // 9. Create Student (student@student.kiu.ac.ug / Student@1234)
     console.log('👤 Creating Student...');
     const [stdResult]: any = await db.query(
-      'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [studentRoleId, 'Sarah', 'Student', 'student@student.kiu.ac.ug', studentHash, 1]
     );
-    await db.query(
-      'INSERT INTO students (user_id, student_number, department_id) VALUES (?, ?, ?)',
-      [stdResult.insertId, 'STUD/001/2026', 1]
-    );
+    if (stdResult.insertId) {
+      await db.query(
+        'INSERT IGNORE INTO students (user_id, student_number, department_id) VALUES (?, ?, ?)',
+        [stdResult.insertId, 'STUD/001/2026', 1]
+      );
+    }
 
     console.log('✅ Robust Seeding Completed Successfully!');
     process.exit(0);

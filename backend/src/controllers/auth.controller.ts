@@ -14,8 +14,10 @@ export const loginUser = async (req: Request, res: Response) => {
       `SELECT users.*, roles.name as role_name 
        FROM users 
        JOIN roles ON users.role_id = roles.id 
-       WHERE email = ? OR users.id IN (SELECT user_id FROM students WHERE student_number = ?)`,
-      [identifier, identifier]
+       WHERE email = ? 
+       OR users.id IN (SELECT user_id FROM students WHERE student_number = ?)
+       OR users.id IN (SELECT user_id FROM staff WHERE staff_number = ?)`,
+      [identifier, identifier, identifier]
     );
 
     if (users.length === 0) {
