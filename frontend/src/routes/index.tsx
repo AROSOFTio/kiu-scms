@@ -92,9 +92,6 @@ export default function AppRoutes() {
         <Route path="admin/complaints" element={
           <ProtectedRoute allowedRoles={['Admin']}><ComplaintsList /></ProtectedRoute>
         } />
-        <Route path="admin/users" element={
-          <ProtectedRoute allowedRoles={['Admin']}><UserManagement /></ProtectedRoute>
-        } />
         <Route path="admin/org" element={
           <ProtectedRoute allowedRoles={['Admin']}><OrgManagement /></ProtectedRoute>
         } />

@@ -5,7 +5,7 @@ import { NotificationService } from '../services/notification.service';
 
 // @desc    Get all complaints (Admin/Staff only)
 export const getAllComplaints = async (req: Request, res: Response) => {
-  const { status, category, search, priority, page = '1', limit = '10' } = req.query as any;
+  const { status, category, search, priority, page = '1', limit = '10', startDate, endDate } = req.query as any;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   try {
@@ -13,9 +13,11 @@ export const getAllComplaints = async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (status) { where += ' AND c.status = ?'; params.push(status); }
-    if (category) { where += ' AND c.category_id = ?'; params.push(category); }
+    if (category) { where += ' AND cc.id = ?'; params.push(category); }
     if (priority) { where += ' AND c.priority = ?'; params.push(priority); }
-    
+    if (startDate) { where += ' AND c.created_at >= ?'; params.push(startDate); }
+    if (endDate) { where += ' AND c.created_at <= ?'; params.push(endDate); }
+
     // Staff filtering: Staff only sees assigned. Dept Officer sees department cases (unless specifically checking assigned).
     const { assignedToMe } = req.query as any;
     const roleName = (req as any).user?.roleName;

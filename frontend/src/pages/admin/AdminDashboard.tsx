@@ -55,17 +55,17 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         </div>
       </Link>
 
-      <Link to="/dashboard/admin/users" className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden text-left">
+      <Link to="/dashboard/admin/reports" className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden text-left">
         <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-          <Users size={120} />
+          <BarChart3 size={120} />
         </div>
         <div className="relative z-10 text-emerald-600 mb-6">
-          <Users className="h-10 w-10" />
+          <BarChart3 className="h-10 w-10" />
         </div>
-        <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">User Intelligence</h3>
-        <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">Audit system access levels and institutional user distribution.</p>
+        <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">System Performance</h3>
+        <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">Audit system resolution metrics and institutional efficiency.</p>
         <div className="flex items-center text-sm font-bold text-emerald-600 group-hover:gap-2 transition-all">
-          User Directory <ArrowRight className="h-4 w-4 ml-1" />
+          View Analytical Reports <ArrowRight className="h-4 w-4 ml-1" />
         </div>
       </Link>
 

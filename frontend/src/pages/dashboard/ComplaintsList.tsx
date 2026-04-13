@@ -1,4 +1,6 @@
-import { 
+  X,
+  Calendar,
+  RefreshCw,
   Search, 
   Loader2,
   User,
@@ -42,6 +44,11 @@ interface Staff {
   role_name: string;
 }
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 export default function ComplaintsList() {
   const { user } = useAuth();
   const location = useLocation();
@@ -53,6 +60,7 @@ export default function ComplaintsList() {
   
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [assignedToMe, setAssignedToMe] = useState(isWorklist);
@@ -61,6 +69,9 @@ export default function ComplaintsList() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
+  const [category, setCategory] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 10;
@@ -73,11 +84,23 @@ export default function ComplaintsList() {
   const [targetStatus, setTargetStatus] = useState('');
   const [remarks, setRemarks] = useState('');
 
+  const clearFilters = () => {
+    setSearch('');
+    setStatus('');
+    setPriority('');
+    setCategory('');
+    setStartDate('');
+    setEndDate('');
+    setPage(1);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const params: any = { search, status, priority, page, limit };
+        const params: any = { 
+          search, status, priority, category, startDate, endDate, page, limit 
+        };
         if (assignedToMe) params.assignedToMe = 'true';
         
         const res = await api.get('/admin/complaints', { params });
@@ -91,12 +114,14 @@ export default function ComplaintsList() {
     };
     const timer = setTimeout(fetchData, 400);
     return () => clearTimeout(timer);
-  }, [search, status, priority, page, assignedToMe]);
+  }, [search, status, priority, category, startDate, endDate, page, assignedToMe]);
 
   useEffect(() => {
     if (isAdmin || isDeptOfficer) {
       api.get('/admin/staff').then(res => setStaffList(res.data.data));
     }
+    // Fetch categories for filter
+    api.get('/admin/org/categories').then(res => setCategories(res.data.data));
   }, [isAdmin, isDeptOfficer]);
 
   const handleAssign = async () => {
@@ -178,47 +203,100 @@ export default function ComplaintsList() {
         )}
       </div>
 
-      {/* Advanced Filters Overlay */}
-      <div className="premium-card p-6 lg:p-8 flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-        <div className="relative flex-1 group w-full">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Search by Reference, Title or Student Identity..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="premium-input pl-16 py-5 text-base"
-          />
-        </div>
-        <div className="flex flex-wrap lg:flex-nowrap gap-4 w-full lg:w-auto">
-          <div className="relative flex-1 lg:w-48">
-             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none" />
-             <select 
-                value={status} 
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-black text-slate-600 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none appearance-none transition-all"
+      {/* Enhanced Multi-Layer Filters */}
+      <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search by Reference, Title or Student Identity..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="premium-input pl-16 py-5 text-base w-full shadow-sm"
+            />
+            {search && (
+              <button 
+                onClick={() => setSearch('')}
+                className="absolute right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-slate-100 rounded-full transition-colors"
               >
-                <option value="">Status: All</option>
-                <option value="Submitted">Pending</option>
-                <option value="Under Review">Under Review</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
+                <X className="h-4 w-4 text-slate-400" />
+              </button>
+            )}
           </div>
-          <div className="relative flex-1 lg:w-48">
-             <AlertCircle className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none" />
-             <select 
-                value={priority} 
-                onChange={(e) => setPriority(e.target.value)}
-                className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-black text-slate-600 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none appearance-none transition-all"
-              >
-                <option value="">Priority: All</option>
-                <option value="Critical">Critical Only</option>
-                <option value="High">High Only</option>
-                <option value="Medium">Medium Only</option>
-                <option value="Low">Low Only</option>
-              </select>
+          <button 
+            onClick={clearFilters}
+            className="flex items-center justify-center gap-3 px-8 bg-white border border-slate-100 rounded-3xl text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all active:scale-95 shadow-sm"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reset Intelligence
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="relative group">
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within:text-emerald-500 transition-colors" />
+            <select 
+              value={status} 
+              onChange={(e) => setStatus(e.target.value)}
+              className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+            >
+              <option value="">Status: All Realms</option>
+              <option value="Submitted">Realm: Pending</option>
+              <option value="Under Review">Realm: Under Review</option>
+              <option value="In Progress">Realm: In Progress</option>
+              <option value="Resolved">Realm: Resolved</option>
+              <option value="Rejected">Realm: Rejected</option>
+            </select>
+          </div>
+
+          <div className="relative group">
+            <AlertCircle className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within:text-emerald-500 transition-colors" />
+            <select 
+              value={priority} 
+              onChange={(e) => setPriority(e.target.value)}
+              className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+            >
+              <option value="">Priority: Unified</option>
+              <option value="Critical">Severity: Critical</option>
+              <option value="High">Severity: High</option>
+              <option value="Medium">Severity: Medium</option>
+              <option value="Low">Severity: Low</option>
+            </select>
+          </div>
+
+          <div className="relative group">
+            <MoreHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within:text-emerald-500 transition-colors" />
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)}
+              className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+            >
+              <option value="">Category: All</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="relative group sm:col-span-1">
+             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within:text-emerald-500 transition-colors" />
+             <input 
+               type="date"
+               value={startDate}
+               onChange={(e) => setStartDate(e.target.value)}
+               className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50 placeholder:text-slate-300"
+             />
+          </div>
+
+          <div className="relative group">
+             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within:text-emerald-500 transition-colors" />
+             <input 
+               type="date"
+               value={endDate}
+               onChange={(e) => setEndDate(e.target.value)}
+               className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+             />
           </div>
         </div>
       </div>

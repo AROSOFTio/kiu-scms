@@ -35,7 +35,6 @@ export default function DashboardLayout() {
     { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Activity Logs', href: '/dashboard/admin?view=activity', icon: History },
     { name: 'Complaint Records', href: '/dashboard/admin/complaints', icon: FileText },
-    { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Institutional Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   ] : (user?.role === 'Staff' || user?.role === 'Department Officer') ? [
     { name: user?.role === 'Department Officer' ? 'Department Dashboard' : 'Staff Dashboard', href: '/dashboard/staff', icon: LayoutDashboard },
