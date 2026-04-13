@@ -29,6 +29,11 @@ export const getAllComplaints = async (req: Request, res: Response) => {
     } else if (roleName === 'Department Officer') {
       where += ' AND c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
       params.push(userId);
+    } else if (roleName === 'Admin') {
+      // HOD Department Filter: If HOD is assigned to a department in staff table, restrict their view.
+      // If not assigned (Global Admin), they see everything.
+      where += ' AND (c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) OR NOT EXISTS (SELECT 1 FROM staff WHERE user_id = ?))';
+      params.push(userId, userId);
     }
 
     if (search) { 
