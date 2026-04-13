@@ -88,8 +88,8 @@ export default function UserManagement() {
     <div className="space-y-8 animate-slide-up">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Unified Identity Center</h1>
-          <p className="text-slate-500 font-medium mt-2">Oversee credentials for students, staff, and system administrators.</p>
+          <h1 className="text-4xl font-bold text-slate-900 tracking-tighter">Unified Identity Center</h1>
+          <p className="text-slate-500 font-medium mt-2">Oversee credentials for students, staff, and HODs.</p>
         </div>
         <button 
           onClick={() => setUserModal({ open: true, data: null })}
@@ -252,7 +252,7 @@ export default function UserManagement() {
                 <option value="">Select Role</option>
                 <option value="Student">Student</option>
                 <option value="Staff">Staff</option>
-                <option value="Admin">Administrator</option>
+                <option value="Admin">HOD</option>
              </select>
           </div>
 

@@ -145,10 +145,10 @@ const InstitutionalCommandView = ({ stats }: { stats: any }) => {
               {[
                 { label: 'Students', count: 1240, percentage: 85, color: 'bg-indigo-500' },
                 { label: 'Staff members', count: 180, percentage: 12, color: 'bg-emerald-500' },
-                { label: 'Administrators', count: 15, percentage: 3, color: 'bg-amber-500' },
+                { label: 'HODs', count: 15, percentage: 3, color: 'bg-amber-500' },
               ].map((item) => (
                 <div key={item.label} className="space-y-3">
-                  <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.2em]">
+                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.2em]">
                      <span className="text-gray-400">{item.label}</span>
                      <span className="text-gray-900">{item.count}</span>
                   </div>

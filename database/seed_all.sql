@@ -17,7 +17,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 INSERT INTO users (role_id, first_name, last_name, email, password_hash) 
 VALUES (
     (SELECT id FROM roles WHERE name = 'Admin'), 
-    'System', 'Administrator', 'admin@kiu.ac.ug', 
+    'HOD', '', 'admin@kiu.ac.ug', 
     '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW'
 );
 
