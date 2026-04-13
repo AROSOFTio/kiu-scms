@@ -72,20 +72,20 @@ export default function DashboardLayout() {
       `}>
         {/* User Profile Area */}
         <div className="p-6 flex flex-col items-center border-b border-white/5 bg-[#141414]">
-          <div className="w-16 h-16 rounded-full bg-slate-700 border-2 border-white/10 flex items-center justify-center text-white font-black text-xl shadow-inner mb-4 overflow-hidden">
+          <div className="w-16 h-16 rounded-full bg-slate-700 border-2 border-white/10 flex items-center justify-center text-white font-bold text-xl shadow-inner mb-4 overflow-hidden">
             {user?.role === 'Student' ? (
                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100" alt="Profile" className="w-full h-full object-cover" />
             ) : userInitials}
           </div>
           <div className="text-center">
             <h3 className="text-white font-bold text-sm tracking-wide uppercase leading-tight">{userName}</h3>
-            <p className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">{user?.role === 'Admin' ? 'HOD' : user?.role || 'User'}</p>
+            <p className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">{user?.role === 'Admin' ? 'HOD' : user?.role || 'User'}</p>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 py-6 overflow-y-auto custom-scrollbar">
-          <div className="px-6 text-xs font-bold text-slate-600 mb-4 uppercase tracking-[0.2em]">Main</div>
+          <div className="px-6 text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-[0.2em]">Main Navigation</div>
           <ul className="space-y-0.5">
             {navigation.map((item: any) => {
               const currentFullHref = location.pathname + location.search;
@@ -94,7 +94,7 @@ export default function DashboardLayout() {
                 <li key={item.name}>
                   <Link
                     to={item.href}
-                    className={`flex items-center px-6 py-3 text-sm font-medium transition-all duration-200 border-l-4 ${
+                    className={`flex items-center px-6 py-3 text-[13px] font-medium transition-all duration-200 border-l-4 ${
                       isActive 
                         ? `text-white bg-white/5 ${item.color || 'border-emerald-500'}` 
                         : `text-slate-400 border-transparent hover:text-white hover:bg-white/5`
@@ -111,29 +111,29 @@ export default function DashboardLayout() {
 
         {/* Brand Footer */}
         <div className="p-4 bg-[#141414]/50 text-center">
-             <span className="text-[10px] font-bold uppercase text-slate-700 tracking-widest">KIU SCMS V1.4</span>
+             <span className="text-[9px] font-bold uppercase text-slate-700 tracking-widest">KIU SCMS V1.4</span>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Top Sticky Header */}
-        <header className="sticky top-0 h-[64px] bg-[#222]/95 backdrop-blur-md border-b border-white/5 z-30 flex items-center justify-between px-6 shadow-sm">
+        <header className="sticky top-0 h-[64px] bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 flex items-center justify-between px-6 shadow-sm">
           <div className="flex items-center gap-4">
             <button 
               onClick={toggleSidebar}
-              className="lg:hidden p-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-all"
+              className="lg:hidden p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition-all"
             >
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex items-center">
-              <div className="hidden sm:block p-1 px-2.5 bg-white/5 border border-white/10 rounded mr-3">
-                 <Menu className="h-4 w-4 text-slate-500" />
+              <div className="hidden sm:block p-1 px-2.5 bg-slate-50 border border-slate-200 rounded mr-3">
+                 <Menu className="h-4 w-4 text-slate-400" />
               </div>
-              <h1 className="hidden sm:block text-sm font-black text-emerald-500 uppercase tracking-widest">
+              <h1 className="hidden sm:block text-xs font-bold text-emerald-600 uppercase tracking-[0.2em]">
                 Student Complaint and Management System
               </h1>
-              <h1 className="sm:hidden text-lg font-black text-emerald-500 uppercase tracking-widest">
+              <h1 className="sm:hidden text-lg font-bold text-emerald-600 uppercase tracking-widest">
                 SCMS
               </h1>
             </div>

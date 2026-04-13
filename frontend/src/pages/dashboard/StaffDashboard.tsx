@@ -95,9 +95,9 @@ export default function StaffDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="h-px w-6 bg-[#008540]" />
-              <span className="text-[10px] font-black text-[#008540] uppercase tracking-widest">Resolution Hub</span>
+              <span className="text-[10px] font-bold text-[#008540] uppercase tracking-widest">Resolution Hub</span>
             </div>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tighter">
+            <h1 className="text-4xl font-bold text-gray-900 tracking-tighter">
               Welcome back,<br />
               <span className="text-[#008540]">{user?.role === 'Department Officer' ? 'Officer' : 'Staff'} {user?.lastName}</span>
             </h1>
@@ -121,7 +121,7 @@ export default function StaffDashboard() {
         <div className="bg-gradient-to-br from-[#008540] to-[#006b33] p-8 rounded-2xl shadow-lg shadow-emerald-900/10 text-white relative overflow-hidden group">
           <Zap className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2 opacity-80">Resolution Hub</p>
-          <h3 className="text-xl font-black mb-6">Staff<br/>Workbench</h3>
+          <h3 className="text-xl font-bold mb-6">Staff<br/>Workbench</h3>
           <Link 
             to="/dashboard/staff/worklist" 
             className="inline-flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-xs font-bold transition-all"
@@ -150,10 +150,10 @@ export default function StaffDashboard() {
               <div className={`${kpi.bg} ${kpi.color} p-4 rounded-xl group-hover:scale-110 transition-transform`}>
                 <kpi.icon className="h-6 w-6" />
               </div>
-              <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Live Data</span>
+              <span className="text-[10px] font-bold text-gray-300 uppercase tracking-[0.2em]">Live Data</span>
             </div>
-            <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{kpi.label}</p>
-            <p className="text-4xl font-black text-gray-900 mt-1">{kpi.value}</p>
+            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">{kpi.label}</p>
+            <p className="text-4xl font-bold text-gray-900 mt-1">{kpi.value}</p>
           </Link>
         ))}
       </div>
@@ -162,11 +162,11 @@ export default function StaffDashboard() {
         {/* Recent My Activity */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-lg font-black text-gray-900 tracking-tight flex items-center">
+            <h2 className="text-lg font-bold text-gray-900 tracking-tight flex items-center">
               <TrendingUp className="h-5 w-5 mr-3 text-[#008540]" />
               Recent Feed
             </h2>
-            <Link to="/dashboard/staff/worklist" className="text-xs font-black text-[#008540] uppercase tracking-widest hover:underline">Full Audit</Link>
+            <Link to="/dashboard/staff/worklist" className="text-xs font-bold text-[#008540] uppercase tracking-widest hover:underline">Full Audit</Link>
           </div>
           
           <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">

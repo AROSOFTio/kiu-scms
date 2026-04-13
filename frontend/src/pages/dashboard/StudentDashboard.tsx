@@ -94,9 +94,9 @@ export default function StudentDashboard() {
           <div className="relative">
             <div className="flex items-center gap-3 mb-2">
                <div className="h-1 w-10 bg-[#008540] rounded-full" />
-               <span className="text-[10px] font-black text-[#008540] uppercase tracking-[0.4em]">Administrative Hub</span>
+               <span className="text-[10px] font-bold text-[#008540] uppercase tracking-[0.4em]">Administrative Hub</span>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight">
+            <h1 className="text-4xl font-bold text-slate-900 tracking-tighter leading-tight">
               Welcome back,<br />
               <span className="text-[#008540]">Student {user?.lastName}</span>
             </h1>
@@ -155,7 +155,7 @@ export default function StudentDashboard() {
             <button 
               key={stat.id} 
               onClick={() => setView(stat.id)}
-              className={`premium-card p-10 group relative border shadow-sm text-left transition-all ${currentView === stat.id ? 'border-[#008540] ring-4 ring-[#008540]/5 bg-white' : 'border-transparent hover:border-slate-200 bg-white'}`}
+              className={`premium-card p-10 group relative border shadow-sm text-left transition-all ${currentView === stat.id ? 'border-[#008540] ring-4 ring-[#008540]/5 bg-white' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
             >
               <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
                  <stat.icon className="h-20 w-20" />
@@ -164,8 +164,8 @@ export default function StudentDashboard() {
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.name}</p>
-                <p className="text-3xl font-black text-slate-900 tracking-tighter tabular-nums">{stat.value}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.name}</p>
+                <p className="text-3xl font-bold text-slate-900 tracking-tighter tabular-nums">{stat.value}</p>
               </div>
             </button>
           ))
@@ -213,7 +213,7 @@ export default function StudentDashboard() {
                       </td>
                       <td className="px-10 py-6">
                          <Link to={`/dashboard/student/complaints/${complaint.id}`} className="max-w-xs block group-hover:translate-x-1 transition-transform">
-                            <p className="text-xs font-black text-slate-900 tracking-tight leading-tight group-hover:text-[#008540] transition-colors uppercase truncate">{complaint.title}</p>
+                            <p className="text-sm font-bold text-slate-900 tracking-tight leading-tight group-hover:text-[#008540] transition-colors uppercase truncate">{complaint.title}</p>
                             <p className="text-[9px] text-slate-400 font-bold mt-1 tracking-wider uppercase">{complaint.category_name}</p>
                          </Link>
                       </td>
@@ -231,7 +231,7 @@ export default function StudentDashboard() {
                       <td className="px-10 py-6 text-right">
                         <Link 
                           to={`/dashboard/student/complaints/${complaint.id}`} 
-                          className="inline-flex items-center gap-2 h-8 px-4 bg-slate-900 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-[#008540] transition-all"
+                          className="inline-flex items-center gap-2 h-8 px-4 bg-slate-900 text-white rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-[#008540] transition-all"
                         >
                            Examine
                         </Link>

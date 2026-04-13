@@ -25,15 +25,15 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
       <div className="max-w-2xl">
         <div className="flex items-center gap-3 mb-4">
           <div className="h-px w-8 bg-emerald-500" />
-          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">HOD Governance Center</span>
+          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.3em]">HOD Governance Center</span>
         </div>
-        <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-4 leading-[0.9]">
+        <h1 className="text-5xl font-bold text-slate-900 tracking-tighter mb-4 leading-[0.9]">
           Welcome back,<br />
           <span className="text-emerald-600">HOD {user?.lastName}</span>
         </h1>
         <p className="text-lg text-slate-500 font-medium leading-relaxed">
           The Student Complaint and Management System is fully operational. 
-          You currently have <span className="text-slate-900 font-black">{stats?.total || 0} active Complaints</span> requiring oversight.
+          You currently have <span className="text-slate-900 font-bold">{stats?.total || 0} active Complaints</span> requiring oversight.
         </p>
       </div>
       
@@ -48,9 +48,9 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         <div className="relative z-10 text-emerald-600 mb-6">
           <FileText className="h-10 w-10" />
         </div>
-        <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Active Cases</h3>
+        <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Active Cases</h3>
         <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">Review and delegate recently filed institutional Complaints.</p>
-        <div className="flex items-center text-sm font-black text-emerald-600 group-hover:gap-2 transition-all">
+        <div className="flex items-center text-sm font-bold text-emerald-600 group-hover:gap-2 transition-all">
           Manage Repository <ArrowRight className="h-4 w-4 ml-1" />
         </div>
       </Link>
@@ -62,9 +62,9 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         <div className="relative z-10 text-emerald-600 mb-6">
           <Users className="h-10 w-10" />
         </div>
-        <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">User Intelligence</h3>
+        <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">User Intelligence</h3>
         <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">Audit system access levels and institutional user distribution.</p>
-        <div className="flex items-center text-sm font-black text-emerald-600 group-hover:gap-2 transition-all">
+        <div className="flex items-center text-sm font-bold text-emerald-600 group-hover:gap-2 transition-all">
           User Directory <ArrowRight className="h-4 w-4 ml-1" />
         </div>
       </Link>
@@ -73,10 +73,10 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <Clock size={120} />
         </div>
-        <div className="relative z-10 text-emerald-200 mb-6 font-black text-xs uppercase tracking-widest group-hover:text-white transition-colors">Calendar Management</div>
-        <h3 className="text-2xl font-black mb-2 tracking-tight">Appointments</h3>
+        <div className="relative z-10 text-emerald-200 mb-6 font-bold text-xs uppercase tracking-widest group-hover:text-white transition-colors">Calendar Management</div>
+        <h3 className="text-2xl font-bold mb-2 tracking-tight">Appointments</h3>
         <p className="text-emerald-100/70 font-medium text-sm mb-6 leading-relaxed">Manage student consultation requests and office hours.</p>
-        <div className="flex items-center text-sm font-black text-white bg-white/10 w-fit px-6 py-3 rounded-2xl group-hover:bg-white/20 transition-all">
+        <div className="flex items-center text-sm font-bold text-white bg-white/10 w-fit px-6 py-3 rounded-2xl group-hover:bg-white/20 transition-all">
           Open Calendar
         </div>
       </Link>
@@ -96,12 +96,12 @@ const InstitutionalCommandView = ({ stats }: { stats: any }) => {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">HOD Oversight</h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">HOD Oversight</h1>
           <p className="text-gray-500 font-medium">Real-time performance metrics and department-wide visibility.</p>
         </div>
         <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm">
-           <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white rounded-xl">Last 24h</button>
-           <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">Last 7d</button>
+           <button className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-slate-900 text-white rounded-xl">Last 24h</button>
+           <button className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">Last 7d</button>
         </div>
       </div>
 
@@ -112,13 +112,13 @@ const InstitutionalCommandView = ({ stats }: { stats: any }) => {
               <div className={`${kpi.bg} ${kpi.color} p-4 rounded-2xl transition-transform group-hover:scale-110`}>
                 <kpi.icon className="h-6 w-6" />
               </div>
-              <div className={`flex items-center text-[11px] font-black uppercase ${kpi.trending === 'up' ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <div className={`flex items-center text-[11px] font-bold uppercase ${kpi.trending === 'up' ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {kpi.trending === 'up' ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
                 {kpi.change}
               </div>
             </div>
-            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-            <p className="text-4xl font-black text-gray-900 tracking-tighter tabular-nums">{kpi.value}</p>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">{kpi.label}</p>
+            <p className="text-4xl font-bold text-gray-900 tracking-tighter tabular-nums">{kpi.value}</p>
           </div>
         ))}
       </div>
