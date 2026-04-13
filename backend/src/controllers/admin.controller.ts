@@ -705,7 +705,7 @@ export const manageOrg = {
         params.push(facultyId);
       } else if (adminRole === 'Admin') {
         // FAIL-CLOSED: Unassigned HOD sees nothing
-        where += ' WHERE 1=0';
+        query += ' WHERE id = 0';
       }
       query += ' ORDER BY name';
       const [rows]: any = await db.query(query, params);
@@ -830,6 +830,8 @@ export const getFeedback = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
     if (adminRole === 'Admin') {
       const facultyId = await getHODFacultyId(adminId);
       if (facultyId) {
@@ -868,6 +870,8 @@ export const getFeedbackStats = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
     if (adminRole === 'Admin') {
       const facultyId = await getHODFacultyId(adminId);
       if (facultyId) {
@@ -901,6 +905,8 @@ export const getDetailedReports = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
     if (adminRole === 'Admin') {
       const facultyId = await getHODFacultyId(adminId);
       if (facultyId) {
@@ -980,6 +986,8 @@ export const exportComplaintsCsv = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
     if (adminRole === 'Admin') {
       const facultyId = await getHODFacultyId(adminId);
       if (facultyId) {
