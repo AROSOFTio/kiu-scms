@@ -50,8 +50,8 @@ export default function DashboardLayout() {
     { name: 'Resolution Archive', href: '/dashboard/student?view=resolved', icon: CheckCircle },
   ];
 
-  const userName = user ? `${user.firstName} ${user.lastName}` : 'User';
-  const userInitials = user ? `${user.firstName[0]}${user.lastName[0]}` : 'U';
+  const userName = user?.role === 'Admin' ? 'HOD' : user ? `${user.firstName} ${user.lastName}` : 'User';
+  const userInitials = user?.role === 'Admin' ? 'H' : user ? `${user.firstName[0]}${user.lastName[0]}` : 'U';
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
