@@ -30,10 +30,165 @@ export const getAllComplaints = async (req: Request, res: Response) => {
       where += ' AND c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
       params.push(userId);
     } else if (roleName === 'Admin') {
-      // HOD Department Filter: If HOD is assigned to a department in staff table, restrict their view.
-      // If not assigned (Global Admin), they see everything.
-      where += ' AND (c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) OR NOT EXISTS (SELECT 1 FROM staff WHERE user_id = ?))';
-      params.push(userId, userId);
+      // HOD Faculty Filter: If HOD is assigned to a department, restrict their view to their entire FACULTY.
+      const facultyId = await getHODFacultyId(userId);
+      if (facultyId) {
+        where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        params.push(facultyId);
+      }
+    }
+
+    if (search) { 
+      where += ' AND (c.title LIKE ? OR c.reference_number LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)'; 
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`); 
+    }
+
+    const [countRows]: any = await db.query(
+      `SELECT COUNT(*) as total 
+       FROM complaints c
+       JOIN students s ON c.student_id = s.id
+       JOIN users u ON s.user_id = u.id
+       ${where}`, 
+      params
+    );
+    const total = countRows[0].total;
+
+    const [rows]: any = await db.query(
+      `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at, c.updated_at,
+              cc.name as category_name,
+              u.first_name as student_first_name, u.last_name as student_last_name,
+              su.first_name as staff_first_name, su.last_name as staff_last_name,
+              f.rating as feedback_rating
+       FROM complaints c
+       JOIN complaint_categories cc ON c.category_id = cc.id
+       JOIN students s ON c.student_id = s.id
+       JOIN users u ON s.user_id = u.id
+       LEFT JOIN users su ON c.assigned_staff_id = su.id
+       LEFT JOIN feedback f ON c.id = f.complaint_id
+       ${where}
+       ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, parseInt(limit), offset]
+    );
+
+    res.json({ status: 'success', data: rows, total, page: parseInt(page), limit: parseInt(limit) });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Get single complaint details (Admin/Staff)
+export const getComplaintById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = (req as any).user?.userId;
+  const roleName = (req as any).user?.roleName;
+
+  try {
+    let where = 'WHERE c.id = ?';
+    const params: any[] = [id];
+
+    // If Staff, they might only be allowed to view it if assigned to them or if Staff has global access.
+    // Assuming staff can view any case if they have the ID, or limit it: let's allow all staff to view.
+
+    const [rows]: any = await db.query(
+      `SELECT c.*, cc.name as category_name,
+              u.first_name as student_first_name, u.last_name as student_last_name, u.email as student_email,
+              su.first_name as staff_first_name, su.last_name as staff_last_name,
+              f.rating as feedback_rating, f.comments as feedback_comments, f.created_at as feedback_date
+       FROM complaints c
+       JOIN complaint_categories cc ON c.category_id = cc.id
+       JOIN students s ON c.student_id = s.id
+       JOIN users u ON s.user_id = u.id
+       LEFT JOIN users su ON c.assigned_staff_id = su.id
+       LEFT JOIN feedback f ON c.id = f.complaint_id
+       ${where}`,
+      params
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Complaint not found' });
+    }
+
+    const complaint = rows[0];
+
+    const [attachments]: any = await db.query(
+      'SELECT id, file_path as file_path, file_path as file_name FROM complaint_attachments WHERE complaint_id = ?', [id]
+    );
+
+    const [timeline]: any = await db.query(
+      `SELECT csh.*, u.first_name, u.last_name, r.name as role_name
+       FROM complaint_status_history csh
+       JOIN users u ON csh.changed_by_user_id = u.id
+       JOIN roles r ON u.role_id = r.id
+       WHERE csh.complaint_id = ?
+       ORDER BY csh.changed_at ASC`,
+      [id]
+    );
+
+    // Get the first review date (earliest event that isn't 'Submitted')
+    const [reviewEvent]: any = await db.query(
+      `SELECT changed_at FROM complaint_status_history 
+       WHERE complaint_id = ? AND status != 'Submitted' 
+       ORDER BY changed_at ASC LIMIT 1`,
+      [id]
+    );
+    const reviewed_at = reviewEvent.length > 0 ? reviewEvent[0].changed_at : null;
+
+    // Format response to match expected UI structure
+    res.json({
+      status: 'success',
+      data: { 
+        ...complaint, 
+        reviewed_at,
+        attachments: attachments.map((a: any) => ({...a, file_name: a.file_path.split('/').pop()})), 
+        timeline,
+        feedback: complaint.feedback_rating ? {
+          rating: complaint.feedback_rating,
+          comments: complaint.feedback_comments,
+          date: complaint.feedback_date
+        } : null
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import { db } from '../config/database';
+import { NotificationService } from '../services/notification.service';
+
+// @desc    Get all complaints (Admin/Staff only)
+export const getAllComplaints = async (req: Request, res: Response) => {
+  const { status, category, search, priority, page = '1', limit = '10', startDate, endDate } = req.query as any;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  try {
+    let where = 'WHERE 1=1';
+    const params: any[] = [];
+
+    if (status) { where += ' AND c.status = ?'; params.push(status); }
+    if (category) { where += ' AND cc.id = ?'; params.push(category); }
+    if (priority) { where += ' AND c.priority = ?'; params.push(priority); }
+    if (startDate) { where += ' AND c.created_at >= ?'; params.push(startDate); }
+    if (endDate) { where += ' AND c.created_at <= ?'; params.push(endDate); }
+
+    // Staff filtering: Staff only sees assigned. Dept Officer sees department cases (unless specifically checking assigned).
+    const { assignedToMe } = req.query as any;
+    const roleName = (req as any).user?.roleName;
+    const userId = (req as any).user?.userId;
+
+    if (roleName === 'Staff' || assignedToMe === 'true') {
+      where += ' AND c.assigned_staff_id = ?';
+      params.push(userId);
+    } else if (roleName === 'Department Officer') {
+      where += ' AND c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
+      params.push(userId);
+    } else if (roleName === 'Admin') {
+      // HOD Faculty Filter: If HOD is assigned to a department, restrict their view to their entire FACULTY.
+      const facultyId = await getHODFacultyId(userId);
+      if (facultyId) {
+        where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        params.push(facultyId);
+      }
     }
 
     if (search) { 
@@ -158,6 +313,11 @@ export const assignStaff = async (req: Request, res: Response) => {
   const adminId = (req as any).user?.userId;
 
   try {
+    // 0. Scope Verification: Ensure HOD has permission for this complaint (Faculty-level check)
+    if (!await verifyHODScope(adminId, (req as any).user?.roleName, parseInt(id))) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage complaints outside your Faculty.' });
+    }
+
     // Verify staffId exists and has Staff or Admin role
     const [staff]: any = await db.query(
       `SELECT u.id, u.first_name, u.last_name, r.name as role_name 
@@ -195,21 +355,35 @@ export const assignStaff = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get all staff members for assignment
+// @desc    Get all staff members for assignment (Within HOD's Faculty)
 export const getStaffMembers = async (req: Request, res: Response) => {
+  const userId = (req as any).user?.userId;
+  const roleName = (req as any).user?.roleName;
+
   try {
-    const [rows]: any = await db.query(
-      `SELECT u.id, u.first_name, u.last_name, u.email, r.name as role_name 
-       FROM users u 
-       JOIN roles r ON u.role_id = r.id 
-       WHERE r.name IN ('Staff', 'Admin') AND u.is_active = 1
-       ORDER BY u.first_name`
-    );
+    let query = `SELECT u.id, u.first_name, u.last_name, u.email, r.name as role_name 
+                 FROM users u 
+                 JOIN roles r ON u.role_id = r.id 
+                 JOIN staff s ON u.id = s.user_id
+                 WHERE r.name IN ('Staff', 'Admin') AND u.is_active = 1`;
+    const params: any[] = [];
+
+    if (roleName === 'Admin') {
+      const facultyId = await getHODFacultyId(userId);
+      if (facultyId) {
+        query += ' AND s.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        params.push(facultyId);
+      }
+    }
+
+    query += ' ORDER BY u.first_name';
+    const [rows]: any = await db.query(query, params);
     res.json({ status: 'success', data: rows });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
 };
+
 
 // @desc    Update complaint status (Admin/Staff)
 export const updateStatus = async (req: Request, res: Response) => {
@@ -222,6 +396,11 @@ export const updateStatus = async (req: Request, res: Response) => {
   }
 
   try {
+    // 0. Scope Verification: Ensure HOD has permission for this complaint (Faculty-level check)
+    if (!await verifyHODScope(userId, (req as any).user?.roleName, parseInt(id))) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage complaints outside your Faculty.' });
+    }
+
     await db.query(
       'UPDATE complaints SET status = ? WHERE id = ?',
       [status, id]
@@ -255,10 +434,16 @@ export const getAdminStats = async (req: Request, res: Response) => {
     let slaQuery = '';
     let params: any[] = [];
 
-    const isDepartmentRestracted = roleName === 'Department Officer' || (roleName === 'Admin' && await isDeptHOD(userId));
+    const hodFacultyId = roleName === 'Admin' ? await getHODFacultyId(userId) : null;
+    const isRestricted = roleName === 'Staff' || roleName === 'Department Officer' || hodFacultyId !== null;
 
-    if (roleName === 'Staff' || isDepartmentRestracted) {
-      const filterSQL = roleName === 'Staff' ? 'assigned_staff_id = ?' : 'department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
+    if (roleName === 'Staff' || roleName === 'Department Officer' || hodFacultyId) {
+      const filterSQL = roleName === 'Staff' 
+        ? 'assigned_staff_id = ?' 
+        : (hodFacultyId 
+            ? 'department_id IN (SELECT id FROM departments WHERE faculty_id = ?)' 
+            : 'department_id = (SELECT department_id FROM staff WHERE user_id = ?)');
+      const filterParam = hodFacultyId || userId;
       
       statsQuery = `SELECT COUNT(*) as count FROM complaints WHERE ${filterSQL}`;
       statusQuery = `SELECT status, COUNT(*) as count FROM complaints WHERE ${filterSQL} GROUP BY status`;
@@ -267,7 +452,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
                     SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
                     SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
                   FROM complaints WHERE ${filterSQL}`;
-      params = [userId];
+      params = [filterParam];
     } else {
       statsQuery = 'SELECT COUNT(*) as count FROM complaints';
       statusQuery = 'SELECT status, COUNT(*) as count FROM complaints GROUP BY status';
@@ -291,29 +476,34 @@ export const getAdminStats = async (req: Request, res: Response) => {
                          JOIN users u ON csh.changed_by_user_id = u.id `;
     
     if (roleName === 'Staff') activityQuery += 'WHERE c.assigned_staff_id = ? OR csh.changed_by_user_id = ? ';
-    else if (isDepartmentRestracted) activityQuery += 'WHERE c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) OR csh.changed_by_user_id = ? ';
-    
+    else if (isRestricted) {
+      if (hodFacultyId) activityQuery += 'WHERE (c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?) OR csh.changed_by_user_id = ?) ';
+      else activityQuery += 'WHERE (c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) OR csh.changed_by_user_id = ?) ';
+    }
+   
     activityQuery += 'ORDER BY csh.changed_at DESC LIMIT 15';
     
-    const [recent]: any = await db.query(activityQuery, (roleName === 'Staff' || isDepartmentRestracted) ? [userId, userId] : []);
+    const [recent]: any = await db.query(activityQuery, (roleName === 'Staff' || isRestricted) ? [params[0], userId] : []);
 
     let urgentCases: any[] = [];
-    if (roleName === 'Staff' || isDepartmentRestracted) {
+    if (roleName === 'Staff' || isRestricted) {
       let uQuery = `SELECT id, reference_number, title, priority, status, created_at FROM complaints WHERE status NOT IN ('Resolved', 'Closed', 'Rejected') AND (priority IN ('High', 'Critical') OR created_at < DATE_SUB(NOW(), INTERVAL 72 HOUR))`;
        if (roleName === 'Staff') uQuery += ' AND assigned_staff_id = ?';
+       else if (hodFacultyId) uQuery += ' AND department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
        else uQuery += ' AND department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
-      uQuery += ' ORDER BY priority DESC, created_at ASC LIMIT 5';
-      const [rows]: any = await db.query(uQuery, [userId]);
+       uQuery += ' ORDER BY priority DESC, created_at ASC LIMIT 5';
+      const [rows]: any = await db.query(uQuery, [params[0]]);
       urgentCases = rows;
     }
 
     let recentFeedback: any[] = [];
-    if (roleName === 'Staff' || isDepartmentRestracted) {
+    if (roleName === 'Staff' || isRestricted) {
       let fQuery = `SELECT f.*, c.reference_number, u.first_name, u.last_name, u.email FROM feedback f JOIN complaints c ON f.complaint_id = c.id JOIN students s ON f.student_id = s.id JOIN users u ON s.user_id = u.id`;
       if (roleName === 'Staff') fQuery += ' WHERE c.assigned_staff_id = ?';
+      else if (hodFacultyId) fQuery += ' WHERE c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
       else fQuery += ' WHERE c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
       fQuery += ' ORDER BY f.created_at DESC LIMIT 3';
-      const [fRows]: any = await db.query(fQuery, [userId]);
+      const [fRows]: any = await db.query(fQuery, [params[0]]);
       recentFeedback = fRows;
     }
 
@@ -646,8 +836,14 @@ export const manageOrg = {
 export const toggleUserStatus = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { isActive } = req.body;
+  const userId = (req as any).user?.userId;
 
   try {
+    // 0. Scope Verification: Ensure HOD has permission for this complaint (Faculty-level check)
+    if (!await verifyHODScope(userId, (req as any).user?.roleName, parseInt(id))) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage complaints outside your Faculty.' });
+    }
+
     await db.query('UPDATE users SET is_active = ? WHERE id = ?', [isActive ? 1 : 0, id]);
     res.json({ status: 'success', message: `User ${isActive ? 'activated' : 'suspended'} successfully` });
   } catch (err: any) {
@@ -785,8 +981,30 @@ export const exportComplaintsCsv = async (req: Request, res: Response) => {
   }
 };
 
-// HELPER: Check if a user (Admin/HOD) is assigned to a specific department in staff table
-const isDeptHOD = async (userId: number): Promise<boolean> => {
-  const [rows]: any = await db.query('SELECT 1 FROM staff WHERE user_id = ? AND department_id IS NOT NULL', [userId]);
+// HELPER: Get the Faculty ID for an HOD (Admin assigned to a department)
+const getHODFacultyId = async (userId: number): Promise<number | null> => {
+  const [rows]: any = await db.query(
+    `SELECT d.faculty_id 
+     FROM staff s 
+     JOIN departments d ON s.department_id = d.id 
+     WHERE s.user_id = ?`, 
+    [userId]
+  );
+  return rows.length > 0 ? rows[0].faculty_id : null;
+};
+
+// HELPER: Verify if an HOD has permission to manage a specific complaint (within their Faculty)
+const verifyHODScope = async (userId: number, roleName: string, complaintId: number): Promise<boolean> => {
+  if (roleName !== 'Admin') return true; // Global admin (no staff record) or Staff handled by other logic
+  
+  const facultyId = await getHODFacultyId(userId);
+  if (!facultyId) return true; // Global Admin (not assigned to a department)
+  
+  const [rows]: any = await db.query(
+    `SELECT 1 FROM complaints c 
+     JOIN departments d ON c.department_id = d.id 
+     WHERE c.id = ? AND d.faculty_id = ?`, 
+    [complaintId, facultyId]
+  );
   return rows.length > 0;
 };

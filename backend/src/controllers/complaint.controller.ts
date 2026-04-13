@@ -64,20 +64,21 @@ export const submitComplaint = async (req: Request, res: Response) => {
       `Your complaint ${reference} has been successfully submitted and is awaiting review.`
     );
 
-    // 2. Notify HODs of the department
+    // 2. Notify HODs of the Faculty (College-wide oversight)
     const [hods]: any = await db.query(
-      `SELECT u.id FROM users u
+      `SELECT DISTINCT u.id FROM users u
        JOIN roles r ON u.role_id = r.id
        JOIN staff s ON u.id = s.user_id
-       WHERE r.name = 'Admin' AND s.department_id = ?`,
+       JOIN departments d ON s.department_id = d.id
+       WHERE r.name = 'Admin' AND d.faculty_id = (SELECT faculty_id FROM departments WHERE id = ?)`,
       [departmentId]
     );
 
     for (const hod of hods) {
       await NotificationService.sendInApp(
         hod.id,
-        'Action Required: New Case',
-        `A new complaint ${reference} has been submitted in your department and requires your intelligence.`
+        'Faculty Action: New Case',
+        `A new complaint ${reference} has been submitted in your Faculty and requires your oversight.`
       );
     }
 
