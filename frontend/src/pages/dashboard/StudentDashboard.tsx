@@ -277,7 +277,6 @@ export default function StudentDashboard() {
             </div>
          </div>
          <div className="relative z-10 flex gap-4">
-            <Link to="/legal" className="px-6 py-2.5 bg-white text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:translate-y-[-2px] transition-all">Transparency</Link>
             <button className="px-6 py-2.5 bg-white/10 text-white border border-white/10 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all">Policy</button>
          </div>
       </div>

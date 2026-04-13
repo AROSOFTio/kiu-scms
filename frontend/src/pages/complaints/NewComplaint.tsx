@@ -20,7 +20,7 @@ import { useToast } from '../../context/ToastContext';
 const complaintSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(200),
   categoryId: z.string().min(1, 'Please select a category'),
-  priority: z.enum(['Low', 'Medium', 'High', 'Critical']),
+  priority: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
   description: z.string().min(20, 'Description must be at least 20 characters'),
 });
 
@@ -77,7 +77,7 @@ export default function NewComplaint() {
       const formData = new FormData();
       formData.append('title', data.title);
       formData.append('categoryId', data.categoryId);
-      formData.append('priority', data.priority);
+      formData.append('priority', 'Medium');
       formData.append('description', data.description);
       
       files.forEach((file) => {
@@ -151,7 +151,7 @@ export default function NewComplaint() {
         
         <form onSubmit={handleSubmit(onSubmit)} className="p-10 lg:p-14 space-y-12">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-10">
             <div className="space-y-3">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Complaint Category</label>
               <select
@@ -164,19 +164,6 @@ export default function NewComplaint() {
                 ))}
               </select>
               {errors.categoryId && <p className="text-red-500 text-[10px] font-black uppercase tracking-tight ml-2">{errors.categoryId.message}</p>}
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Complaint Priority</label>
-              <select
-                {...register('priority')}
-                className="premium-input py-5 bg-white focus:border-[#008540]"
-              >
-                <option value="Low">Low Priority</option>
-                <option value="Medium">Medium Priority</option>
-                <option value="High">High Priority</option>
-                <option value="Critical">Critical Assessment</option>
-              </select>
             </div>
           </div>
 

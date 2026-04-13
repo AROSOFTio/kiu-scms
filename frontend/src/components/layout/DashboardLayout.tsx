@@ -37,12 +37,10 @@ export default function DashboardLayout() {
     { name: 'Complaint Records', href: '/dashboard/admin/complaints', icon: FileText },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Institutional Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
-    { name: 'Transparency Board', href: '/dashboard/public-board', icon: BarChart3 },
   ] : (user?.role === 'Staff' || user?.role === 'Department Officer') ? [
     { name: user?.role === 'Department Officer' ? 'Department Dashboard' : 'Staff Dashboard', href: '/dashboard/staff', icon: LayoutDashboard },
     { name: 'Resolution Hub', href: '/dashboard/staff/worklist', icon: ClipboardList },
     { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-    { name: 'Transparency Board', href: '/dashboard/public-board', icon: BarChart3 },
   ] : [
     { name: 'My Dashboard', href: '/dashboard/student', icon: Home },
     { name: 'Submit Complaint', href: '/dashboard/student/complaints/new', icon: PlusCircle, color: 'border-[#008540]' },
@@ -50,7 +48,6 @@ export default function DashboardLayout() {
     { name: 'Book Appointment', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Tracked Cases', href: '/dashboard/student?view=all', icon: Clock },
     { name: 'Resolution Archive', href: '/dashboard/student?view=resolved', icon: CheckCircle },
-    { name: 'Transparency Board', href: '/dashboard/public-board', icon: BarChart3 },
   ];
 
   const userName = user ? `${user.firstName} ${user.lastName}` : 'User';
