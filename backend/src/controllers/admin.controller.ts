@@ -145,12 +145,6 @@ export const getComplaintById = async (req: Request, res: Response) => {
           rating: complaint.feedback_rating,
           comments: complaint.feedback_comments,
           date: complaint.feedback_date
-        } : null
-      }
-    });
-  } catch (err: any) {
-    res.status(500).json({ status: 'error', message: err.message });
-  }
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { db } from '../config/database';
