@@ -35,6 +35,9 @@ export const getAllComplaints = async (req: Request, res: Response) => {
       if (facultyId) {
         where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
         params.push(facultyId);
+      } else {
+        // FAIL-CLOSED: Unassigned HOD sees nothing
+        where += ' AND 1=0';
       }
     }
 
@@ -83,6 +86,11 @@ export const getComplaintById = async (req: Request, res: Response) => {
   const roleName = (req as any).user?.roleName;
 
   try {
+    // 0. Scope Verification: Ensure HOD has permission for this complaint (Faculty-level check)
+    if (!await verifyHODScope(userId, roleName, parseInt(id))) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to view complaints outside your Faculty.' });
+    }
+
     let where = 'WHERE c.id = ?';
     const params: any[] = [id];
 
@@ -269,90 +277,105 @@ export const updateStatus = async (req: Request, res: Response) => {
 };
 
 // @desc    Get Admin/Staff Dashboard Stats
+// @desc    Get Admin/Staff Dashboard Stats
 export const getAdminStats = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
   const roleName = (req as any).user?.roleName;
   const isStaff = roleName === 'Staff';
 
   try {
-    let statsQuery = '';
-    let statusQuery = '';
-    let categoryQuery = '';
-    let slaQuery = '';
-    let params: any[] = [];
-
     const hodFacultyId = roleName === 'Admin' ? await getHODFacultyId(userId) : null;
-    const isRestricted = roleName === 'Staff' || roleName === 'Department Officer' || hodFacultyId !== null;
+    
+    // STRICT ISOLATION: Everyone except global system admins (if any) is restricted.
+    // If an Admin has no faculty assigned, we force a restricted filter that returns nothing.
+    const isRestricted = true; 
 
-    if (roleName === 'Staff' || roleName === 'Department Officer' || hodFacultyId) {
-      const filterSQL = roleName === 'Staff' 
-        ? 'assigned_staff_id = ?' 
-        : (hodFacultyId 
-            ? 'department_id IN (SELECT id FROM departments WHERE faculty_id = ?)' 
-            : 'department_id = (SELECT department_id FROM staff WHERE user_id = ?)');
-      const filterParam = hodFacultyId || userId;
-      
-      statsQuery = `SELECT COUNT(*) as count FROM complaints WHERE ${filterSQL}`;
-      statusQuery = `SELECT status, COUNT(*) as count FROM complaints WHERE ${filterSQL} GROUP BY status`;
-      categoryQuery = `SELECT cc.name as category, COUNT(c.id) as count FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id AND c.${filterSQL} GROUP BY cc.name`;
-      slaQuery = `SELECT 
-                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
-                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
-                  FROM complaints WHERE ${filterSQL}`;
-      params = [filterParam];
-    } else {
-      statsQuery = 'SELECT COUNT(*) as count FROM complaints';
-      statusQuery = 'SELECT status, COUNT(*) as count FROM complaints GROUP BY status';
-      categoryQuery = `SELECT cc.name as category, COUNT(c.id) as count FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id GROUP BY cc.name`;
-      slaQuery = `SELECT 
-                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
-                    SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
-                  FROM complaints`;
+    let filterSQL = '';
+    let filterParam: any = null;
+
+    if (roleName === 'Staff') {
+      filterSQL = 'assigned_staff_id = ?';
+      filterParam = userId;
+    } else if (roleName === 'Department Officer') {
+      filterSQL = 'department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
+      filterParam = userId;
+    } else if (roleName === 'Admin') {
+      if (hodFacultyId) {
+        filterSQL = 'department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        filterParam = hodFacultyId;
+      } else {
+        // FAIL-CLOSED: Unassigned HOD sees nothing
+        filterSQL = '1=0'; 
+        filterParam = null;
+      }
     }
+
+    const params = filterParam !== null ? [filterParam] : [];
+
+    const statsQuery = `SELECT COUNT(*) as count FROM complaints WHERE ${filterSQL}`;
+    const statusQuery = `SELECT status, COUNT(*) as count FROM complaints WHERE ${filterSQL} GROUP BY status`;
+    const categoryQuery = `SELECT cc.name as category, COUNT(c.id) as count FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id AND c.${filterSQL} GROUP BY cc.name`;
+    const slaQuery = `SELECT 
+                  SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,
+                  SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) <= CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as onTrack
+                FROM complaints WHERE ${filterSQL}`;
 
     const [total]: any = await db.query(statsQuery, params);
     const [byStatus]: any = await db.query(statusQuery, params);
     const [byCategory]: any = await db.query(categoryQuery, params);
     const [slaMetrics]: any = await db.query(slaQuery, params);
-    const [users]: any = await db.query('SELECT COUNT(*) as count FROM users');
     
-    // Recent activity
+    // Scoped user count
+    let userCountQuery = '';
+    let userCountParams: any[] = [];
+    if (roleName === 'Admin' && hodFacultyId) {
+      userCountQuery = `SELECT COUNT(DISTINCT u.id) as count FROM users u 
+                        LEFT JOIN students s ON u.id = s.user_id 
+                        LEFT JOIN staff st ON u.id = st.user_id 
+                        WHERE s.department_id IN (SELECT id FROM departments WHERE faculty_id = ?) 
+                        OR st.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)`;
+      userCountParams = [hodFacultyId, hodFacultyId];
+    } else if (roleName === 'Admin') {
+      userCountQuery = 'SELECT 0 as count';
+    } else {
+      userCountQuery = `SELECT COUNT(DISTINCT u.id) as count FROM users u 
+                        LEFT JOIN students s ON u.id = s.user_id 
+                        LEFT JOIN staff st ON u.id = st.user_id 
+                        WHERE s.department_id = (SELECT department_id FROM staff WHERE user_id = ?) 
+                        OR st.department_id = (SELECT department_id FROM staff WHERE user_id = ?)`;
+      userCountParams = [userId, userId];
+    }
+    const [users]: any = await db.query(userCountQuery, userCountParams);
+    
+    // Recent activity - Scoped
     let activityQuery = `SELECT csh.*, c.reference_number, u.first_name, u.last_name 
                          FROM complaint_status_history csh
                          JOIN complaints c ON csh.complaint_id = c.id
-                         JOIN users u ON csh.changed_by_user_id = u.id `;
+                         JOIN users u ON csh.changed_by_user_id = u.id 
+                         WHERE ${filterSQL.replace('department_id', 'c.department_id').replace('assigned_staff_id', 'c.assigned_staff_id')}
+                         OR csh.changed_by_user_id = ?
+                         ORDER BY csh.changed_at DESC LIMIT 15`;
     
-    if (roleName === 'Staff') activityQuery += 'WHERE c.assigned_staff_id = ? OR csh.changed_by_user_id = ? ';
-    else if (isRestricted) {
-      if (hodFacultyId) activityQuery += 'WHERE (c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?) OR csh.changed_by_user_id = ?) ';
-      else activityQuery += 'WHERE (c.department_id = (SELECT department_id FROM staff WHERE user_id = ?) OR csh.changed_by_user_id = ?) ';
-    }
-   
-    activityQuery += 'ORDER BY csh.changed_at DESC LIMIT 15';
-    
-    const [recent]: any = await db.query(activityQuery, (roleName === 'Staff' || isRestricted) ? [params[0], userId] : []);
+    const [recent]: any = await db.query(activityQuery, [...params, userId]);
 
-    let urgentCases: any[] = [];
-    if (roleName === 'Staff' || isRestricted) {
-      let uQuery = `SELECT id, reference_number, title, priority, status, created_at FROM complaints WHERE status NOT IN ('Resolved', 'Closed', 'Rejected') AND (priority IN ('High', 'Critical') OR created_at < DATE_SUB(NOW(), INTERVAL 72 HOUR))`;
-       if (roleName === 'Staff') uQuery += ' AND assigned_staff_id = ?';
-       else if (hodFacultyId) uQuery += ' AND department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
-       else uQuery += ' AND department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
-       uQuery += ' ORDER BY priority DESC, created_at ASC LIMIT 5';
-      const [rows]: any = await db.query(uQuery, [params[0]]);
-      urgentCases = rows;
-    }
+    // Urgent Cases - Scoped
+    let uQuery = `SELECT id, reference_number, title, priority, status, created_at 
+                   FROM complaints 
+                   WHERE status NOT IN ('Resolved', 'Closed', 'Rejected') 
+                   AND (priority IN ('High', 'Critical') OR created_at < DATE_SUB(NOW(), INTERVAL 72 HOUR))
+                   AND ${filterSQL}
+                   ORDER BY priority DESC, created_at ASC LIMIT 5`;
+    const [urgentCases]: any = await db.query(uQuery, params);
 
-    let recentFeedback: any[] = [];
-    if (roleName === 'Staff' || isRestricted) {
-      let fQuery = `SELECT f.*, c.reference_number, u.first_name, u.last_name, u.email FROM feedback f JOIN complaints c ON f.complaint_id = c.id JOIN students s ON f.student_id = s.id JOIN users u ON s.user_id = u.id`;
-      if (roleName === 'Staff') fQuery += ' WHERE c.assigned_staff_id = ?';
-      else if (hodFacultyId) fQuery += ' WHERE c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
-      else fQuery += ' WHERE c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
-      fQuery += ' ORDER BY f.created_at DESC LIMIT 3';
-      const [fRows]: any = await db.query(fQuery, [params[0]]);
-      recentFeedback = fRows;
-    }
+    // Recent Feedback - Scoped
+    let fQuery = `SELECT f.*, c.reference_number, u.first_name, u.last_name, u.email 
+                  FROM feedback f 
+                  JOIN complaints c ON f.complaint_id = c.id 
+                  JOIN students s ON f.student_id = s.id 
+                  JOIN users u ON s.user_id = u.id
+                  WHERE c.${filterSQL}
+                  ORDER BY f.created_at DESC LIMIT 3`;
+    const [recentFeedback]: any = await db.query(fQuery, params);
 
     res.json({
       status: 'success',
@@ -427,14 +450,19 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const params: any[] = [];
 
     // HOD Faculty Filtering
-    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
-    if (facultyId) {
-      where += ` AND (
-        u.id IN (SELECT user_id FROM students WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?))
-        OR 
-        u.id IN (SELECT user_id FROM staff WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?))
-      )`;
-      params.push(facultyId, facultyId);
+    if (adminRole === 'Admin') {
+      const facultyId = await getHODFacultyId(adminId);
+      if (facultyId) {
+        where += ` AND (
+          u.id IN (SELECT user_id FROM students WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?))
+          OR 
+          u.id IN (SELECT user_id FROM staff WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?))
+        )`;
+        params.push(facultyId, facultyId);
+      } else {
+        // FAIL-CLOSED: Unassigned HOD sees nothing
+        where += ' AND 1=0';
+      }
     }
 
     if (role) { where += ' AND r.name = ?'; params.push(role); }
@@ -625,17 +653,22 @@ export const getAuditLogs = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
-    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
     let where = 'WHERE 1=1';
     const params: any[] = [];
 
-    if (facultyId) {
-      where += ` AND u.id IN (
-        SELECT user_id FROM staff WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?)
-        UNION
-        SELECT user_id FROM students WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?)
-      )`;
-      params.push(facultyId, facultyId);
+    if (adminRole === 'Admin') {
+      const facultyId = await getHODFacultyId(adminId);
+      if (facultyId) {
+        where += ` AND u.id IN (
+          SELECT user_id FROM staff WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?)
+          UNION
+          SELECT user_id FROM students WHERE department_id IN (SELECT id FROM departments WHERE faculty_id = ?)
+        )`;
+        params.push(facultyId, facultyId);
+      } else {
+        // FAIL-CLOSED: Unassigned HOD sees no logs
+        where += ' AND 1=0';
+      }
     }
 
     const [countRows]: any = await db.query(`SELECT COUNT(*) as total FROM audit_logs al JOIN users u ON al.user_id = u.id ${where}`, params);
@@ -670,6 +703,9 @@ export const manageOrg = {
       if (facultyId) {
         query += ' WHERE id = ?';
         params.push(facultyId);
+      } else if (adminRole === 'Admin') {
+        // FAIL-CLOSED: Unassigned HOD sees nothing
+        where += ' WHERE 1=0';
       }
       query += ' ORDER BY name';
       const [rows]: any = await db.query(query, params);
@@ -694,6 +730,9 @@ export const manageOrg = {
       if (facultyId) {
         query += ' WHERE f.id = ?';
         params.push(facultyId);
+      } else if (adminRole === 'Admin') {
+        // FAIL-CLOSED: Unassigned HOD sees nothing
+        query += ' WHERE f.id = 0'; // f.id is never 0
       }
       query += ' ORDER BY f.name, d.name';
       const [rows]: any = await db.query(query, params);
@@ -791,13 +830,15 @@ export const getFeedback = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
-    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
-    let where = 'WHERE 1=1';
-    const params: any[] = [];
-
-    if (facultyId) {
-      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
-      params.push(facultyId);
+    if (adminRole === 'Admin') {
+      const facultyId = await getHODFacultyId(adminId);
+      if (facultyId) {
+        where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        params.push(facultyId);
+      } else {
+        // FAIL-CLOSED: Unassigned HOD sees nothing
+        where += ' AND 1=0';
+      }
     }
 
     const [countRows]: any = await db.query(`SELECT COUNT(*) as total FROM feedback f JOIN complaints c ON f.complaint_id = c.id ${where}`, params);
@@ -827,13 +868,15 @@ export const getFeedbackStats = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
-    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
-    let where = 'WHERE 1=1';
-    const params: any[] = [];
-
-    if (facultyId) {
-      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
-      params.push(facultyId);
+    if (adminRole === 'Admin') {
+      const facultyId = await getHODFacultyId(adminId);
+      if (facultyId) {
+        where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        params.push(facultyId);
+      } else {
+        // FAIL-CLOSED
+        where += ' AND 1=0';
+      }
     }
 
     const [avg]: any = await db.query(`SELECT AVG(f.rating) as averageRating, COUNT(f.id) as totalFeedback FROM feedback f JOIN complaints c ON f.complaint_id = c.id ${where}`, params);
@@ -858,12 +901,15 @@ export const getDetailedReports = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
-    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
-    let where = 'WHERE 1=1';
-    const params: any[] = [];
-    if (facultyId) {
-      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
-      params.push(facultyId);
+    if (adminRole === 'Admin') {
+      const facultyId = await getHODFacultyId(adminId);
+      if (facultyId) {
+        where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        params.push(facultyId);
+      } else {
+        // FAIL-CLOSED
+        where += ' AND 1=0';
+      }
     }
 
     // 1. Distribution by Category
@@ -934,12 +980,15 @@ export const exportComplaintsCsv = async (req: Request, res: Response) => {
   const adminRole = (req as any).user?.roleName;
 
   try {
-    const facultyId = adminRole === 'Admin' ? await getHODFacultyId(adminId) : null;
-    let where = 'WHERE 1=1';
-    const params: any[] = [];
-    if (facultyId) {
-      where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
-      params.push(facultyId);
+    if (adminRole === 'Admin') {
+      const facultyId = await getHODFacultyId(adminId);
+      if (facultyId) {
+        where += ' AND c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
+        params.push(facultyId);
+      } else {
+        // FAIL-CLOSED
+        where += ' AND 1=0';
+      }
     }
 
     const [rows]: any = await db.query(
@@ -985,7 +1034,7 @@ const verifyHODScope = async (userId: number, roleName: string, complaintId: num
   if (roleName !== 'Admin') return true; 
   
   const facultyId = await getHODFacultyId(userId);
-  if (!facultyId) return true; // Global Admin (not assigned to a department)
+  if (!facultyId) return false; // FAIL-CLOSED (Unassigned HOD has no scope)
   
   const [rows]: any = await db.query(
     `SELECT 1 FROM complaints c 
@@ -1001,7 +1050,7 @@ const verifyUserScope = async (adminId: number, adminRole: string, targetUserId:
   if (adminRole !== 'Admin') return true;
   
   const facultyId = await getHODFacultyId(adminId);
-  if (!facultyId) return true;
+  if (!facultyId) return false; // FAIL-CLOSED
 
   const [rows]: any = await db.query(
     `SELECT 1 FROM users u 
