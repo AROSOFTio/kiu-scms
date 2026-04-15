@@ -13,8 +13,6 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { StatSkeleton } from '../../components/ui/Skeleton';
-import { useAuth } from '../../context/AuthContext';
-import TimeDisplay from '../../components/dashboard/TimeDisplay';
 
 interface DashboardStats {
   total: number;
@@ -24,7 +22,6 @@ interface DashboardStats {
 }
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentView = searchParams.get('view');
   
@@ -88,26 +85,17 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      {/* Welcome Institutional Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-6">
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-2">
-               <div className="h-1 w-10 bg-[#008540] rounded-full" />
-               <span className="text-[10px] font-bold text-[#008540] uppercase tracking-[0.4em]">Administrative Hub</span>
-            </div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tighter leading-tight">
-              Welcome back,<br />
-              <span className="text-[#008540]">Student {user?.lastName}</span>
-            </h1>
-            {currentView && (
-              <p className="text-slate-500 mt-2 font-medium text-sm">
-                Currently inspecting: <span className="text-[#008540] font-bold uppercase tracking-widest">{viewTitle}</span>
-              </p>
-            )}
-          </div>
-          <TimeDisplay />
-        </div>
+      <div className="app-page-header">
+        <span className="app-page-kicker">Student workspace</span>
+        <h1 className="app-page-title">Complaint Overview</h1>
+        <p className="app-page-subtitle">
+          Submit new complaints, review active cases, and track responses from the relevant office.
+        </p>
+        {currentView && (
+          <p className="text-sm text-slate-500">
+            Viewing <span className="font-medium text-emerald-700">{viewTitle}</span>
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6">

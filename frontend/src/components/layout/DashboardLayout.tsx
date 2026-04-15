@@ -1,106 +1,194 @@
-import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, BarChart3, ClipboardList, Menu, LogOut, ChevronDown, ShieldCheck, History, Home, Clock, CheckCircle, Calendar } from 'lucide-react';
+import type { ComponentType } from 'react';
+import { useEffect, useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import {
+  BarChart3,
+  Building2,
+  CalendarDays,
+  ChevronRight,
+  ClipboardList,
+  FilePlus2,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import TimeDisplay from '../dashboard/TimeDisplay';
 import NotificationDropdown from './NotificationDropdown';
+
+type NavigationItem = {
+  label: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+};
+
+function getNavigation(role?: string): NavigationItem[] {
+  if (role === 'Admin') {
+    return [
+      { label: 'Dashboard', href: '/dashboard/admin', icon: ShieldCheck },
+      { label: 'Complaint Queue', href: '/dashboard/admin/complaints', icon: ClipboardList },
+      { label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
+      { label: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
+    ];
+  }
+
+  if (role === 'Staff' || role === 'Department Officer') {
+    return [
+      { label: 'Workspace', href: '/dashboard/staff', icon: LayoutDashboard },
+      { label: 'Assigned Complaints', href: '/dashboard/staff/worklist', icon: ClipboardList },
+      { label: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
+    ];
+  }
+
+  return [
+    { label: 'Dashboard', href: '/dashboard/student', icon: LayoutDashboard },
+    { label: 'Submit Complaint', href: '/dashboard/student/complaints/new', icon: FilePlus2 },
+    { label: 'My Complaints', href: '/dashboard/student/complaints', icon: FileText },
+    { label: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
+  ];
+}
+
+function getRoleMeta(role?: string) {
+  if (role === 'Admin') {
+    return {
+      title: 'HOD / Admin',
+      subtitle: 'Complaint oversight and routing',
+      badge: 'Admin',
+    };
+  }
+
+  if (role === 'Staff' || role === 'Department Officer') {
+    return {
+      title: 'Staff / Lecturer',
+      subtitle: 'Assigned complaint handling',
+      badge: 'Staff',
+    };
+  }
+
+  return {
+    title: 'Student',
+    subtitle: 'Complaint submission and tracking',
+    badge: 'Student',
+  };
+}
+
+function getPageMeta(pathname: string) {
+  const entries = [
+    { match: /^\/dashboard\/student$/, title: 'Student Dashboard', crumbs: ['Dashboard', 'Student'] },
+    { match: /^\/dashboard\/student\/complaints\/new$/, title: 'Submit Complaint', crumbs: ['Dashboard', 'Student', 'Submit Complaint'] },
+    { match: /^\/dashboard\/student\/complaints\/[^/]+$/, title: 'Complaint Details', crumbs: ['Dashboard', 'Student', 'My Complaints', 'Details'] },
+    { match: /^\/dashboard\/student\/complaints$/, title: 'My Complaints', crumbs: ['Dashboard', 'Student', 'My Complaints'] },
+    { match: /^\/dashboard\/staff$/, title: 'Staff Workspace', crumbs: ['Dashboard', 'Staff'] },
+    { match: /^\/dashboard\/staff\/worklist$/, title: 'Assigned Complaints', crumbs: ['Dashboard', 'Staff', 'Assigned Complaints'] },
+    { match: /^\/dashboard\/staff\/complaints\/[^/]+$/, title: 'Complaint Workspace', crumbs: ['Dashboard', 'Staff', 'Assigned Complaints', 'Details'] },
+    { match: /^\/dashboard\/admin$/, title: 'HOD Dashboard', crumbs: ['Dashboard', 'HOD'] },
+    { match: /^\/dashboard\/admin\/complaints$/, title: 'Complaint Queue', crumbs: ['Dashboard', 'HOD', 'Complaint Queue'] },
+    { match: /^\/dashboard\/admin\/reports$/, title: 'Reports', crumbs: ['Dashboard', 'HOD', 'Reports'] },
+    { match: /^\/dashboard\/admin\/org$/, title: 'Organisation', crumbs: ['Dashboard', 'HOD', 'Organisation'] },
+    { match: /^\/dashboard\/admin\/config$/, title: 'Settings', crumbs: ['Dashboard', 'HOD', 'Settings'] },
+    { match: /^\/dashboard\/admin\/logs$/, title: 'Audit Logs', crumbs: ['Dashboard', 'HOD', 'Audit Logs'] },
+    { match: /^\/dashboard\/appointments$/, title: 'Appointments', crumbs: ['Dashboard', 'Appointments'] },
+  ];
+
+  return entries.find((entry) => entry.match.test(pathname)) ?? { title: 'KIU SCMS', crumbs: ['Dashboard'] };
+}
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export default function DashboardLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const navigation = getNavigation(user?.role);
+  const roleMeta = getRoleMeta(user?.role);
+  const pageMeta = getPageMeta(location.pathname);
+  const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : 'U';
 
-  // Close sidebar when route changes on mobile
   useEffect(() => {
     setIsSidebarOpen(false);
-  }, [location]);
+  }, [location.pathname]);
 
-  // Lock body scroll when mobile sidebar is open
   useEffect(() => {
-    if (isSidebarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
+    document.body.style.overflow = isSidebarOpen ? 'hidden' : 'unset';
+    return () => {
       document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
+    };
   }, [isSidebarOpen]);
 
-
-  // Filter navigation based on role
-  
-  const navigation = user?.role === 'Admin' ? [
-    { name: 'Welcome Home', href: '/dashboard/admin?view=welcome', icon: Home },
-    { name: 'HOD Oversight', href: '/dashboard/admin?view=command', icon: ShieldCheck },
-    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-    { name: 'Activity Logs', href: '/dashboard/admin?view=activity', icon: History },
-    { name: 'Complaint Records', href: '/dashboard/admin/complaints', icon: FileText },
-    { name: 'Institutional Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
-  ] : (user?.role === 'Staff' || user?.role === 'Department Officer') ? [
-    { name: user?.role === 'Department Officer' ? 'Department Dashboard' : 'Staff Dashboard', href: '/dashboard/staff', icon: LayoutDashboard },
-    { name: 'Resolution Hub', href: '/dashboard/staff/worklist', icon: ClipboardList },
-    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-  ] : [
-    { name: 'My Dashboard', href: '/dashboard/student', icon: Home },
-    { name: 'Submit Complaint', href: '/dashboard/student/complaints/new', icon: PlusCircle, color: 'border-[#008540]' },
-    { name: 'My Complaints', href: '/dashboard/student/complaints', icon: FileText },
-    { name: 'Book Appointment', href: '/dashboard/appointments', icon: Calendar },
-    { name: 'Tracked Cases', href: '/dashboard/student?view=all', icon: Clock },
-    { name: 'Resolution Archive', href: '/dashboard/student?view=resolved', icon: CheckCircle },
-  ];
-
-  const userName = user?.role === 'Admin' ? 'HOD' : user ? `${user.firstName} ${user.lastName}` : 'User';
-  const userInitials = user?.role === 'Admin' ? 'H' : user ? `${user.firstName[0]}${user.lastName[0]}` : 'U';
-
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Mobile Sidebar Overlay */}
-      {/* We use conditional rendering but always apply transition to the backdrop by combining opacity. Wait, react conditional rendering might cut the transition. 
-          Given it's a simple fix without breaking the structure, we use the existing conditional standard but add better backdrop-blur. */}
+    <div className="min-h-screen bg-[var(--kiu-surface)] text-slate-900">
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-40 lg:hidden animate-in fade-in duration-300"
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-sm lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-50 w-[240px] bg-[#1a1a1a] text-slate-300 flex-shrink-0 flex flex-col transform transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) lg:relative lg:translate-x-0
-        ${isSidebarOpen ? 'translate-x-0 shadow-[20px_0_40px_rgba(0,0,0,0.5)]' : '-translate-x-full'}
-      `}>
-        {/* User Profile Area */}
-        <div className="p-6 flex flex-col items-center border-b border-white/5 bg-[#141414]">
-          <div className="w-16 h-16 rounded-full bg-slate-700 border-2 border-white/10 flex items-center justify-center text-white font-bold text-xl shadow-inner mb-4 overflow-hidden">
-            {user?.role === 'Student' ? (
-               <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100" alt="Profile" className="w-full h-full object-cover" />
-            ) : userInitials}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0 ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-700">KIU SCMS</p>
+              <h1 className="text-sm font-semibold text-slate-900">Student Complaint System</h1>
+            </div>
           </div>
-          <div className="text-center">
-            <h3 className="text-white font-bold text-sm tracking-wide uppercase leading-tight">{userName}</h3>
-            <p className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">{user?.role === 'Admin' ? 'HOD' : user?.role || 'User'}</p>
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 lg:hidden"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="border-b border-slate-100 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-700">
+              {initials}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{user ? `${user.firstName} ${user.lastName}` : 'User'}</p>
+              <p className="text-xs text-slate-500">{roleMeta.subtitle}</p>
+            </div>
+          </div>
+          <div className="mt-4 inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-700">
+            {roleMeta.badge}
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-6 overflow-y-auto custom-scrollbar">
-          <div className="px-6 text-[10px] font-bold text-slate-600 mb-4 uppercase tracking-[0.2em]">Main Navigation</div>
-          <ul className="space-y-0.5">
-            {navigation.map((item: any) => {
-              const currentFullHref = location.pathname + location.search;
-              const isActive = currentFullHref === item.href || (location.pathname === item.href && !location.search);
+        <nav className="flex-1 px-4 py-5">
+          <div className="px-3 pb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+            Navigation
+          </div>
+          <ul className="space-y-1">
+            {navigation.map((item) => {
+              const active = isActivePath(location.pathname, item.href);
               return (
-                <li key={item.name}>
+                <li key={item.href}>
                   <Link
                     to={item.href}
-                    className={`flex items-center px-6 py-3 text-[13px] font-medium transition-all duration-200 border-l-4 ${
-                      isActive 
-                        ? `text-white bg-white/5 ${item.color || 'border-emerald-500'}` 
-                        : `text-slate-400 border-transparent hover:text-white hover:bg-white/5`
+                    className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm transition ${
+                      active
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 mr-3 ${isActive && item.color ? item.color.replace('border-', 'text-') : ''}`} />
-                    {item.name}
+                    <item.icon className="h-4 w-4" />
+                    <span className="font-medium">{item.label}</span>
                   </Link>
                 </li>
               );
@@ -108,56 +196,65 @@ export default function DashboardLayout() {
           </ul>
         </nav>
 
-        {/* Brand Footer */}
-        <div className="p-4 bg-[#141414]/50 text-center">
-             <span className="text-[9px] font-bold uppercase text-slate-700 tracking-widest">KIU SCMS V1.4</span>
+        <div className="border-t border-slate-100 px-4 py-4">
+          <button
+            type="button"
+            onClick={logout}
+            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Top Sticky Header */}
-        <header className="sticky top-0 h-[64px] bg-white/80 backdrop-blur-md border-b border-slate-100 z-30 flex items-center justify-between px-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={toggleSidebar}
-              className="lg:hidden p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition-all"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="flex items-center">
-              <div className="hidden sm:block p-1 px-2.5 bg-slate-50 border border-slate-200 rounded mr-3">
-                 <Menu className="h-4 w-4 text-slate-400" />
+      <div className="lg:pl-72">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
+          <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  {pageMeta.crumbs.map((crumb, index) => (
+                    <div key={`${crumb}-${index}`} className="flex items-center gap-2">
+                      {index > 0 && <ChevronRight className="h-3 w-3 text-slate-300" />}
+                      <span className={index === pageMeta.crumbs.length - 1 ? 'font-medium text-slate-700' : ''}>{crumb}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-1 flex items-center gap-3">
+                  <h2 className="truncate text-lg font-semibold text-slate-900">{pageMeta.title}</h2>
+                  <span className="hidden rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600 sm:inline-flex">
+                    {roleMeta.title}
+                  </span>
+                </div>
               </div>
-              <h1 className="hidden sm:block text-xs font-bold text-emerald-600 uppercase tracking-[0.2em]">
-                Student Complaint and Management System
-              </h1>
-              <h1 className="sm:hidden text-lg font-bold text-emerald-600 uppercase tracking-widest">
-                SCMS
-              </h1>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-4 sm:space-x-6 text-sm font-bold text-slate-300">
-            <NotificationDropdown />
-            <Link to="/dashboard/profile" className="hidden sm:flex items-center gap-2 hover:text-white transition-colors">
-              Change password <ChevronDown className="h-3 w-3" />
-            </Link>
-            <button 
-              onClick={() => {
-                logout();
-                window.location.href = '/login';
-              }}
-              className="flex items-center gap-1.5 hover:text-white transition-colors"
-            >
-              <span className="hidden sm:inline">Logout</span> <LogOut className="h-4 w-4" />
-            </button>
+
+            <div className="flex items-center gap-3">
+              <TimeDisplay />
+              <NotificationDropdown />
+              <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm md:flex">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  <UserRound className="h-4 w-4" />
+                </div>
+                <div className="text-right leading-tight">
+                  <p className="text-sm font-medium text-slate-900">{user ? `${user.firstName} ${user.lastName}` : 'User'}</p>
+                  <p className="text-[11px] text-slate-500">{roleMeta.title}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Routed Page Container */}
-        <main className="flex-1 overflow-y-auto bg-transparent p-6 lg:p-12 text-slate-800 custom-scrollbar">
-          <div className="max-w-[1400px] mx-auto animate-slide-up">
+        <main className="px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-7xl space-y-6">
             <Outlet />
           </div>
         </main>

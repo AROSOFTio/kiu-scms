@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -172,13 +172,8 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Bottom text info recreating the student portal footer */}
-            <div className="mt-8 text-[11px] leading-tight text-[#666] font-['Arial',sans-serif] px-1">
-              Please use your assigned organizational credentials. <strong>Students</strong> can use their Registration Number or KIU student email. <strong>HODs & Staff</strong> should use their assigned institutional emails. For technical assistance, please visit the ICT office.
-              <div className="mt-4 flex justify-between">
-                <Link to="/forgot-password" className="text-[#2ea84b] hover:underline">Forgot password?</Link>
-                <Link to="/register" className="text-[#2ea84b] hover:underline">Register for SCMS</Link>
-              </div>
+            <div className="mt-8 rounded border border-slate-200 bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-600">
+              Use assigned KIU credentials only. Students can sign in with a registration number or KIU student email. Staff and HOD users should sign in with institutional credentials.
             </div>
           </div>
         </div>

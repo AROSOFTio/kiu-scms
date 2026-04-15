@@ -29,9 +29,13 @@ export default function NotificationDropdown() {
   };
 
   useEffect(() => {
-    if (isOpen) {
-      fetchNotifications();
-    }
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) fetchNotifications();
   }, [isOpen]);
 
   useEffect(() => {
@@ -59,71 +63,74 @@ export default function NotificationDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
+        className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
       >
-        <Bell className={`h-4.5 w-4.5 transition-colors ${isOpen ? 'text-emerald-500' : 'text-slate-400 group-hover:text-white'}`} />
+        <Bell className={`h-4 w-4 transition-colors ${isOpen ? 'text-emerald-600' : ''}`} />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 h-3.5 w-3.5 bg-red-600 border-2 border-[#222] rounded-full flex items-center justify-center text-[7px] font-black text-white animate-pulse">
+          <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-600 px-1 text-[9px] font-bold text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-4 w-80 bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="p-5 border-b border-white/5 bg-[#252525]">
-             <div className="flex items-center justify-between">
-                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Automated Alerts</h3>
-                <span className="text-[9px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full">Institutional Feed</span>
-             </div>
+        <div className="absolute right-0 z-50 mt-4 w-[360px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_64px_-24px_rgba(15,23,42,0.35)]">
+          <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Alerts</h3>
+                <p className="text-[11px] text-slate-500">Complaint updates and routing activity</p>
+              </div>
+              {unreadCount > 0 && (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                  {unreadCount} unread
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[360px] overflow-y-auto">
             {loading ? (
               <div className="p-8 text-center">
-                 <div className="h-5 w-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Syncing Telemetry...</p>
+                <div className="mx-auto mb-3 h-5 w-5 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+                <p className="text-xs text-slate-500">Loading alerts...</p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-12 text-center opacity-30">
-                 <CheckCircle2 className="h-8 w-8 text-slate-500 mx-auto mb-3" />
-                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Zero active alerts</p>
+              <div className="p-10 text-center">
+                <CheckCircle2 className="mx-auto mb-3 h-8 w-8 text-slate-300" />
+                <p className="text-sm font-medium text-slate-500">No new complaint alerts</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-slate-100">
                 {notifications.map(n => (
                   <div 
                     key={n.id} 
                     onClick={() => markAsRead(n.id)}
-                    className={`p-4 hover:bg-white/5 transition-colors cursor-pointer group relative ${!n.is_read ? 'bg-emerald-500/5' : ''}`}
+                    className={`relative cursor-pointer px-5 py-4 transition hover:bg-slate-50 ${!n.is_read ? 'bg-emerald-50/40' : ''}`}
                   >
-                    {!n.is_read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />}
+                    {!n.is_read && <div className="absolute inset-y-0 left-0 w-1 bg-emerald-600" />}
                     <div className="flex gap-4">
-                       <div className={`h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                         n.title.includes('Received') ? 'bg-blue-500/10 text-blue-500' : 
-                         n.title.includes('Progress') ? 'bg-amber-500/10 text-amber-500' :
-                         'bg-emerald-500/10 text-emerald-500'
-                       }`}>
-                          {n.title.includes('Received') ? <MessageSquare className="h-4 w-4" /> :
-                           n.title.includes('Progress') ? <Clock className="h-4 w-4" /> :
-                           <CheckCircle2 className="h-4 w-4" />}
-                       </div>
-                       <div className="min-w-0">
-                          <p className={`text-[11px] font-black text-white tracking-widest uppercase mb-1 ${!n.is_read ? 'opacity-100' : 'opacity-60'}`}>{n.title}</p>
-                          <p className="text-[10px] text-slate-400 font-medium leading-relaxed mb-3">{n.message}</p>
-                          <p className="text-[8px] font-black text-slate-600 uppercase tracking-tighter flex items-center">
-                            <Clock className="h-2.5 w-2.5 mr-1" /> {new Date(n.created_at).toLocaleString()}
-                          </p>
-                       </div>
+                      <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${
+                        n.title.includes('Received') ? 'bg-blue-50 text-blue-600' :
+                        n.title.includes('Progress') ? 'bg-amber-50 text-amber-600' :
+                        'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        {n.title.includes('Received') ? <MessageSquare className="h-4 w-4" /> :
+                         n.title.includes('Progress') ? <Clock className="h-4 w-4" /> :
+                         <CheckCircle2 className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="mb-1 text-sm font-medium text-slate-900">{n.title}</p>
+                        <p className="mb-2 text-xs leading-relaxed text-slate-600">{n.message}</p>
+                        <p className="flex items-center text-[11px] text-slate-400">
+                          <Clock className="mr-1 h-3 w-3" /> {new Date(n.created_at).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="p-4 border-t border-white/5 text-center bg-[#181818]">
-             <button className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Clear All History</button>
           </div>
         </div>
       )}

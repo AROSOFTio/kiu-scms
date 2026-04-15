@@ -16,30 +16,18 @@ import {
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { Skeleton } from '../../components/ui/Skeleton';
-import TimeDisplay from '../../components/dashboard/TimeDisplay';
 
 // --- Sub-Components ---
 
 const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
   <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-      <div className="max-w-2xl">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-px w-8 bg-emerald-500" />
-          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.3em]">HOD Governance Center</span>
-        </div>
-        <h1 className="text-5xl font-bold text-slate-900 tracking-tighter mb-4 leading-[0.9]">
-          Welcome back,<br />
-          <span className="text-emerald-600">HOD {user?.lastName}</span>
-        </h1>
-        <p className="text-lg text-slate-500 font-medium leading-relaxed">
-          The Student Complaint and Management System is fully operational. 
-          You currently have <span className="text-slate-900 font-bold">{stats?.total || 0} active Complaints</span> requiring oversight.
+      <div className="app-page-header max-w-2xl">
+        <span className="app-page-kicker">HOD dashboard</span>
+        <h1 className="app-page-title">Complaint Oversight</h1>
+        <p className="app-page-subtitle">
+          Review institution-wide complaint performance, route pending cases, and monitor unresolved matters{user?.lastName ? ` for HOD ${user.lastName}` : ''}.
         </p>
       </div>
-      
-      <TimeDisplay />
-    </div>
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       <Link to="/dashboard/admin/complaints" className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden text-left">
@@ -226,7 +214,7 @@ const ActivityLogView = ({ stats }: { stats: any }) => (
 
 export default function AdminDashboard() {
   const [searchParams] = useSearchParams();
-  const currentView = searchParams.get('view') || 'welcome';
+  const currentView = searchParams.get('view') || 'command';
   
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);

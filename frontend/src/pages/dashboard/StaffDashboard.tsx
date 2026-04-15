@@ -16,7 +16,6 @@ import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { CardSkeleton } from '../../components/ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
-import TimeDisplay from '../../components/dashboard/TimeDisplay';
 
 interface DashboardStats {
   total: number;
@@ -90,20 +89,12 @@ export default function StaffDashboard() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-px w-6 bg-[#008540]" />
-              <span className="text-[10px] font-bold text-[#008540] uppercase tracking-widest">Resolution Hub</span>
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900 tracking-tighter">
-              Welcome back,<br />
-              <span className="text-[#008540]">{user?.role === 'Department Officer' ? 'Officer' : 'Staff'} {user?.lastName}</span>
-            </h1>
-          </div>
-          <TimeDisplay />
-        </div>
+      <div className="app-page-header">
+        <span className="app-page-kicker">Staff workspace</span>
+        <h1 className="app-page-title">Assigned Complaints</h1>
+        <p className="app-page-subtitle">
+          Review the complaints in your queue, update statuses, and keep a clear internal action trail.
+        </p>
       </div>
 
       <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl border border-slate-100">
@@ -226,7 +217,7 @@ export default function StaffDashboard() {
                      {c.title}
                    </h4>
                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
-                     Ref: {c.reference_number} • {c.status}
+                     Ref: {c.reference_number} | {c.status}
                    </p>
                 </Link>
               ))
