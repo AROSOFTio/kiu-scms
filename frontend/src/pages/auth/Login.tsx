@@ -1,49 +1,88 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowRight,
+  BriefcaseBusiness,
+  Eye,
+  EyeOff,
+  FileStack,
+  GraduationCap,
+  ShieldCheck,
+} from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
 const loginSchema = z.object({
-  identifier: z.string().min(1, 'Institutional Email, Staff ID, or Student Reg Number is required'),
+  identifier: z.string().min(1, 'Enter your KIU email, staff ID, or student number'),
   password: z.string().min(1, 'Password is required'),
-  role: z.string().min(1, 'Please select your role'),
-  facultyId: z.string().min(1, 'Please select your College/School'),
+  accessMode: z.enum(['Student', 'Staff']),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+const accessOptions: Array<{
+  value: LoginForm['accessMode'];
+  label: string;
+  detail: string;
+  icon: typeof GraduationCap;
+}> = [
+  {
+    value: 'Student',
+    label: 'Student',
+    detail: 'Submit and track complaints',
+    icon: GraduationCap,
+  },
+  {
+    value: 'Staff',
+    label: 'Staff / HOD',
+    detail: 'Review, route, and update cases',
+    icon: BriefcaseBusiness,
+  },
+];
+
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState('');
-  const [faculties, setFaculties] = useState<{id: number, name: string}[]>([]);
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    api.get('/auth/faculties').then(res => {
-      if (res.data.data) setFaculties(res.data.data);
-    }).catch(err => console.error('Failed to fetch faculties', err));
-  }, []);
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      accessMode: 'Student',
+      identifier: '',
+      password: '',
+    },
+  });
+
+  const accessMode = watch('accessMode');
 
   const onSubmit = async (data: LoginForm) => {
     setApiError('');
+
     try {
-      const res = await api.post('/auth/login', data);
+      const payload = {
+        identifier: data.identifier.trim(),
+        password: data.password,
+        role: data.accessMode === 'Student' ? 'Student' : undefined,
+      };
+
+      const res = await api.post('/auth/login', payload);
+
       if (res.data.status === 'success') {
         const { user, token } = res.data;
         login(token, user);
-        
-        // Dynamic Role-Based Redirection
+
         if (user.role === 'Admin') navigate('/dashboard/admin');
         else if (user.role === 'Staff' || user.role === 'Department Officer') navigate('/dashboard/staff');
         else navigate('/dashboard/student');
@@ -54,130 +93,179 @@ export default function Login() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center relative bg-gray-900"
-      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }}
-    >
-      <div className="absolute inset-0 bg-[#35393c]/50" />
+    <div className="min-h-screen bg-[#eef2f6]">
+      <div className="relative isolate min-h-screen overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.08),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(22,163,74,0.08),_transparent_32%)]" />
+        <div className="absolute inset-y-0 left-0 hidden w-1/2 border-r border-white/40 bg-white/30 lg:block" />
 
-      <div className="relative z-10 w-full max-w-[420px] mx-4 pt-12">
-        {/* Card */}
-        <div className="bg-white">
-          {/* No green top bar replicating the native portal */}
-
-          <div className="px-10 py-10">
-            {/* Logo area replicating the native Student Portal */}
-            <div className="flex flex-col items-center mb-6 font-['Arial',sans-serif]">
-              <img src="/kiu-logo.png" alt="Kampala International University" className="w-[200px] object-contain mix-blend-multiply" />
-              <h1 className="text-[20px] font-black text-slate-800 mt-4 leading-tight text-center uppercase tracking-tighter">
-                Online Student Complaint <br /> Management System
-              </h1>
-            </div>
-
-            {/* API Error */}
-            {apiError && (
-              <div className="mb-5 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded">
-                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>{apiError}</span>
+        <div className="relative mx-auto flex min-h-screen max-w-6xl items-center px-5 py-10 sm:px-8">
+          <div className="grid w-full gap-10 lg:grid-cols-[1.1fr_420px] lg:gap-14">
+            <section className="flex flex-col justify-center">
+              <div className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-slate-600 shadow-sm">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                KIU Student Complaint System
               </div>
-            )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-              {/* Identifier */}
-              <div>
-                <input
-                  type="text"
-                  autoComplete="username"
-                  {...register('identifier')}
-                  className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors ${
-                    errors.identifier ? 'border-red-500' : 'border-[#d0d0d0]'
-                  }`}
-                  placeholder="Email, Staff ID, or Student Reg No."
-                />
-                {errors.identifier && (
-                  <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.identifier.message}</p>
+              <div className="max-w-xl">
+                <img src="/kiu-logo.png" alt="Kampala International University" className="mb-6 h-14 w-auto object-contain mix-blend-multiply" />
+                <h1 className="max-w-lg text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+                  Complaint management for students, staff, and HOD offices.
+                </h1>
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+                  Submit concerns, route cases, track action, and close complaints through one structured KIU workflow.
+                </p>
+              </div>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Submit</p>
+                  <p className="mt-2 text-sm text-slate-700">Formal complaints with clear issue categories and attachments.</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Review</p>
+                  <p className="mt-2 text-sm text-slate-700">HOD and responsible offices review, route, and update status.</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Track</p>
+                  <p className="mt-2 text-sm text-slate-700">Students follow progress from submission through resolution.</p>
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium text-slate-600">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">Submitted</span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">Under Review</span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">In Progress</span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">Resolved</span>
+              </div>
+            </section>
+
+            <section className="w-full">
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:p-8">
+                <div className="mb-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Access</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-900">Sign in</h2>
+                  <p className="mt-2 text-sm text-slate-600">Use your assigned KIU account credentials.</p>
+                </div>
+
+                {apiError && (
+                  <div className="mb-5 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                    <span>{apiError}</span>
+                  </div>
                 )}
-              </div>
 
-              {/* Password */}
-              <div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    {...register('password')}
-                    className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors pr-10 ${
-                      errors.password ? 'border-red-500' : 'border-[#d0d0d0]'
-                    }`}
-                    placeholder="Enter your password"
-                  />
+                <div className="mb-6 grid gap-3 sm:grid-cols-2">
+                  {accessOptions.map(({ value, label, detail, icon: Icon }) => {
+                    const isActive = accessMode === value;
+
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setValue('accessMode', value, { shouldValidate: true })}
+                        className={`rounded-2xl border px-4 py-4 text-left transition ${
+                          isActive
+                            ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                              isActive ? 'bg-white/12 text-white' : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold">{label}</p>
+                            <p className={`text-xs ${isActive ? 'text-slate-200' : 'text-slate-500'}`}>{detail}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+                  <input type="hidden" {...register('accessMode')} />
+
+                  <div>
+                    <label htmlFor="identifier" className="mb-2 block text-sm font-medium text-slate-700">
+                      {accessMode === 'Student' ? 'Registration number or KIU email' : 'Staff ID or institutional email'}
+                    </label>
+                    <input
+                      id="identifier"
+                      type="text"
+                      autoComplete="username"
+                      {...register('identifier')}
+                      className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 ${
+                        errors.identifier ? 'border-red-500' : 'border-slate-200'
+                      }`}
+                      placeholder={accessMode === 'Student' ? 'e.g. BSC/01/1234 or name@stud.kiu.ac.ug' : 'e.g. ST-2048 or name@kiu.ac.ug'}
+                    />
+                    {errors.identifier && (
+                      <p className="mt-1.5 flex items-center text-xs text-red-500">
+                        <AlertCircle className="mr-1 h-3 w-3" />
+                        {errors.identifier.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-700">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        {...register('password')}
+                        className={`w-full rounded-2xl border bg-white px-4 py-3 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 ${
+                          errors.password ? 'border-red-500' : 'border-slate-200'
+                        }`}
+                        placeholder="Enter your password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="mt-1.5 flex items-center text-xs text-red-500">
+                        <AlertCircle className="mr-1 h-3 w-3" />
+                        {errors.password.message}
+                      </p>
+                    )}
+                  </div>
+
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {isSubmitting ? 'Signing in...' : 'Sign in'}
+                    {!isSubmitting && <ArrowRight className="h-4 w-4" />}
                   </button>
-                </div>
-                {errors.password && (
-                  <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.password.message}</p>
-                )}
-              </div>
+                </form>
 
-              {/* Role Selection */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <select
-                    {...register('role')}
-                    className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors bg-white ${
-                      errors.role ? 'border-red-500' : 'border-[#d0d0d0]'
-                    }`}
-                  >
-                    <option value="">-- Role --</option>
-                    <option value="Student">Student</option>
-                    <option value="Staff">Staff</option>
-                    <option value="Admin">HOD</option>
-                  </select>
-                  {errors.role && (
-                    <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.role.message}</p>
-                  )}
-                </div>
-
-                {/* College Selection */}
-                <div>
-                  <select
-                    {...register('facultyId')}
-                    className={`w-full px-4 py-3 border text-[13px] text-gray-700 outline-none focus:border-[#2ea84b] transition-colors bg-white ${
-                      errors.facultyId ? 'border-red-500' : 'border-[#d0d0d0]'
-                    }`}
-                  >
-                    <option value="">-- College --</option>
-                    {faculties.map(f => (
-                      <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
-                  {errors.facultyId && (
-                    <p className="mt-1 flex items-center text-xs text-red-500"><AlertCircle className="h-3 w-3 mr-1"/>{errors.facultyId.message}</p>
-                  )}
+                <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  <div className="flex items-start gap-3">
+                    <FileStack className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-500" />
+                    <p>
+                      Student access is validated against student records. Staff and HOD access is determined automatically from the account assigned in the system.
+                    </p>
+                  </div>
                 </div>
               </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3 px-4 bg-[#2ea84b] hover:bg-[#258a3d] disabled:opacity-70 text-white text-[15px] rounded-sm transition-colors mt-2"
-              >
-                {isSubmitting ? 'Signing in...' : 'Next'}
-              </button>
-            </form>
-
-            <div className="mt-8 rounded border border-slate-200 bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-600">
-              Use assigned KIU credentials only. Students can sign in with a registration number or KIU student email. Staff and HOD users should sign in with institutional credentials.
-            </div>
+            </section>
           </div>
         </div>
-
       </div>
     </div>
   );
