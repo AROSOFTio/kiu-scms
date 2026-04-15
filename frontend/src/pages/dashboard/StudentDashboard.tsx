@@ -220,17 +220,15 @@ export default function StudentDashboard() {
     },
   ];
 
-  const actionCards: { label: string; description: string; icon: LucideIcon; href: string; tone: string }[] = [
+  const actionCards: { label: string; icon: LucideIcon; href: string; tone: string }[] = [
     {
       label: 'Submit Complaint',
-      description: 'Create a formal complaint record.',
       icon: FilePlus2,
       href: '/dashboard/student/complaints/new',
       tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-900',
     },
     {
       label: 'Track Complaints',
-      description: 'Review status, responses, and progress.',
       icon: ListFilter,
       href: '/dashboard/student/complaints',
       tone: 'border-blue-200 bg-blue-50/70 text-blue-900',
@@ -240,7 +238,6 @@ export default function StudentDashboard() {
   if (appointmentsActive) {
     actionCards.push({
       label: 'Appointments',
-      description: 'Review appointment requests and approvals.',
       icon: Calendar,
       href: '/dashboard/appointments',
       tone: 'border-violet-200 bg-violet-50/70 text-violet-900',
@@ -266,12 +263,7 @@ export default function StudentDashboard() {
       <div className="app-page-header">
         <span className="app-page-kicker">Student dashboard</span>
         <h1 className="app-page-title">Complaint overview</h1>
-        <p className="app-page-subtitle">Submit and track complaints from one home screen.</p>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
-        <p className="text-sm font-medium text-slate-700">Complaint desk</p>
-        <p className="mt-1 text-sm text-slate-500">Monitor submissions, follow updates, and keep records in one place.</p>
+        <p className="app-page-subtitle">Track, submit, and review.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -298,10 +290,7 @@ export default function StudentDashboard() {
             className={`group rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${action.tone}`}
           >
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-lg font-semibold">{action.label}</p>
-                <p className="mt-1 text-sm opacity-90">{action.description}</p>
-              </div>
+              <p className="text-lg font-semibold">{action.label}</p>
               <div className="rounded-2xl bg-white/70 p-3">
                 <action.icon className="h-5 w-5" />
               </div>
@@ -320,7 +309,6 @@ export default function StudentDashboard() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
-                <p className="mt-1 text-sm text-slate-500">Search and filter current complaint records.</p>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -330,7 +318,7 @@ export default function StudentDashboard() {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     type="text"
-                    placeholder="Search complaints"
+                    placeholder="Search"
                     className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 sm:w-64"
                   />
                 </label>
@@ -342,7 +330,7 @@ export default function StudentDashboard() {
                 >
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
-                      {status === 'All' ? 'All statuses' : status}
+                      {status}
                     </option>
                   ))}
                 </select>
@@ -405,8 +393,8 @@ export default function StudentDashboard() {
               <div className="p-8">
                 <EmptyState
                   icon={FileSearch}
-                  title="No complaints found"
-                  description="Try a different search term or clear the current filter."
+                  title="No records"
+                  description="No matching complaints."
                   actionLabel="Submit Complaint"
                   actionLink="/dashboard/student/complaints/new"
                 />
@@ -419,7 +407,6 @@ export default function StudentDashboard() {
           <div className="app-card p-6">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-slate-900">Alerts</h2>
-              <p className="mt-1 text-sm text-slate-500">Complaint updates and approvals.</p>
             </div>
 
             <div className="space-y-3">
@@ -437,8 +424,7 @@ export default function StudentDashboard() {
                 ))
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
-                  <p>No new alerts.</p>
-                  <p className="mt-2">Examples: Your complaint has been updated. Appointment approved.</p>
+                  No alerts.
                 </div>
               )}
             </div>
