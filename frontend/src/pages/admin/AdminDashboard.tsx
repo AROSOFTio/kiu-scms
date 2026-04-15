@@ -1,261 +1,317 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { 
-  Users, 
-  FileText, 
-  CheckCircle2, 
-  TrendingUp, 
-  ShieldCheck,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  History,
-  ArrowRight,
-  BarChart3
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Route,
+  TrendingUp,
+} from 'lucide-react';
 import api from '../../lib/api';
-import { Skeleton } from '../../components/ui/Skeleton';
+import { StatSkeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
 
-// --- Sub-Components ---
+interface StatusCount {
+  status: string;
+  count: number;
+}
 
-const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
-  <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div className="app-page-header max-w-2xl">
-        <span className="app-page-kicker">Admin dashboard</span>
-        <h1 className="app-page-title">Complaint Oversight</h1>
-        <p className="app-page-subtitle">
-          Review institution-wide complaint performance, route pending cases, and monitor unresolved matters{user?.lastName ? ` for ${user.lastName}` : ''}. There are currently {stats?.total || 0} complaint records in the system.
-        </p>
-      </div>
+interface DashboardStatsResponse {
+  total: number;
+  byStatus: StatusCount[];
+  slaMetrics?: {
+    breached?: number;
+    onTrack?: number;
+  };
+  urgentCases?: Array<{ id: number }>;
+}
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <Link to="/dashboard/admin/complaints" className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden text-left">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-          <FileText size={120} />
-        </div>
-        <div className="relative z-10 text-emerald-600 mb-6">
-          <FileText className="h-10 w-10" />
-        </div>
-        <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Active Cases</h3>
-        <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">Review and delegate recently filed institutional Complaints.</p>
-        <div className="flex items-center text-sm font-bold text-emerald-600 group-hover:gap-2 transition-all">
-          Manage Repository <ArrowRight className="h-4 w-4 ml-1" />
-        </div>
-      </Link>
+interface ComplaintRecord {
+  id: number;
+  reference_number: string;
+  status: string;
+  category_name: string;
+  created_at: string;
+  student_first_name: string;
+  student_last_name: string;
+}
 
-      <Link to="/dashboard/admin/reports" className="group bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500 relative overflow-hidden text-left">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-          <BarChart3 size={120} />
-        </div>
-        <div className="relative z-10 text-emerald-600 mb-6">
-          <BarChart3 className="h-10 w-10" />
-        </div>
-        <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">System Performance</h3>
-        <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">Audit system resolution metrics and institutional efficiency.</p>
-        <div className="flex items-center text-sm font-bold text-emerald-600 group-hover:gap-2 transition-all">
-          View Analytical Reports <ArrowRight className="h-4 w-4 ml-1" />
-        </div>
-      </Link>
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
-      <Link to="/dashboard/appointments" className="group bg-emerald-600 p-10 rounded-[40px] shadow-2xl shadow-emerald-900/20 text-white transition-all duration-500 relative overflow-hidden text-left block">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-          <Clock size={120} />
-        </div>
-        <div className="relative z-10 text-emerald-200 mb-6 font-bold text-xs uppercase tracking-widest group-hover:text-white transition-colors">Calendar Management</div>
-        <h3 className="text-2xl font-bold mb-2 tracking-tight">Appointments</h3>
-        <p className="text-emerald-100/70 font-medium text-sm mb-6 leading-relaxed">Manage student consultation requests and office hours.</p>
-        <div className="flex items-center text-sm font-bold text-white bg-white/10 w-fit px-6 py-3 rounded-2xl group-hover:bg-white/20 transition-all">
-          Open Calendar
-        </div>
-      </Link>
-    </div>
-  </div>
-);
-
-const InstitutionalCommandView = ({ stats }: { stats: any }) => {
-  const kpis = [
-    { label: 'Total Complaints', value: stats?.total || 0, icon: FileText, change: '+12%', trending: 'up', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Total Users', value: stats?.totalUsers || 0, icon: Users, change: '+5%', trending: 'up', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Resolution Rate', value: '84%', icon: CheckCircle2, change: '+2.4%', trending: 'up', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Avg. Response', value: '4.2h', icon: TrendingUp, change: '-15%', trending: 'down', color: 'text-amber-600', bg: 'bg-amber-50' },
-  ];
-
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Admin Oversight</h1>
-          <p className="text-gray-500 font-medium">Real-time performance metrics and department-wide visibility.</p>
-        </div>
-        <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm">
-           <button className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-slate-900 text-white rounded-xl">Last 24h</button>
-           <button className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">Last 7d</button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
-            <div className="flex justify-between items-start mb-6">
-              <div className={`${kpi.bg} ${kpi.color} p-4 rounded-2xl transition-transform group-hover:scale-110`}>
-                <kpi.icon className="h-6 w-6" />
-              </div>
-              <div className={`flex items-center text-[11px] font-bold uppercase ${kpi.trending === 'up' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {kpi.trending === 'up' ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                {kpi.change}
-              </div>
-            </div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-            <p className="text-4xl font-bold text-gray-900 tracking-tighter tabular-nums">{kpi.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-10 rounded-[40px] border border-gray-100 shadow-sm h-[480px] flex flex-col relative overflow-hidden">
-           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-emerald-700" />
-           <div className="flex items-center justify-between mb-12">
-              <h3 className="text-xl font-black text-gray-900 tracking-tight">Institutional Response Trends</h3>
-              <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Resolution</div>
-                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-200" /> Submissions</div>
-              </div>
-           </div>
-           <div className="flex-1 flex flex-col items-center justify-center opacity-20">
-              <TrendingUp size={80} className="text-slate-300 mb-4" />
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Intelligent Charting Offline</p>
-           </div>
-        </div>
-
-        <div className="bg-white p-10 rounded-[40px] border border-gray-100 shadow-sm">
-           <h3 className="text-xl font-black text-gray-900 tracking-tight mb-10">Institutional Mix</h3>
-           <div className="space-y-8">
-              {[
-                { label: 'Students', count: 1240, percentage: 85, color: 'bg-indigo-500' },
-                { label: 'Staff members', count: 180, percentage: 12, color: 'bg-emerald-500' },
-                { label: 'Admins', count: 15, percentage: 3, color: 'bg-amber-500' },
-              ].map((item) => (
-                <div key={item.label} className="space-y-3">
-                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.2em]">
-                     <span className="text-gray-400">{item.label}</span>
-                     <span className="text-gray-900">{item.count}</span>
-                  </div>
-                  <div className="h-2.5 bg-slate-50 rounded-full overflow-hidden">
-                     <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.percentage}%` }} />
-                  </div>
-                </div>
-              ))}
-           </div>
-        </div>
-      </div>
-    </div>
-  );
+const getStatusTone = (status: string) => {
+  switch (status) {
+    case 'Resolved':
+    case 'Closed':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+    case 'Rejected':
+      return 'bg-rose-50 text-rose-700 border-rose-100';
+    case 'In Progress':
+      return 'bg-amber-50 text-amber-700 border-amber-100';
+    case 'Awaiting Student':
+      return 'bg-violet-50 text-violet-700 border-violet-100';
+    case 'Forwarded':
+    case 'Under Review':
+      return 'bg-blue-50 text-blue-700 border-blue-100';
+    case 'Submitted':
+    default:
+      return 'bg-slate-100 text-slate-700 border-slate-200';
+  }
 };
 
-const ActivityLogView = ({ stats }: { stats: any }) => (
-  <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
-    <div className="max-w-2xl">
-      <h1 className="text-3xl font-black text-gray-900 tracking-tight">System Events Audit</h1>
-      <p className="text-gray-500 font-medium leading-relaxed mt-2">
-        A real-time ledger of institutional governance actions across the Kampala International University network.
-      </p>
-    </div>
-
-    <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden">
-      <div className="p-8 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center">
-          <Clock className="h-4 w-4 mr-3 text-emerald-600" />
-          Real-time Audit Stream
-        </h3>
-        <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-full">
-          Live Connection Active
-        </div>
-      </div>
-      
-      <div className="divide-y divide-gray-50">
-        {stats?.recentActivity?.map((act: any) => (
-          <div key={act.id} className="p-8 hover:bg-slate-50 transition-all group flex items-start gap-6">
-             <div className="h-12 w-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-400 font-black group-hover:border-emerald-200 group-hover:text-emerald-600 transition-all">
-                {act.first_name[0]}{act.last_name[0]}
-             </div>
-             <div className="flex-1 min-w-0 pt-1">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-base font-bold text-slate-900 leading-none">
-                    {act.first_name} {act.last_name}
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-tight tabular-nums">
-                    {new Date(act.changed_at).toLocaleTimeString()}
-                  </p>
-                </div>
-                <p className="text-sm text-slate-500 font-medium">
-                  Institutional oversight action on case <span className="text-emerald-700 font-black">#{act.reference_number}</span>
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-tight">
-                    <History className="h-3 w-3" /> Event Log ID: {act.id.toString().substring(0, 8)}
-                  </div>
-                </div>
-             </div>
-          </div>
-        ))}
-        {(!stats?.recentActivity || stats.recentActivity.length === 0) && (
-          <div className="p-20 text-center">
-            <ShieldCheck className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-sm font-black text-slate-400 uppercase tracking-widest">No recent audit events discovered</p>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-);
-
-// --- Main Page Component ---
+function statusCount(statuses: StatusCount[], keys: string[]) {
+  return statuses
+    .filter((item) => keys.includes(item.status))
+    .reduce((sum, item) => sum + Number(item.count || 0), 0);
+}
 
 export default function AdminDashboard() {
-  const [searchParams] = useSearchParams();
-  const currentView = searchParams.get('view') || 'command';
-  
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
+  const [recentComplaints, setRecentComplaints] = useState<ComplaintRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboard = async () => {
+      setLoading(true);
+      setError('');
+
       try {
-        const [statsRes, userRes] = await Promise.all([
+        const [statsRes, complaintsRes] = await Promise.all([
           api.get('/admin/dashboard'),
-          api.get('/auth/me')
+          api.get('/admin/complaints', { params: { page: 1, limit: 8 } }),
         ]);
-        setStats(statsRes.data.data);
-        setUser(userRes.data.data);
+
+        setStats(statsRes.data.data || null);
+        setRecentComplaints(complaintsRes.data.data || []);
       } catch (err) {
-        console.error('Failed to resolve institutional oversight metrics');
+        setError('Unable to load dashboard data.');
       } finally {
-        setTimeout(() => setLoading(false), 500);
+        setLoading(false);
       }
     };
-    fetchStats();
+
+    fetchDashboard();
   }, []);
 
-  if (loading) {
+  const byStatus = stats?.byStatus || [];
+  const pendingCount = statusCount(byStatus, ['Submitted', 'Under Review', 'Forwarded', 'In Progress', 'Awaiting Student']);
+  const resolvedCount = statusCount(byStatus, ['Resolved', 'Closed']);
+  const escalatedCount = stats?.urgentCases?.length || 0;
+
+  const priorityAlerts = useMemo(() => {
+    const overdue = Number(stats?.slaMetrics?.breached || 0);
+    const pendingApprovals = statusCount(byStatus, ['Submitted', 'Under Review']);
+    const unresolvedRouted = statusCount(byStatus, ['Forwarded', 'In Progress', 'Awaiting Student']);
+
+    return [
+      {
+        label: 'Overdue complaints',
+        value: overdue,
+        tone: overdue > 0 ? 'border-rose-100 bg-rose-50' : 'border-slate-200 bg-white',
+      },
+      {
+        label: 'Pending approvals',
+        value: pendingApprovals,
+        tone: pendingApprovals > 0 ? 'border-amber-100 bg-amber-50' : 'border-slate-200 bg-white',
+      },
+      {
+        label: 'Unresolved routed complaints',
+        value: unresolvedRouted,
+        tone: unresolvedRouted > 0 ? 'border-blue-100 bg-blue-50' : 'border-slate-200 bg-white',
+      },
+    ];
+  }, [byStatus, stats?.slaMetrics?.breached]);
+
+  const statCards = [
+    {
+      label: 'Total Complaints',
+      value: stats?.total || 0,
+      icon: FileText,
+      tone: 'bg-gradient-to-br from-slate-800 to-slate-700 text-white',
+      iconTone: 'bg-white/20 text-white',
+    },
+    {
+      label: 'Pending',
+      value: pendingCount,
+      icon: Clock3,
+      tone: 'bg-gradient-to-br from-amber-500 to-amber-400 text-white',
+      iconTone: 'bg-white/20 text-white',
+    },
+    {
+      label: 'Resolved',
+      value: resolvedCount,
+      icon: CheckCircle2,
+      tone: 'bg-gradient-to-br from-emerald-600 to-emerald-500 text-white',
+      iconTone: 'bg-white/20 text-white',
+    },
+    {
+      label: 'Escalated',
+      value: escalatedCount,
+      icon: TrendingUp,
+      tone: 'bg-gradient-to-br from-rose-600 to-rose-500 text-white',
+      iconTone: 'bg-white/20 text-white',
+    },
+  ];
+
+  const quickActions = [
+    { label: 'Review Complaints', href: '/dashboard/admin/complaints', icon: FileText, tone: 'border-slate-200 bg-white text-slate-900' },
+    { label: 'Route Complaint', href: '/dashboard/admin/complaints', icon: Route, tone: 'border-blue-200 bg-blue-50 text-blue-900' },
+    { label: 'View Reports', href: '/dashboard/admin/reports', icon: TrendingUp, tone: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
+    { label: 'View Appointments', href: '/dashboard/appointments', icon: Clock3, tone: 'border-violet-200 bg-violet-50 text-violet-900' },
+  ];
+
+  if (error) {
     return (
-      <div className="p-8 space-y-8 max-w-[1400px] mx-auto animate-pulse">
-        <Skeleton className="h-12 w-1/3 mb-10 rounded-2xl" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-           <Skeleton className="h-64 rounded-[40px]" />
-           <Skeleton className="h-64 rounded-[40px]" />
-           <Skeleton className="h-64 rounded-[40px]" />
-        </div>
+      <div className="mx-auto mt-16 max-w-2xl">
+        <EmptyState
+          icon={AlertCircle}
+          title="Dashboard unavailable"
+          description={error}
+          actionLabel="Reload"
+          actionLink="/dashboard/admin"
+        />
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto pb-20">
-      {currentView === 'welcome' && <WelcomeView user={user} stats={stats} />}
-      {currentView === 'command' && <InstitutionalCommandView stats={stats} />}
-      {currentView === 'activity' && <ActivityLogView stats={stats} />}
+    <div className="space-y-7 pb-16">
+      <div className="app-page-header">
+        <span className="app-page-kicker">HOD / Admin</span>
+        <h1 className="app-page-title">Complaint control center</h1>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {loading
+          ? Array(4)
+              .fill(0)
+              .map((_, index) => <StatSkeleton key={index} />)
+          : statCards.map((card) => (
+              <div key={card.label} className={`rounded-3xl border p-6 shadow-sm ${card.tone}`}>
+                <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${card.iconTone}`}>
+                  <card.icon className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-medium text-white/85">{card.label}</p>
+                <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{card.value}</p>
+              </div>
+            ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {quickActions.map((action) => (
+          <Link
+            key={action.label}
+            to={action.href}
+            className={`group rounded-3xl border p-5 transition hover:-translate-y-0.5 ${action.tone}`}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-base font-semibold">{action.label}</p>
+              <div className="rounded-xl bg-white/80 p-2.5">
+                <action.icon className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-end text-sm font-semibold">
+              Open
+              <ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-0.5" />
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="app-card p-6">
+          <h2 className="text-lg font-semibold text-slate-900">Priority alerts</h2>
+          <div className="mt-5 space-y-3">
+            {loading
+              ? Array(3)
+                  .fill(0)
+                  .map((_, index) => <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />)
+              : priorityAlerts.map((item) => (
+                  <div key={item.label} className={`rounded-2xl border p-4 ${item.tone}`}>
+                    <p className="text-sm text-slate-600">{item.label}</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">{item.value}</p>
+                  </div>
+                ))}
+          </div>
+        </aside>
+
+        <section className="app-card overflow-hidden">
+          <div className="border-b border-slate-200 px-6 py-5">
+            <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="space-y-3 p-6">
+                {Array(5)
+                  .fill(0)
+                  .map((_, index) => (
+                    <div key={index} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+                  ))}
+              </div>
+            ) : recentComplaints.length > 0 ? (
+              <table className="min-w-full text-left">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold">Ref No</th>
+                    <th className="px-6 py-4 font-semibold">Student</th>
+                    <th className="px-6 py-4 font-semibold">Type</th>
+                    <th className="px-6 py-4 font-semibold">Status</th>
+                    <th className="px-6 py-4 font-semibold">Date</th>
+                    <th className="px-6 py-4 text-right font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recentComplaints.map((complaint) => (
+                    <tr key={complaint.id} className="transition hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                          {complaint.reference_number}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-900">
+                        {complaint.student_first_name} {complaint.student_last_name}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{complaint.category_name}</td>
+                      <td className="px-6 py-4">
+                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusTone(complaint.status)}`}>
+                          {complaint.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{formatDate(complaint.created_at)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <Link
+                          to="/dashboard/admin/complaints"
+                          className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+                        >
+                          Review
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-8">
+                <EmptyState
+                  icon={FileText}
+                  title="No records"
+                  description="No complaints available."
+                  actionLabel="Review Complaints"
+                  actionLink="/dashboard/admin/complaints"
+                />
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
