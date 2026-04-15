@@ -1,10 +1,11 @@
 #!/bin/bash
 # SCMS Redeployment Script (Docker)
+set -euo pipefail
 
 echo "🚀 Starting Redeployment..."
 
 # Pull latest changes
-git pull origin main
+exec bash ./scripts/deploy.sh
 
 # Build and restart containers
 docker-compose down

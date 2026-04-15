@@ -9,22 +9,38 @@ This platform is a fully decoupled **TypeScript** monorepo:
 - **Database**: MySQL 8.0 containing advanced relational tables measuring complaint workflows, staff assignments, and audit tracking.
 - **Infrastructure**: Ultra-secure multi-container Docker cluster isolating backend communication and proxy-passing exclusively via NGINX.
 
-## 📦 Production Deployment
-The application utilizes an advanced deploy-and-forget workflow designed for Cloudflare origin mapping or Direct IP routing from a server like aaPanel. 
+## Production Deployment
+This repository is now prepared for an aaPanel deployment model where:
+- aaPanel manages the public website and reverse proxy
+- aaPanel MySQL is the production database
+- Docker only runs the application services
 
-On the production server (`/www/wwwroot/scms.arosoft.io`):
-1. **Initialize Environments**: 
-   Rename `.env.production.example` to `.env` and fill in your secure root database configurations.
-2. **Launch Cluster**:
+Recommended server layout:
+1. Clone the repo into `/www/wwwroot/kiuscms.arosoft.io`
+2. Copy `.env.production.example` to `.env`
+3. Set the aaPanel MySQL credentials in `.env`
+4. Keep `FRONTEND_PORT=3001`
+5. Run:
    ```bash
    bash ./scripts/deploy.sh
    ```
-   *The `deploy.sh` script automates Git synchronization, pulls updates, securely restarts the `80` and `443` proxy bindings inside the Docker Network, and purges dangling disk images.*
+6. In aaPanel, configure the site reverse proxy to:
+   ```text
+   http://127.0.0.1:3001
+   ```
+7. Import `database/init.sql` into the aaPanel MySQL database before first login
 
-### Port Bindings
-- **React UI & API Portal**: `80` & `443`
-- **Internal API Service**: Reversely fetched locally via Node on `5000` inside the bridge network.
-- **Database Web Admin (phpMyAdmin)**: Isolated locally on `8087` ensuring no direct public IP scraping.
+### Production Ports
+- **Frontend container host port**: `3001`
+- **Backend container**: internal-only on `5000`
+- **Database**: aaPanel-managed MySQL, typically `3306`
+
+### Reverse Proxy
+Use the domain `kiuscms.arosoft.io` in aaPanel and forward traffic to:
+```text
+http://127.0.0.1:3001
+```
+The frontend container already proxies `/api/` and `/uploads/` to the backend container over Docker networking.
 
 ## 💼 Role-Based Access Scopes
 SCMS utilizes precise JSON Web Token verification mapping to Database Access Controls.
