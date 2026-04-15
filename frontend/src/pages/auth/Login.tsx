@@ -34,7 +34,7 @@ const accessOptions: Array<{
   },
   {
     value: 'Staff',
-    label: 'Staff / HOD',
+    label: 'Staff',
     icon: BriefcaseBusiness,
   },
 ];
@@ -123,7 +123,7 @@ export default function Login() {
             </div>
 
             <h1 className="text-[2rem] font-semibold tracking-tight sm:text-[2.35rem]">
-              {accessMode === 'Student' ? 'Student' : 'Staff / HOD'}
+              {accessMode === 'Student' ? 'Student' : 'Staff'}
             </h1>
           </div>
 

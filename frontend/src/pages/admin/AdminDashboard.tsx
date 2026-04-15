@@ -22,10 +22,10 @@ import { Skeleton } from '../../components/ui/Skeleton';
 const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
   <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="app-page-header max-w-2xl">
-        <span className="app-page-kicker">HOD dashboard</span>
+        <span className="app-page-kicker">Admin dashboard</span>
         <h1 className="app-page-title">Complaint Oversight</h1>
         <p className="app-page-subtitle">
-          Review institution-wide complaint performance, route pending cases, and monitor unresolved matters{user?.lastName ? ` for HOD ${user.lastName}` : ''}. There are currently {stats?.total || 0} complaint records in the system.
+          Review institution-wide complaint performance, route pending cases, and monitor unresolved matters{user?.lastName ? ` for ${user.lastName}` : ''}. There are currently {stats?.total || 0} complaint records in the system.
         </p>
       </div>
 
@@ -85,7 +85,7 @@ const InstitutionalCommandView = ({ stats }: { stats: any }) => {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">HOD Oversight</h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Admin Oversight</h1>
           <p className="text-gray-500 font-medium">Real-time performance metrics and department-wide visibility.</p>
         </div>
         <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm">
@@ -134,7 +134,7 @@ const InstitutionalCommandView = ({ stats }: { stats: any }) => {
               {[
                 { label: 'Students', count: 1240, percentage: 85, color: 'bg-indigo-500' },
                 { label: 'Staff members', count: 180, percentage: 12, color: 'bg-emerald-500' },
-                { label: 'HODs', count: 15, percentage: 3, color: 'bg-amber-500' },
+                { label: 'Admins', count: 15, percentage: 3, color: 'bg-amber-500' },
               ].map((item) => (
                 <div key={item.label} className="space-y-3">
                   <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.2em]">

@@ -55,7 +55,7 @@ function getNavigation(role?: string): NavigationItem[] {
 function getRoleMeta(role?: string) {
   if (role === 'Admin') {
     return {
-      title: 'HOD / Admin',
+      title: 'Admin',
       subtitle: 'Complaint oversight and routing',
       badge: 'Admin',
     };
@@ -85,12 +85,12 @@ function getPageMeta(pathname: string) {
     { match: /^\/dashboard\/staff$/, title: 'Staff Workspace', crumbs: ['Dashboard', 'Staff'] },
     { match: /^\/dashboard\/staff\/worklist$/, title: 'Assigned Complaints', crumbs: ['Dashboard', 'Staff', 'Assigned Complaints'] },
     { match: /^\/dashboard\/staff\/complaints\/[^/]+$/, title: 'Complaint Workspace', crumbs: ['Dashboard', 'Staff', 'Assigned Complaints', 'Details'] },
-    { match: /^\/dashboard\/admin$/, title: 'HOD Dashboard', crumbs: ['Dashboard', 'HOD'] },
-    { match: /^\/dashboard\/admin\/complaints$/, title: 'Complaint Queue', crumbs: ['Dashboard', 'HOD', 'Complaint Queue'] },
-    { match: /^\/dashboard\/admin\/reports$/, title: 'Reports', crumbs: ['Dashboard', 'HOD', 'Reports'] },
-    { match: /^\/dashboard\/admin\/org$/, title: 'Organisation', crumbs: ['Dashboard', 'HOD', 'Organisation'] },
-    { match: /^\/dashboard\/admin\/config$/, title: 'Settings', crumbs: ['Dashboard', 'HOD', 'Settings'] },
-    { match: /^\/dashboard\/admin\/logs$/, title: 'Audit Logs', crumbs: ['Dashboard', 'HOD', 'Audit Logs'] },
+    { match: /^\/dashboard\/admin$/, title: 'Admin Dashboard', crumbs: ['Dashboard', 'Admin'] },
+    { match: /^\/dashboard\/admin\/complaints$/, title: 'Complaint Queue', crumbs: ['Dashboard', 'Admin', 'Complaint Queue'] },
+    { match: /^\/dashboard\/admin\/reports$/, title: 'Reports', crumbs: ['Dashboard', 'Admin', 'Reports'] },
+    { match: /^\/dashboard\/admin\/org$/, title: 'Organisation', crumbs: ['Dashboard', 'Admin', 'Organisation'] },
+    { match: /^\/dashboard\/admin\/config$/, title: 'Settings', crumbs: ['Dashboard', 'Admin', 'Settings'] },
+    { match: /^\/dashboard\/admin\/logs$/, title: 'Audit Logs', crumbs: ['Dashboard', 'Admin', 'Audit Logs'] },
     { match: /^\/dashboard\/appointments$/, title: 'Appointments', crumbs: ['Dashboard', 'Appointments'] },
   ];
 

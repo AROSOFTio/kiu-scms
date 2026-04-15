@@ -60,7 +60,7 @@ export default function Appointments() {
       setHods(res.data.data);
       if (res.data.data.length > 0 && !isHOD) setSelectedHOD(res.data.data[0]);
     } catch (err) {
-      toast.error('Failed to fetch HOD list');
+      toast.error('Failed to fetch staff list');
     }
   };
 
@@ -102,7 +102,7 @@ export default function Appointments() {
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !selectedHOD) {
-      toast.error('Please select a date and HOD');
+      toast.error('Please select a date and staff member');
       return;
     }
 
@@ -160,12 +160,12 @@ export default function Appointments() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-            {isHOD ? 'HOD Scheduler' : 'Book HOD Appointment'}
+            {isHOD ? 'Appointment Scheduler' : 'Book Appointment'}
           </h1>
           <p className="text-slate-500 font-medium mt-2">
             {isHOD 
               ? 'Click on the calendar to mark your office presence for students.' 
-              : 'Schedule a formal session with your Head of Department.'}
+              : 'Schedule a formal session with the responsible staff office.'}
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-3 px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -302,7 +302,7 @@ export default function Appointments() {
                       </div>
                       <div>
                         <p className="text-xs font-black text-slate-900 uppercase tracking-tight">
-                          {isHOD ? `${appt.student_first_name} ${appt.student_last_name}` : `HOD ${appt.hod_first_name} ${appt.hod_last_name}`}
+                          {isHOD ? `${appt.student_first_name} ${appt.student_last_name}` : `${appt.hod_first_name} ${appt.hod_last_name}`}
                         </p>
                         <p className="text-[10px] text-slate-500 font-bold mt-1 flex items-center gap-1.5">
                           <Clock className="h-3 w-3" /> {appt.time_slot}
@@ -348,7 +348,7 @@ export default function Appointments() {
               </div>
               <h4 className="text-sm font-black uppercase tracking-widest mb-4">Scheduling Protocol</h4>
               <p className="text-[11px] text-emerald-50/70 font-medium leading-relaxed">
-                 Sessions are strictly academic. Please ensure you are present at the HOD's office 5 minutes before your scheduled window.
+                 Sessions are strictly academic. Please ensure you are present at the selected office 5 minutes before your scheduled window.
               </p>
            </div>
         </div>

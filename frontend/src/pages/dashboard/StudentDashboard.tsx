@@ -151,7 +151,7 @@ export default function StudentDashboard() {
         title: appointment.status === 'Confirmed' ? 'Appointment approved' : 'Appointment pending',
         message:
           appointment.status === 'Confirmed'
-            ? `Meeting with HOD ${appointment.hod_first_name || ''} ${appointment.hod_last_name || ''} on ${formatDate(appointment.appointment_date)}.`
+            ? `Meeting with ${appointment.hod_first_name || ''} ${appointment.hod_last_name || ''} on ${formatDate(appointment.appointment_date)}.`
             : `Appointment request for ${formatDate(appointment.appointment_date)} is awaiting confirmation.`,
         date: appointment.appointment_date,
         tone: appointment.status === 'Confirmed' ? 'border-blue-100 bg-blue-50/70' : 'border-amber-100 bg-amber-50/70',
@@ -252,7 +252,7 @@ export default function StudentDashboard() {
         >
           <div>
             <p className="text-lg font-semibold text-slate-900">Appointments</p>
-            <p className="mt-1 text-sm text-slate-500">Book or review HOD appointments.</p>
+            <p className="mt-1 text-sm text-slate-500">Book or review staff appointments.</p>
           </div>
           <div className="rounded-2xl bg-blue-50 p-3 text-blue-700 transition group-hover:bg-blue-100">
             <Calendar className="h-5 w-5" />
