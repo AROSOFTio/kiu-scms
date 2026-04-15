@@ -3,9 +3,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const hasDiscreteDbConfig = Boolean(
+  process.env.DB_HOST ||
+  process.env.DB_PORT ||
+  process.env.DB_USER ||
+  process.env.DB_PASSWORD ||
+  process.env.DB_NAME
+);
 const databaseUrl = process.env.DATABASE_URL;
 
-const connectionOptions = databaseUrl
+const connectionOptions = hasDiscreteDbConfig
+  ? {
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT || 3306),
+      user: process.env.DB_USER || 'scms_user',
+      password: process.env.DB_PASSWORD || 'scms_password',
+      database: process.env.DB_NAME || 'scms_db',
+    }
+  : databaseUrl
   ? (() => {
       const parsed = new URL(databaseUrl);
 
@@ -18,11 +33,11 @@ const connectionOptions = databaseUrl
       };
     })()
   : {
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT || 3306),
-      user: process.env.DB_USER || 'scms_user',
-      password: process.env.DB_PASSWORD || 'scms_password',
-      database: process.env.DB_NAME || 'scms_db',
+      host: 'localhost',
+      port: 3306,
+      user: 'scms_user',
+      password: 'scms_password',
+      database: 'scms_db',
     };
 
 export const db = mysql.createPool({
