@@ -25,7 +25,7 @@ const WelcomeView = ({ user, stats }: { user: any, stats: any }) => (
         <span className="app-page-kicker">HOD dashboard</span>
         <h1 className="app-page-title">Complaint Oversight</h1>
         <p className="app-page-subtitle">
-          Review institution-wide complaint performance, route pending cases, and monitor unresolved matters{user?.lastName ? ` for HOD ${user.lastName}` : ''}.
+          Review institution-wide complaint performance, route pending cases, and monitor unresolved matters{user?.lastName ? ` for HOD ${user.lastName}` : ''}. There are currently {stats?.total || 0} complaint records in the system.
         </p>
       </div>
 
