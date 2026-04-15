@@ -16,7 +16,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 
 interface DashboardStats {
   total: number;
-  open: number;
+  pending: number;
   resolved: number;
 }
 
@@ -43,7 +43,7 @@ interface AppointmentRecord {
   id: number;
   appointment_date: string;
   time_slot: string;
-  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rejected';
   hod_first_name?: string;
   hod_last_name?: string;
 }
@@ -80,6 +80,7 @@ export default function StudentDashboard() {
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
+  const [appointmentsActive, setAppointmentsActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -87,24 +88,56 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      setLoading(true);
+      setError('');
+
       try {
-        const [statsRes, complaintsRes, notificationsRes, appointmentsRes] = await Promise.all([
+        const [statsRes, complaintsRes, notificationsRes, appointmentsRes] = await Promise.allSettled([
           api.get('/complaints/stats'),
           api.get('/complaints', { params: { limit: 12 } }),
           api.get('/complaints/notifications'),
           api.get('/appointments'),
         ]);
 
-        const statsData = statsRes.data.data || {};
+        if (complaintsRes.status === 'rejected') {
+          throw complaintsRes.reason;
+        }
 
-        setStats({
-          total: statsData.total || 0,
-          open: statsData.open || 0,
-          resolved: statsData.resolved || 0,
-        });
-        setComplaints(complaintsRes.data.data || []);
-        setNotifications(notificationsRes.data.data || []);
-        setAppointments(appointmentsRes.data.data || []);
+        const complaintData = complaintsRes.value.data.data || [];
+        setComplaints(complaintData);
+
+        if (statsRes.status === 'fulfilled') {
+          const statsData = statsRes.value.data.data || {};
+          setStats({
+            total: statsData.total || complaintData.length,
+            pending: statsData.pending || statsData.open || 0,
+            resolved: statsData.resolved || 0,
+          });
+        } else {
+          const pendingFallback = complaintData.filter(
+            (complaint: ComplaintRecord) => !['Resolved', 'Closed', 'Rejected'].includes(complaint.status),
+          ).length;
+
+          setStats({
+            total: complaintData.length,
+            pending: pendingFallback,
+            resolved: complaintData.filter((complaint: ComplaintRecord) => complaint.status === 'Resolved').length,
+          });
+        }
+
+        if (notificationsRes.status === 'fulfilled') {
+          setNotifications(notificationsRes.value.data.data || []);
+        } else {
+          setNotifications([]);
+        }
+
+        if (appointmentsRes.status === 'fulfilled') {
+          setAppointments(appointmentsRes.value.data.data || []);
+          setAppointmentsActive(true);
+        } else {
+          setAppointments([]);
+          setAppointmentsActive(false);
+        }
       } catch (err) {
         setError('Unable to load your dashboard right now.');
       } finally {
@@ -169,7 +202,7 @@ export default function StudentDashboard() {
     },
     {
       label: 'Pending',
-      value: stats?.open || 0,
+      value: stats?.pending || 0,
       icon: Clock3,
       iconTone: 'bg-amber-50 text-amber-700',
     },
@@ -200,7 +233,7 @@ export default function StudentDashboard() {
       <div className="app-page-header">
         <span className="app-page-kicker">Student dashboard</span>
         <h1 className="app-page-title">Complaint overview</h1>
-        <p className="app-page-subtitle">Submit, track, and review complaint activity from one place.</p>
+        <p className="app-page-subtitle">Submit and track complaints from one home screen.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -219,14 +252,14 @@ export default function StudentDashboard() {
             ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className={`grid grid-cols-1 gap-4 ${appointmentsActive ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
         <Link
           to="/dashboard/student/complaints/new"
           className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-emerald-200"
         >
           <div>
             <p className="text-lg font-semibold text-slate-900">Submit Complaint</p>
-            <p className="mt-1 text-sm text-slate-500">Create a new complaint record.</p>
+            <p className="mt-1 text-sm text-slate-500">Create a new complaint.</p>
           </div>
           <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700 transition group-hover:bg-emerald-100">
             <ArrowRight className="h-5 w-5" />
@@ -239,25 +272,27 @@ export default function StudentDashboard() {
         >
           <div>
             <p className="text-lg font-semibold text-slate-900">Track Complaints</p>
-            <p className="mt-1 text-sm text-slate-500">Review status and progress updates.</p>
+            <p className="mt-1 text-sm text-slate-500">View status and responses.</p>
           </div>
           <div className="rounded-2xl bg-slate-100 p-3 text-slate-700 transition group-hover:bg-slate-200">
             <ArrowRight className="h-5 w-5" />
           </div>
         </Link>
 
-        <Link
-          to="/dashboard/appointments"
-          className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-blue-200"
-        >
-          <div>
-            <p className="text-lg font-semibold text-slate-900">Appointments</p>
-            <p className="mt-1 text-sm text-slate-500">Book or review staff appointments.</p>
-          </div>
-          <div className="rounded-2xl bg-blue-50 p-3 text-blue-700 transition group-hover:bg-blue-100">
-            <Calendar className="h-5 w-5" />
-          </div>
-        </Link>
+        {appointmentsActive && (
+          <Link
+            to="/dashboard/appointments"
+            className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-blue-200"
+          >
+            <div>
+              <p className="text-lg font-semibold text-slate-900">Appointments</p>
+              <p className="mt-1 text-sm text-slate-500">Review appointment requests.</p>
+            </div>
+            <div className="rounded-2xl bg-blue-50 p-3 text-blue-700 transition group-hover:bg-blue-100">
+              <Calendar className="h-5 w-5" />
+            </div>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -266,7 +301,7 @@ export default function StudentDashboard() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
-                <p className="mt-1 text-sm text-slate-500">Recent complaint records and status activity.</p>
+                <p className="mt-1 text-sm text-slate-500">Search and filter current complaint records.</p>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -288,7 +323,7 @@ export default function StudentDashboard() {
                 >
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
-                      {status}
+                      {status === 'All' ? 'All statuses' : status}
                     </option>
                   ))}
                 </select>
@@ -365,7 +400,7 @@ export default function StudentDashboard() {
           <div className="app-card p-6">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-slate-900">Alerts</h2>
-              <p className="mt-1 text-sm text-slate-500">Latest complaint and appointment updates.</p>
+              <p className="mt-1 text-sm text-slate-500">Complaint updates and approvals.</p>
             </div>
 
             <div className="space-y-3">
@@ -383,29 +418,10 @@ export default function StudentDashboard() {
                 ))
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
-                  No new alerts.
+                  <p>No new alerts.</p>
+                  <p className="mt-2">Examples: Your complaint has been updated. Appointment approved.</p>
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className="app-card p-6">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Quick summary</h2>
-              <p className="mt-1 text-sm text-slate-500">Current student activity.</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Complaints in review</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">{stats?.open || 0}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">Open appointments</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">
-                  {appointments.filter((appointment) => appointment.status === 'Pending' || appointment.status === 'Confirmed').length}
-                </p>
-              </div>
             </div>
           </div>
         </aside>
