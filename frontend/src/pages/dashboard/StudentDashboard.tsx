@@ -7,7 +7,10 @@ import {
   CheckCircle2,
   Clock3,
   FileSearch,
+  FilePlus2,
   FileText,
+  ListFilter,
+  LucideIcon,
   Search,
 } from 'lucide-react';
 import api from '../../lib/api';
@@ -198,21 +201,51 @@ export default function StudentDashboard() {
       label: 'Total Complaints',
       value: stats?.total || 0,
       icon: FileText,
-      iconTone: 'bg-slate-100 text-slate-700',
+      tileTone: 'bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-indigo-200',
+      iconTone: 'bg-white/20 text-white',
     },
     {
       label: 'Pending',
       value: stats?.pending || 0,
       icon: Clock3,
-      iconTone: 'bg-amber-50 text-amber-700',
+      tileTone: 'bg-gradient-to-br from-amber-500 to-amber-400 text-white shadow-amber-200',
+      iconTone: 'bg-white/20 text-white',
     },
     {
       label: 'Resolved',
       value: stats?.resolved || 0,
       icon: CheckCircle2,
-      iconTone: 'bg-emerald-50 text-emerald-700',
+      tileTone: 'bg-gradient-to-br from-emerald-600 to-emerald-500 text-white shadow-emerald-200',
+      iconTone: 'bg-white/20 text-white',
     },
   ];
+
+  const actionCards: { label: string; description: string; icon: LucideIcon; href: string; tone: string }[] = [
+    {
+      label: 'Submit Complaint',
+      description: 'Create a formal complaint record.',
+      icon: FilePlus2,
+      href: '/dashboard/student/complaints/new',
+      tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-900',
+    },
+    {
+      label: 'Track Complaints',
+      description: 'Review status, responses, and progress.',
+      icon: ListFilter,
+      href: '/dashboard/student/complaints',
+      tone: 'border-blue-200 bg-blue-50/70 text-blue-900',
+    },
+  ];
+
+  if (appointmentsActive) {
+    actionCards.push({
+      label: 'Appointments',
+      description: 'Review appointment requests and approvals.',
+      icon: Calendar,
+      href: '/dashboard/appointments',
+      tone: 'border-violet-200 bg-violet-50/70 text-violet-900',
+    });
+  }
 
   if (error) {
     return (
@@ -229,11 +262,16 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-7 pb-16">
       <div className="app-page-header">
         <span className="app-page-kicker">Student dashboard</span>
         <h1 className="app-page-title">Complaint overview</h1>
         <p className="app-page-subtitle">Submit and track complaints from one home screen.</p>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+        <p className="text-sm font-medium text-slate-700">Complaint desk</p>
+        <p className="mt-1 text-sm text-slate-500">Monitor submissions, follow updates, and keep records in one place.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -242,57 +280,38 @@ export default function StudentDashboard() {
               .fill(0)
               .map((_, index) => <StatSkeleton key={index} />)
           : statCards.map((card) => (
-              <div key={card.label} className="app-card p-6">
+              <div key={card.label} className={`rounded-3xl border p-6 shadow-sm ${card.tileTone}`}>
                 <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${card.iconTone}`}>
                   <card.icon className="h-5 w-5" />
                 </div>
-                <p className="text-sm font-medium text-slate-500">{card.label}</p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{card.value}</p>
+                <p className="text-sm font-medium text-white/85">{card.label}</p>
+                <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{card.value}</p>
               </div>
             ))}
       </div>
 
       <div className={`grid grid-cols-1 gap-4 ${appointmentsActive ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
-        <Link
-          to="/dashboard/student/complaints/new"
-          className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-emerald-200"
-        >
-          <div>
-            <p className="text-lg font-semibold text-slate-900">Submit Complaint</p>
-            <p className="mt-1 text-sm text-slate-500">Create a new complaint.</p>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700 transition group-hover:bg-emerald-100">
-            <ArrowRight className="h-5 w-5" />
-          </div>
-        </Link>
-
-        <Link
-          to="/dashboard/student/complaints"
-          className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-slate-300"
-        >
-          <div>
-            <p className="text-lg font-semibold text-slate-900">Track Complaints</p>
-            <p className="mt-1 text-sm text-slate-500">View status and responses.</p>
-          </div>
-          <div className="rounded-2xl bg-slate-100 p-3 text-slate-700 transition group-hover:bg-slate-200">
-            <ArrowRight className="h-5 w-5" />
-          </div>
-        </Link>
-
-        {appointmentsActive && (
+        {actionCards.map((action) => (
           <Link
-            to="/dashboard/appointments"
-            className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-blue-200"
+            key={action.label}
+            to={action.href}
+            className={`group rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${action.tone}`}
           >
-            <div>
-              <p className="text-lg font-semibold text-slate-900">Appointments</p>
-              <p className="mt-1 text-sm text-slate-500">Review appointment requests.</p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-lg font-semibold">{action.label}</p>
+                <p className="mt-1 text-sm opacity-90">{action.description}</p>
+              </div>
+              <div className="rounded-2xl bg-white/70 p-3">
+                <action.icon className="h-5 w-5" />
+              </div>
             </div>
-            <div className="rounded-2xl bg-blue-50 p-3 text-blue-700 transition group-hover:bg-blue-100">
-              <Calendar className="h-5 w-5" />
+            <div className="mt-5 flex items-center justify-end text-sm font-semibold">
+              Open
+              <ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-0.5" />
             </div>
           </Link>
-        )}
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
