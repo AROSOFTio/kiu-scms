@@ -1,227 +1,346 @@
-import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  PlusCircle, 
-  ArrowRight,
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
   AlertCircle,
-  History,
-  ShieldCheck,
-  Calendar
+  ArrowRight,
+  Calendar,
+  CheckCircle2,
+  Clock3,
+  FileSearch,
+  FileText,
+  Search,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { StatSkeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 interface DashboardStats {
   total: number;
   open: number;
   resolved: number;
-  recent: any[];
 }
 
+interface ComplaintRecord {
+  id: number;
+  reference_number: string;
+  title: string;
+  status: string;
+  priority?: string;
+  category_name: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface NotificationItem {
+  id: number;
+  title: string;
+  message: string;
+  created_at: string;
+  is_read?: boolean;
+}
+
+interface AppointmentRecord {
+  id: number;
+  appointment_date: string;
+  time_slot: string;
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+  hod_first_name?: string;
+  hod_last_name?: string;
+}
+
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+const getStatusTone = (status: string) => {
+  switch (status) {
+    case 'Resolved':
+    case 'Closed':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+    case 'Rejected':
+      return 'bg-rose-50 text-rose-700 border-rose-100';
+    case 'In Progress':
+      return 'bg-amber-50 text-amber-700 border-amber-100';
+    case 'Awaiting Student':
+      return 'bg-violet-50 text-violet-700 border-violet-100';
+    case 'Forwarded':
+    case 'Under Review':
+      return 'bg-blue-50 text-blue-700 border-blue-100';
+    case 'Submitted':
+    default:
+      return 'bg-slate-100 text-slate-700 border-slate-200';
+  }
+};
+
 export default function StudentDashboard() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const currentView = searchParams.get('view');
-  
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboard = async () => {
       try {
-        const res = await api.get('/complaints/stats');
-        setStats(res.data.data);
-      } catch (err: any) {
-        setError('Failed to load institutional telemetry data bank.');
+        const [statsRes, complaintsRes, notificationsRes, appointmentsRes] = await Promise.all([
+          api.get('/complaints/stats'),
+          api.get('/complaints', { params: { limit: 12 } }),
+          api.get('/complaints/notifications'),
+          api.get('/appointments'),
+        ]);
+
+        const statsData = statsRes.data.data || {};
+
+        setStats({
+          total: statsData.total || 0,
+          open: statsData.open || 0,
+          resolved: statsData.resolved || 0,
+        });
+        setComplaints(complaintsRes.data.data || []);
+        setNotifications(notificationsRes.data.data || []);
+        setAppointments(appointmentsRes.data.data || []);
+      } catch (err) {
+        setError('Unable to load your dashboard right now.');
       } finally {
-        setTimeout(() => setLoading(false), 600); 
+        setLoading(false);
       }
     };
-    fetchStats();
+
+    fetchDashboard();
   }, []);
 
-  const setView = (view: string) => {
-    setSearchParams({ view });
-  };
+  const statusOptions = useMemo(() => {
+    const values = new Set<string>(['All']);
+    complaints.forEach((complaint) => values.add(complaint.status));
+    return Array.from(values);
+  }, [complaints]);
+
+  const filteredComplaints = useMemo(() => {
+    return complaints.filter((complaint) => {
+      const matchesSearch =
+        complaint.title.toLowerCase().includes(search.toLowerCase()) ||
+        complaint.reference_number.toLowerCase().includes(search.toLowerCase()) ||
+        complaint.category_name.toLowerCase().includes(search.toLowerCase());
+
+      const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [complaints, search, statusFilter]);
+
+  const alerts = useMemo(() => {
+    const notificationAlerts = notifications.slice(0, 4).map((item) => ({
+      id: `notification-${item.id}`,
+      title: item.title,
+      message: item.message,
+      date: item.created_at,
+      tone: item.is_read ? 'border-slate-200 bg-white' : 'border-emerald-100 bg-emerald-50/70',
+    }));
+
+    const appointmentAlerts = appointments
+      .filter((appointment) => appointment.status === 'Confirmed' || appointment.status === 'Pending')
+      .slice(0, 2)
+      .map((appointment) => ({
+        id: `appointment-${appointment.id}`,
+        title: appointment.status === 'Confirmed' ? 'Appointment approved' : 'Appointment pending',
+        message:
+          appointment.status === 'Confirmed'
+            ? `Meeting with HOD ${appointment.hod_first_name || ''} ${appointment.hod_last_name || ''} on ${formatDate(appointment.appointment_date)}.`
+            : `Appointment request for ${formatDate(appointment.appointment_date)} is awaiting confirmation.`,
+        date: appointment.appointment_date,
+        tone: appointment.status === 'Confirmed' ? 'border-blue-100 bg-blue-50/70' : 'border-amber-100 bg-amber-50/70',
+      }));
+
+    return [...notificationAlerts, ...appointmentAlerts].slice(0, 5);
+  }, [appointments, notifications]);
+
+  const statCards = [
+    {
+      label: 'Total Complaints',
+      value: stats?.total || 0,
+      icon: FileText,
+      iconTone: 'bg-slate-100 text-slate-700',
+    },
+    {
+      label: 'Pending',
+      value: stats?.open || 0,
+      icon: Clock3,
+      iconTone: 'bg-amber-50 text-amber-700',
+    },
+    {
+      label: 'Resolved',
+      value: stats?.resolved || 0,
+      icon: CheckCircle2,
+      iconTone: 'bg-emerald-50 text-emerald-700',
+    },
+  ];
 
   if (error) {
     return (
-      <div className="premium-card bg-red-50/50 border-red-100 p-10 flex flex-col items-center justify-center text-center max-w-2xl mx-auto mt-20 animate-in zoom-in duration-500">
-        <div className="h-16 w-16 bg-white rounded-3xl shadow-xl flex items-center justify-center text-red-500 mb-6">
-           <AlertCircle className="h-8 w-8" />
-        </div>
-        <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase mb-2">Protocol Disruption</h3>
-        <p className="text-red-700/70 text-sm font-bold mb-8 leading-relaxed px-10">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-10 py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-900/10 hover:translate-y-[-2px] active:scale-95 transition-all"
-        >
-          Initialize Re-sync
-        </button>
+      <div className="mx-auto mt-16 max-w-2xl">
+        <EmptyState
+          icon={AlertCircle}
+          title="Dashboard unavailable"
+          description={error}
+          actionLabel="Reload"
+          actionLink="/dashboard/student"
+        />
       </div>
     );
   }
 
-  // Filtering Logic
-  const filteredComplaints = stats?.recent.filter((c: any) => {
-    if (currentView === 'processing') return c.status === 'Pending' || c.status === 'In Progress' || c.status === 'Submitted';
-    if (currentView === 'resolved') return c.status === 'Resolved';
-    return true; 
-  }) || [];
-
-  const viewTitle = 
-    currentView === 'processing' ? 'Active Processing' :
-    currentView === 'resolved' ? 'Verified Resolutions' :
-    'Total Tracked Cases';
-
-  const statCardsData = [
-    { id: 'all', name: 'Total Tracked Cases', value: stats?.total || 0, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { id: 'processing', name: 'Active Processing', value: stats?.open || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { id: 'resolved', name: 'Verified Resolutions', value: stats?.resolved || 0, icon: CheckCircle, color: 'text-[#008540]', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-  ];
-
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+    <div className="space-y-8 pb-16">
       <div className="app-page-header">
-        <span className="app-page-kicker">Student workspace</span>
-        <h1 className="app-page-title">Complaint Overview</h1>
-        <p className="app-page-subtitle">
-          Submit new complaints, review active cases, and track responses from the relevant office.
-        </p>
-        {currentView && (
-          <p className="text-sm text-slate-500">
-            Viewing <span className="font-medium text-emerald-700">{viewTitle}</span>
-          </p>
-        )}
+        <span className="app-page-kicker">Student dashboard</span>
+        <h1 className="app-page-title">Complaint overview</h1>
+        <p className="app-page-subtitle">Submit, track, and review complaint activity from one place.</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6">
-        <div className="flex-1 flex items-center justify-between bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity">
-            <PlusCircle size={80} />
-          </div>
-          <div>
-            <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">Need Assistance?</h3>
-            <p className="text-sm text-slate-500 font-medium mb-6">Log a new institutional Complaint for review.</p>
-            <Link
-              to="/dashboard/student/complaints/new"
-              className="inline-flex items-center px-8 py-4 bg-[#008540] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-900/10 hover:translate-y-[-2px] transition-all group active:scale-95"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Case
-            </Link>
-          </div>
-        </div>
-
-        <div className="flex-1 flex items-center justify-between bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity">
-            <Calendar size={80} />
-          </div>
-          <div>
-            <h3 className="text-xl font-black text-slate-900 mb-1 tracking-tight">HOD Engagement</h3>
-            <p className="text-sm text-slate-500 font-medium mb-6">Schedule a formal session with the HOD.</p>
-            <Link
-              to="/dashboard/appointments"
-              className="inline-flex items-center px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-900/10 hover:translate-y-[-2px] transition-all group active:scale-95"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Book Session
-            </Link>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {loading
+          ? Array(3)
+              .fill(0)
+              .map((_, index) => <StatSkeleton key={index} />)
+          : statCards.map((card) => (
+              <div key={card.label} className="app-card p-6">
+                <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${card.iconTone}`}>
+                  <card.icon className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-medium text-slate-500">{card.label}</p>
+                <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{card.value}</p>
+              </div>
+            ))}
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {loading ? (
-             Array(3).fill(0).map((_, i) => <StatSkeleton key={i} />)
-        ) : (
-          statCardsData.map((stat) => (
-            <button 
-              key={stat.id} 
-              onClick={() => setView(stat.id)}
-              className={`premium-card p-10 group relative border shadow-sm text-left transition-all ${currentView === stat.id ? 'border-[#008540] ring-4 ring-[#008540]/5 bg-white' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
-            >
-              <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
-                 <stat.icon className="h-20 w-20" />
-              </div>
-              <div className={`${stat.bg} ${stat.border} border h-14 w-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-500`}>
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
-              </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Link
+          to="/dashboard/student/complaints/new"
+          className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-emerald-200"
+        >
+          <div>
+            <p className="text-lg font-semibold text-slate-900">Submit Complaint</p>
+            <p className="mt-1 text-sm text-slate-500">Create a new complaint record.</p>
+          </div>
+          <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700 transition group-hover:bg-emerald-100">
+            <ArrowRight className="h-5 w-5" />
+          </div>
+        </Link>
+
+        <Link
+          to="/dashboard/student/complaints"
+          className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-slate-300"
+        >
+          <div>
+            <p className="text-lg font-semibold text-slate-900">Track Complaints</p>
+            <p className="mt-1 text-sm text-slate-500">Review status and progress updates.</p>
+          </div>
+          <div className="rounded-2xl bg-slate-100 p-3 text-slate-700 transition group-hover:bg-slate-200">
+            <ArrowRight className="h-5 w-5" />
+          </div>
+        </Link>
+
+        <Link
+          to="/dashboard/appointments"
+          className="app-card group flex items-center justify-between p-6 transition-all hover:-translate-y-0.5 hover:border-blue-200"
+        >
+          <div>
+            <p className="text-lg font-semibold text-slate-900">Appointments</p>
+            <p className="mt-1 text-sm text-slate-500">Book or review HOD appointments.</p>
+          </div>
+          <div className="rounded-2xl bg-blue-50 p-3 text-blue-700 transition group-hover:bg-blue-100">
+            <Calendar className="h-5 w-5" />
+          </div>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="app-card overflow-hidden">
+          <div className="border-b border-slate-200 px-6 py-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.name}</p>
-                <p className="text-3xl font-bold text-slate-900 tracking-tighter tabular-nums">{stat.value}</p>
+                <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
+                <p className="mt-1 text-sm text-slate-500">Recent complaint records and status activity.</p>
               </div>
-            </button>
-          ))
-        )}
-      </div>
 
-      {currentView && (
-        <div className="premium-card flex flex-col animate-in slide-in-from-top-4 duration-500">
-          <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-               <div className="h-10 w-10 bg-[#008540]/5 rounded-xl flex items-center justify-center text-[#008540]">
-                  <History className="h-5 w-5" />
-               </div>
-               <div>
-                  <h2 className="font-black text-slate-900 text-lg tracking-tighter leading-none mb-1">{viewTitle}</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active records for selection</p>
-               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setView('')} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-4">Clear Filter</button>
-              <Link to="/dashboard/student/complaints" className="px-5 py-2.5 bg-slate-50 rounded-lg text-[10px] font-black text-slate-600 hover:bg-[#008540] hover:text-white transition-all flex items-center group">
-                History Archives <ArrowRight className="h-3 w-3 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <label className="relative block">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    type="text"
+                    placeholder="Search complaints"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 sm:w-64"
+                  />
+                </label>
+
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto min-h-[300px]">
-            {filteredComplaints.length > 0 ? (
-              <table className="w-full text-left table-fixed min-w-[800px]">
-                <thead>
-                  <tr className="bg-slate-50/50 text-[10px] uppercase font-black text-slate-400 tracking-[0.3em] border-b border-slate-100">
-                    <th className="px-10 py-5 w-1/4">Ref ID</th>
-                    <th className="px-10 py-5 w-2/5">Subject</th>
-                    <th className="px-10 py-5">Status</th>
-                    <th className="px-10 py-5 text-right w-1/6">Action</th>
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="space-y-3 p-6">
+                {Array(5)
+                  .fill(0)
+                  .map((_, index) => (
+                    <div key={index} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+                  ))}
+              </div>
+            ) : filteredComplaints.length > 0 ? (
+              <table className="min-w-full text-left">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold">Reference</th>
+                    <th className="px-6 py-4 font-semibold">Subject</th>
+                    <th className="px-6 py-4 font-semibold">Category</th>
+                    <th className="px-6 py-4 font-semibold">Status</th>
+                    <th className="px-6 py-4 font-semibold">Date</th>
+                    <th className="px-6 py-4 font-semibold text-right">View</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredComplaints.map((complaint: any) => (
-                    <tr key={complaint.id} className="hover:bg-slate-50/30 transition-all group">
-                      <td className="px-10 py-6">
-                        <span className="font-black text-slate-900 bg-slate-100 px-2 py-1 rounded text-[10px] tracking-widest">
+                <tbody className="divide-y divide-slate-100">
+                  {filteredComplaints.map((complaint) => (
+                    <tr key={complaint.id} className="transition hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
                           {complaint.reference_number}
                         </span>
                       </td>
-                      <td className="px-10 py-6">
-                         <Link to={`/dashboard/student/complaints/${complaint.id}`} className="max-w-xs block group-hover:translate-x-1 transition-transform">
-                            <p className="text-sm font-bold text-slate-900 tracking-tight leading-tight group-hover:text-[#008540] transition-colors uppercase truncate">{complaint.title}</p>
-                            <p className="text-[9px] text-slate-400 font-bold mt-1 tracking-wider uppercase">{complaint.category_name}</p>
-                         </Link>
+                      <td className="px-6 py-4">
+                        <p className="font-medium text-slate-900">{complaint.title}</p>
                       </td>
-                      <td className="px-10 py-6">
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                          complaint.status === 'Resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                          complaint.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-100' :
-                          complaint.status === 'In Progress' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                          complaint.status === 'Submitted' ? 'bg-red-50 text-red-700 border-red-100' :
-                          'bg-blue-50 text-blue-700 border-blue-100'
-                        }`}>
-                          {complaint.status === 'Submitted' ? 'Pending' : complaint.status}
+                      <td className="px-6 py-4 text-sm text-slate-500">{complaint.category_name}</td>
+                      <td className="px-6 py-4">
+                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusTone(complaint.status)}`}>
+                          {complaint.status}
                         </span>
                       </td>
-                      <td className="px-10 py-6 text-right">
-                        <Link 
-                          to={`/dashboard/student/complaints/${complaint.id}`} 
-                          className="inline-flex items-center gap-2 h-8 px-4 bg-slate-900 text-white rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-[#008540] transition-all"
+                      <td className="px-6 py-4 text-sm text-slate-500">{formatDate(complaint.created_at)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <Link
+                          to={`/dashboard/student/complaints/${complaint.id}`}
+                          className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
                         >
-                           Examine
+                          Open
                         </Link>
                       </td>
                     </tr>
@@ -229,44 +348,67 @@ export default function StudentDashboard() {
                 </tbody>
               </table>
             ) : (
-              <div className="p-20 text-center">
-                 <History className="h-12 w-12 mx-auto text-slate-200 mb-4" />
-                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Zero Matching Records</h3>
+              <div className="p-8">
+                <EmptyState
+                  icon={FileSearch}
+                  title="No complaints found"
+                  description="Try a different search term or clear the current filter."
+                  actionLabel="Submit Complaint"
+                  actionLink="/dashboard/student/complaints/new"
+                />
               </div>
             )}
           </div>
-        </div>
-      )}
+        </section>
 
-      {!currentView && (
-        <div className="bg-white border-2 border-dashed border-slate-100 rounded-[2rem] p-16 text-center animate-in fade-in duration-1000">
-           <div className="max-w-md mx-auto">
-              <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                 <ShieldCheck className="h-8 w-8 text-slate-300" />
+        <aside className="space-y-6">
+          <div className="app-card p-6">
+            <div className="mb-5">
+              <h2 className="text-lg font-semibold text-slate-900">Alerts</h2>
+              <p className="mt-1 text-sm text-slate-500">Latest complaint and appointment updates.</p>
+            </div>
+
+            <div className="space-y-3">
+              {loading ? (
+                Array(4)
+                  .fill(0)
+                  .map((_, index) => <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />)
+              ) : alerts.length > 0 ? (
+                alerts.map((alert) => (
+                  <div key={alert.id} className={`rounded-2xl border p-4 ${alert.tone}`}>
+                    <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{alert.message}</p>
+                    <p className="mt-3 text-xs font-medium text-slate-500">{formatDate(alert.date)}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
+                  No new alerts.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="app-card p-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Quick summary</h2>
+              <p className="mt-1 text-sm text-slate-500">Current student activity.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Complaints in review</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">{stats?.open || 0}</p>
               </div>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-2">Clean Institutional Ledger</h3>
-              <p className="text-xs font-medium text-slate-400 leading-relaxed">Select a category above to inspect specific tracking records, or initialize a new case using the action button.</p>
-           </div>
-        </div>
-      )}
-      
-      {/* Slim Promotional Institutional Card */}
-      <div className="bg-[#08271c] rounded-2xl p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden group border border-white/5">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
-         <div className="relative z-10 flex items-center gap-6">
-            <div className="h-12 w-12 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center">
-               <ShieldCheck className="h-6 w-6 text-emerald-500" />
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-sm text-slate-500">Open appointments</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {appointments.filter((appointment) => appointment.status === 'Pending' || appointment.status === 'Confirmed').length}
+                </p>
+              </div>
             </div>
-            <div>
-               <h2 className="text-xl font-black text-white tracking-tighter leading-none mb-1">Privacy is our <span className="text-emerald-500">Foundation.</span></h2>
-               <p className="text-emerald-100/50 font-medium text-[11px] uppercase tracking-wider">
-                  Every Complaint is end-to-end audit-protected and structurally managed.
-               </p>
-            </div>
-         </div>
-         <div className="relative z-10 flex gap-4">
-            <button className="px-6 py-2.5 bg-white/10 text-white border border-white/10 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all">Policy</button>
-         </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

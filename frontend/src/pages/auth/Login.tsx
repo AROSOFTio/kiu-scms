@@ -95,8 +95,10 @@ export default function Login() {
           <div className="animate-float absolute -bottom-16 -right-14 h-44 w-44 rounded-full bg-white/10" />
           <div className="animate-float absolute right-10 top-12 h-20 w-20 rounded-full border border-white/20 bg-white/10" style={{ animationDelay: '1.2s' }} />
 
-          <div className="relative z-10 animate-slide-up">
-            <img src="/kiu-logo.png" alt="Kampala International University" className="h-12 w-auto bg-white/95 p-2 shadow-sm" />
+          <div className="relative z-10 animate-slide-up self-start">
+            <div className="rounded-2xl bg-white/96 p-3 shadow-[0_16px_32px_rgba(8,39,28,0.12)]">
+              <img src="/kiu-logo.png" alt="Kampala International University" className="h-10 w-auto rounded-xl object-contain" />
+            </div>
           </div>
 
           <div className="relative z-10 max-w-sm animate-slide-up" style={{ animationDelay: '0.08s' }}>
