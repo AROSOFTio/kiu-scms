@@ -74,6 +74,13 @@ export const loginUser = async (req: Request, res: Response) => {
       }
     });
   } catch (err: any) {
+    if (['ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND'].includes(err.code)) {
+      return res.status(503).json({
+        status: 'error',
+        message: 'Login is temporarily unavailable because the database connection failed. Please verify the backend database settings.',
+      });
+    }
+
     res.status(500).json({ status: 'error', message: err.message });
   }
 };
