@@ -17,6 +17,11 @@ import {
 import api from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
 
+const MAX_FILES = 5;
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const ALLOWED_FILE_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'] as const;
+
 const issueTypes = [
   'Marks / Results',
   'Tuition / Finance',
@@ -43,13 +48,35 @@ const complaintSchema = z.object({
   issueType: z.enum(issueTypes, { required_error: 'Select the complaint type' }),
   facultyId: z.string().min(1, 'Select a school or faculty'),
   departmentId: z.string().min(1, 'Select a department'),
-  relatedStaff: z.string().max(120, 'Keep this field under 120 characters').optional().or(z.literal('')),
-  targetOffice: z.string().optional().or(z.literal('')),
-  title: z.string().min(5, 'Subject must be at least 5 characters').max(200, 'Subject must be under 200 characters'),
-  description: z.string().min(40, 'Provide a detailed description with at least 40 characters'),
+  relatedStaff: z.string().trim().max(120, 'Keep this field under 120 characters').optional(),
+  targetOffice: z.string().trim().max(80, 'Keep this field under 80 characters').optional(),
+  title: z.string().trim().min(8, 'Subject must be at least 8 characters').max(200, 'Subject must be under 200 characters'),
+  description: z.string().trim().min(60, 'Provide a detailed description with at least 60 characters').max(5000, 'Description is too long'),
   incidentDate: z.string().min(1, 'Select the date of incident'),
-  desiredResolution: z.string().min(10, 'Describe the desired resolution'),
+  desiredResolution: z.string().trim().min(20, 'Describe the desired resolution with at least 20 characters').max(800, 'Resolution details are too long'),
   declaration: z.boolean().refine((value) => value === true, 'You must confirm the declaration'),
+}).superRefine((data, ctx) => {
+  if (data.issueType === 'Lecturer / Staff conduct' && !data.relatedStaff?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['relatedStaff'],
+      message: 'Provide the related lecturer or staff name for this complaint type',
+    });
+  }
+
+  if (data.incidentDate) {
+    const incident = new Date(`${data.incidentDate}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (incident > today) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['incidentDate'],
+        message: 'Date of incident cannot be in the future',
+      });
+    }
+  }
 });
 
 type ComplaintFormData = z.infer<typeof complaintSchema>;
@@ -57,6 +84,12 @@ type ComplaintFormData = z.infer<typeof complaintSchema>;
 type Category = { id: number; name: string; description?: string };
 type Faculty = { id: number; name: string };
 type Department = { id: number; name: string; faculty_name: string };
+
+function getFileExtension(filename: string) {
+  const parts = filename.split('.');
+  if (parts.length < 2) return '';
+  return parts[parts.length - 1].toLowerCase();
+}
 
 function Section({
   title,
@@ -135,6 +168,7 @@ export default function NewComplaint() {
   const issueType = watch('issueType');
   const facultyId = watch('facultyId');
   const descriptionValue = watch('description') || '';
+  const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     const fetchMeta = async () => {
@@ -169,13 +203,45 @@ export default function NewComplaint() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
 
-    const newFiles = Array.from(e.target.files);
-    if (files.length + newFiles.length > 5) {
-      toast.error('Maximum 5 files allowed');
-      return;
+    const incomingFiles = Array.from(e.target.files);
+    const rejected: string[] = [];
+
+    setFiles((current) => {
+      const next = [...current];
+
+      for (const file of incomingFiles) {
+        if (next.length >= MAX_FILES) {
+          rejected.push(`Maximum ${MAX_FILES} files allowed`);
+          break;
+        }
+
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          rejected.push(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB`);
+          continue;
+        }
+
+        const ext = getFileExtension(file.name);
+        if (!ALLOWED_FILE_EXTENSIONS.includes(ext as (typeof ALLOWED_FILE_EXTENSIONS)[number])) {
+          rejected.push(`${file.name} has an unsupported file type`);
+          continue;
+        }
+
+        const duplicate = next.some((existing) => existing.name === file.name && existing.size === file.size);
+        if (duplicate) {
+          rejected.push(`${file.name} is already attached`);
+          continue;
+        }
+
+        next.push(file);
+      }
+
+      return next;
+    });
+
+    if (rejected.length > 0) {
+      toast.error(rejected[0]);
     }
 
-    setFiles((current) => [...current, ...newFiles]);
     e.target.value = '';
   };
 
@@ -200,10 +266,10 @@ export default function NewComplaint() {
         `Issue Type: ${data.issueType}`,
         `School / Faculty: ${facultyName}`,
         `Department: ${departmentName}`,
-        `Related Lecturer / Staff: ${data.relatedStaff || 'Not specified'}`,
-        `Target Office: ${data.targetOffice || 'Not specified'}`,
+        `Related Lecturer / Staff: ${data.relatedStaff?.trim() || 'Not specified'}`,
+        `Target Office: ${data.targetOffice?.trim() || 'Not specified'}`,
         `Date of Incident: ${data.incidentDate}`,
-        `Desired Resolution: ${data.desiredResolution}`,
+        `Desired Resolution: ${data.desiredResolution.trim()}`,
         '',
         'Complaint Details:',
         data.description.trim(),
@@ -212,7 +278,6 @@ export default function NewComplaint() {
       const formData = new FormData();
       formData.append('title', data.title.trim());
       formData.append('categoryId', String(categoryId));
-      formData.append('priority', 'Medium');
       formData.append('description', composedDescription);
 
       files.forEach((file) => {
@@ -280,6 +345,9 @@ export default function NewComplaint() {
 
       <div className="app-card overflow-hidden">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 p-6 sm:p-8 lg:p-10">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Fields in this form are for formal complaint processing. Please provide accurate and complete information.
+          </div>
 
           <Section title="Section A: Complaint Type" subtitle="Select the issue that best matches your complaint.">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -347,6 +415,9 @@ export default function NewComplaint() {
                   placeholder="Name if relevant"
                   className={`app-input ${errors.relatedStaff ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
                 />
+                {issueType === 'Lecturer / Staff conduct' && (
+                  <p className="text-xs text-slate-500">Required for staff conduct complaints.</p>
+                )}
                 {errors.relatedStaff && <p className="text-sm text-rose-600">{errors.relatedStaff.message}</p>}
               </div>
 
@@ -382,6 +453,7 @@ export default function NewComplaint() {
                 <input
                   type="date"
                   {...register('incidentDate')}
+                  max={today}
                   className={`app-input ${errors.incidentDate ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
                 />
                 {errors.incidentDate && <p className="text-sm text-rose-600">{errors.incidentDate.message}</p>}
@@ -401,8 +473,8 @@ export default function NewComplaint() {
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-slate-700">Detailed description</label>
-                  <span className={`text-xs ${descriptionValue.length < 40 ? 'text-rose-500' : 'text-emerald-700'}`}>
-                    {descriptionValue.length}/40 minimum
+                  <span className={`text-xs ${descriptionValue.length < 60 ? 'text-rose-500' : 'text-emerald-700'}`}>
+                    {descriptionValue.length}/60 minimum
                   </span>
                 </div>
                 <textarea
@@ -424,7 +496,7 @@ export default function NewComplaint() {
                 </div>
                 <p className="mt-4 text-base font-medium text-slate-900">Upload evidence</p>
                 <p className="mt-2 text-sm text-slate-500">PDF, JPG, PNG, DOC, DOCX</p>
-                <p className="mt-1 text-xs text-slate-400">Maximum 10MB per file</p>
+                <p className="mt-1 text-xs text-slate-400">Maximum {MAX_FILE_SIZE_MB}MB per file</p>
                 <input
                   type="file"
                   className="hidden"
@@ -437,7 +509,7 @@ export default function NewComplaint() {
               <div className="rounded-[28px] border border-slate-200 bg-white p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
                   <Paperclip className="h-4 w-4 text-slate-500" />
-                  Attached files
+                  Attached files ({files.length}/{MAX_FILES})
                 </div>
 
                 {files.length > 0 ? (
