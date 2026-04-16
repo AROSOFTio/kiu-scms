@@ -196,22 +196,22 @@ export default function StudentDashboard() {
       label: 'Total',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-[#292929]',
+      tone: 'bg-[#34b05a]',
       textTone: 'text-white',
     },
     {
       label: 'Pending',
       value: stats?.pending || 0,
       icon: Clock3,
-      tone: 'bg-[#393836]',
-      textTone: 'text-white',
+      tone: 'bg-white border border-slate-200',
+      textTone: 'text-[#292929]',
     },
     {
       label: 'Resolved',
       value: stats?.resolved || 0,
       icon: CheckCircle2,
-      tone: 'bg-[#34b05a]',
-      textTone: 'text-white',
+      tone: 'bg-[#34b05a]/15 border border-[#34b05a]/20',
+      textTone: 'text-[#292929]',
     },
   ];
 
@@ -228,9 +228,9 @@ export default function StudentDashboard() {
       label: 'Track Complaints',
       icon: ListFilter,
       href: '/dashboard/student/complaints',
-      tone: 'bg-[#292929]',
-      textTone: 'text-white',
-      iconTone: 'bg-white/15',
+      tone: 'bg-[#34b05a]/12 border border-[#34b05a]/20',
+      textTone: 'text-[#292929]',
+      iconTone: 'bg-[#34b05a]/10',
     },
   ];
 

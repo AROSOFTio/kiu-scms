@@ -90,8 +90,8 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-[#f4f5f7] px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
       <div className="animate-slide-up w-full max-w-[980px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_60px_-36px_rgba(41,41,41,0.18)] lg:grid lg:grid-cols-[0.96fr_1fr]">
-        <section className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-[#292929] p-7 text-white sm:p-8 lg:min-h-[540px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(52,176,90,0.18),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(255,255,255,0.08),_transparent_24%)]" />
+        <section className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-[#34b05a] p-7 text-white sm:p-8 lg:min-h-[540px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.20),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(41,41,41,0.10),_transparent_24%)]" />
 
           <div className="relative z-10 self-start">
             <div className="rounded-[18px] bg-white p-3 shadow-[0_16px_32px_rgba(0,0,0,0.16)]">

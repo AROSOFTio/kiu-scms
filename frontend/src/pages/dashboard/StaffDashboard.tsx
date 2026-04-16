@@ -70,16 +70,16 @@ export default function StaffDashboard() {
 
   const statCards = useMemo(
     () => [
-      { label: 'Assigned', value: stats?.total || 0, icon: FileText, tone: 'bg-[#292929] text-white', iconTone: 'bg-white/15' },
-      { label: 'Pending', value: pending, icon: Clock3, tone: 'bg-[#393836] text-white', iconTone: 'bg-white/15' },
-      { label: 'Resolved', value: resolved, icon: CheckCircle2, tone: 'bg-[#34b05a] text-white', iconTone: 'bg-white/15' },
+      { label: 'Assigned', value: stats?.total || 0, icon: FileText, tone: 'bg-[#34b05a] text-white', iconTone: 'bg-white/15' },
+      { label: 'Pending', value: pending, icon: Clock3, tone: 'bg-[#34b05a]/15 border border-[#34b05a]/20 text-[#292929]', iconTone: 'bg-[#34b05a]/10' },
+      { label: 'Resolved', value: resolved, icon: CheckCircle2, tone: 'bg-[#2d9a4e] text-white', iconTone: 'bg-white/15' },
     ],
     [pending, resolved, stats?.total],
   );
 
   const actions = [
     { label: 'Worklist', href: '/dashboard/staff/worklist', icon: ListTodo, tone: 'bg-[#34b05a] text-white', iconTone: 'bg-white/15' },
-    { label: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays, tone: 'bg-white border border-slate-200 text-[#292929]', iconTone: 'bg-[#34b05a]/10' },
+    { label: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays, tone: 'bg-[#34b05a]/12 border border-[#34b05a]/20 text-[#292929]', iconTone: 'bg-[#34b05a]/10' },
   ];
 
   if (error) {

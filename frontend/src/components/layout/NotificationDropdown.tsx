@@ -63,7 +63,7 @@ export default function NotificationDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-[18px] border border-white/15 bg-white/10 text-white/75 transition hover:text-white"
+        className="relative flex h-10 w-10 items-center justify-center rounded-[18px] border border-white/20 bg-white/12 text-white/80 transition hover:text-white"
       >
         <Bell className={`h-4 w-4 transition-colors ${isOpen ? 'text-[#34b05a]' : ''}`} />
         {unreadCount > 0 && (

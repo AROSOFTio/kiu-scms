@@ -113,19 +113,19 @@ export default function DashboardLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#393836] text-white transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#34b05a] text-white transition-transform duration-300 lg:translate-x-0 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="relative border-b border-white/10 px-6 py-5">
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-[#34b05a]" />
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-white/85" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white p-2.5 shadow-sm">
                 <img src="/kiu-logo.png" alt="Kampala International University" className="h-full w-full object-contain" />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#34b05a]">KIU</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">KIU</p>
                 <h1 className="text-sm font-semibold text-white">Student Complaint System</h1>
               </div>
             </div>
@@ -152,8 +152,8 @@ export default function DashboardLayout() {
                     to={item.href}
                     className={`flex items-center gap-3 rounded-[18px] px-4 py-3.5 text-sm transition ${
                       active
-                        ? 'bg-white/10 text-white ring-1 ring-inset ring-white/20'
-                        : 'text-white/78 hover:bg-white/7 hover:text-white'
+                        ? 'bg-white text-[#34b05a] shadow-sm'
+                        : 'text-white/88 hover:bg-white/12 hover:text-white'
                     }`}
                   >
                     <item.icon className="h-4 w-4" />
@@ -178,7 +178,7 @@ export default function DashboardLayout() {
       </aside>
 
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-[#292929] bg-[#292929] text-white">
+        <header className="sticky top-0 z-30 border-b border-[#2d9a4e] bg-[#34b05a] text-white">
           <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-4">
               <button

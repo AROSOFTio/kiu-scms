@@ -12,7 +12,7 @@ export default function TimeDisplay() {
   }, []);
 
   return (
-    <div className="hidden lg:flex items-center gap-3 rounded-[18px] border border-white/15 bg-white/10 px-4 py-2.5">
+    <div className="hidden lg:flex items-center gap-3 rounded-[18px] border border-white/20 bg-white/12 px-4 py-2.5">
       <div className="h-2 w-2 rounded-full bg-[#34b05a]" />
       <div className="text-right leading-tight">
         <div className="text-[11px] font-medium text-white/65">
