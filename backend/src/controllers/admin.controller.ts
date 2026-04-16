@@ -598,6 +598,7 @@ export const createUser = async (req: Request, res: Response) => {
   const { roleName, firstName, lastName, email, password, idNumber, departmentId } = req.body;
   const adminId = (req as any).user?.userId;
   const adminRole = (req as any).user?.roleName;
+  const officeRoles = ['Admin', 'Staff', 'Department Officer'];
 
   try {
     // 0. Scope Verification: Ensure HOD is only creating within their Faculty
@@ -627,8 +628,11 @@ export const createUser = async (req: Request, res: Response) => {
     // 4. Role-specific record
     if (roleName === 'Student' && idNumber && departmentId) {
       await db.query('INSERT INTO students (user_id, student_number, department_id) VALUES (?, ?, ?)', [userId, idNumber, departmentId]);
-    } else if (roleName === 'Staff' && idNumber && departmentId) {
-      await db.query('INSERT INTO staff (user_id, staff_number, department_id) VALUES (?, ?, ?)', [userId, idNumber, departmentId]);
+    } else if (officeRoles.includes(roleName) && idNumber && departmentId) {
+      await db.query(
+        'INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
+        [userId, idNumber, departmentId, roleId],
+      );
     }
 
     // 5. Log audit
@@ -649,6 +653,7 @@ export const updateUser = async (req: Request, res: Response) => {
   const { firstName, lastName, email, roleName, idNumber, departmentId } = req.body;
   const adminId = (req as any).user?.userId;
   const adminRole = (req as any).user?.roleName;
+  const officeRoles = ['Admin', 'Staff', 'Department Officer'];
 
   try {
     // 0. Scope Verification: Ensure HOD has jurisdiction over the TARGET user
@@ -678,14 +683,16 @@ export const updateUser = async (req: Request, res: Response) => {
 
     // 3. Update Role-specific record
     if (roleName === 'Student' && idNumber && departmentId) {
+      await db.query('DELETE FROM staff WHERE user_id = ?', [id]);
       await db.query(
         'INSERT INTO students (user_id, student_number, department_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE student_number = ?, department_id = ?',
         [id, idNumber, departmentId, idNumber, departmentId]
       );
-    } else if (roleName === 'Staff' && idNumber && departmentId) {
+    } else if (officeRoles.includes(roleName) && idNumber && departmentId) {
+      await db.query('DELETE FROM students WHERE user_id = ?', [id]);
       await db.query(
-        'INSERT INTO staff (user_id, staff_number, department_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE staff_number = ?, department_id = ?',
-        [id, idNumber, departmentId, idNumber, departmentId]
+        'INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE staff_number = ?, department_id = ?, role_id = ?',
+        [id, idNumber, departmentId, roleId, idNumber, departmentId, roleId]
       );
     }
 

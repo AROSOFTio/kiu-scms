@@ -26,7 +26,7 @@ export const submitComplaint = async (req: Request, res: Response) => {
     if (students.length === 0) {
       return res.status(403).json({
         status: 'error',
-        message: 'Only student accounts linked to a student profile can submit complaints',
+        message: 'This account is not linked to a student profile. Ask an administrator to create or link the student record.',
       });
     }
     const studentId = students[0].id;
