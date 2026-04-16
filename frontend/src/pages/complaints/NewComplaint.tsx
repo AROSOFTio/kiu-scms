@@ -10,7 +10,6 @@ import {
   Loader2,
   Paperclip,
   Send,
-  ShieldCheck,
   UploadCloud,
   X,
 } from 'lucide-react';
@@ -45,7 +44,7 @@ const officeOptions = [
 ] as const;
 
 const complaintSchema = z.object({
-  issueType: z.enum(issueTypes, { required_error: 'Select the complaint type' }),
+  issueTypes: z.array(z.enum(issueTypes)).min(1, 'Select at least one complaint type'),
   facultyId: z.string().min(1, 'Select a school or faculty'),
   departmentId: z.string().min(1, 'Select a department'),
   relatedStaff: z.string().trim().max(120, 'Keep this field under 120 characters').optional(),
@@ -56,7 +55,7 @@ const complaintSchema = z.object({
   desiredResolution: z.string().trim().min(20, 'Describe the desired resolution with at least 20 characters').max(800, 'Resolution details are too long'),
   declaration: z.boolean().refine((value) => value === true, 'You must confirm the declaration'),
 }).superRefine((data, ctx) => {
-  if (data.issueType === 'Lecturer / Staff conduct' && !data.relatedStaff?.trim()) {
+  if (data.issueTypes.includes('Lecturer / Staff conduct') && !data.relatedStaff?.trim()) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['relatedStaff'],
@@ -91,6 +90,15 @@ function getFileExtension(filename: string) {
   return parts[parts.length - 1].toLowerCase();
 }
 
+function getCategoryNameFromIssueType(issueType: (typeof issueTypes)[number]) {
+  if (issueType === 'Marks / Results' || issueType === 'Exams') return 'academic';
+  if (issueType === 'Tuition / Finance') return 'financial';
+  if (issueType === 'ICT / Portal') return 'technical';
+  if (issueType === 'Welfare / Hostel') return 'hostel';
+  if (issueType === 'Lecturer / Staff conduct' || issueType === 'Registration') return 'administration';
+  return 'other';
+}
+
 function Section({
   title,
   subtitle,
@@ -111,26 +119,16 @@ function Section({
   );
 }
 
-function mapIssueTypeToCategoryId(issueType: ComplaintFormData['issueType'], categories: Category[]) {
+function mapIssueTypesToCategoryId(selectedIssueTypes: ComplaintFormData['issueTypes'], categories: Category[]) {
   const normalized = categories.reduce<Record<string, number>>((acc, category) => {
     acc[category.name.toLowerCase()] = category.id;
     return acc;
   }, {});
 
-  const categoryName =
-    issueType === 'Marks / Results' || issueType === 'Exams'
-      ? 'academic'
-      : issueType === 'Tuition / Finance'
-        ? 'financial'
-        : issueType === 'ICT / Portal'
-          ? 'technical'
-          : issueType === 'Welfare / Hostel'
-            ? 'hostel'
-            : issueType === 'Lecturer / Staff conduct' || issueType === 'Registration'
-              ? 'administration'
-              : 'other';
+  const categoryNames = Array.from(new Set(selectedIssueTypes.map(getCategoryNameFromIssueType)));
+  const categoryName = categoryNames.length === 1 ? categoryNames[0] : 'other';
 
-  return normalized[categoryName] || normalized.other;
+  return normalized[categoryName] || normalized.other || null;
 }
 
 export default function NewComplaint() {
@@ -152,7 +150,7 @@ export default function NewComplaint() {
   } = useForm<ComplaintFormData>({
     resolver: zodResolver(complaintSchema),
     defaultValues: {
-      issueType: 'Marks / Results',
+      issueTypes: [],
       facultyId: '',
       departmentId: '',
       relatedStaff: '',
@@ -165,7 +163,7 @@ export default function NewComplaint() {
     },
   });
 
-  const issueType = watch('issueType');
+  const selectedIssueTypes = watch('issueTypes') || [];
   const facultyId = watch('facultyId');
   const descriptionValue = watch('description') || '';
   const today = new Date().toISOString().split('T')[0];
@@ -199,6 +197,18 @@ export default function NewComplaint() {
   useEffect(() => {
     setValue('departmentId', '');
   }, [facultyId, setValue]);
+
+  const toggleIssueType = (issueType: (typeof issueTypes)[number]) => {
+    const nextSelection = selectedIssueTypes.includes(issueType)
+      ? selectedIssueTypes.filter((item) => item !== issueType)
+      : [...selectedIssueTypes, issueType];
+
+    setValue('issueTypes', nextSelection, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -250,7 +260,7 @@ export default function NewComplaint() {
   };
 
   const onSubmit = async (data: ComplaintFormData) => {
-    const categoryId = mapIssueTypeToCategoryId(data.issueType, categories);
+    const categoryId = mapIssueTypesToCategoryId(data.issueTypes, categories);
 
     if (!categoryId) {
       toast.error('Complaint categories are not configured correctly');
@@ -263,7 +273,7 @@ export default function NewComplaint() {
       const facultyName = faculties.find((faculty) => String(faculty.id) === data.facultyId)?.name || '';
       const departmentName = departments.find((department) => String(department.id) === data.departmentId)?.name || '';
       const composedDescription = [
-        `Issue Type: ${data.issueType}`,
+        `Issue Types: ${data.issueTypes.join(', ')}`,
         `School / Faculty: ${facultyName}`,
         `Department: ${departmentName}`,
         `Related Lecturer / Staff: ${data.relatedStaff?.trim() || 'Not specified'}`,
@@ -323,7 +333,7 @@ export default function NewComplaint() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 pb-16">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4">
         <div>
           <button
             type="button"
@@ -333,46 +343,39 @@ export default function NewComplaint() {
             <ChevronLeft className="h-4 w-4" />
             Back
           </button>
-          <h1 className="text-3xl font-semibold text-slate-900">Formal complaint form</h1>
-          <p className="mt-2 text-sm text-slate-500">Provide clear and accurate information for review.</p>
-        </div>
-
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
-          <ShieldCheck className="h-4 w-4" />
-          Complaint submission only
+          <h1 className="text-3xl font-semibold text-slate-900">Submit complaint</h1>
         </div>
       </div>
 
       <div className="app-card overflow-hidden">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 p-6 sm:p-8 lg:p-10">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Fields in this form are for formal complaint processing. Please provide accurate and complete information.
-          </div>
-
-          <Section title="Section A: Complaint Type" subtitle="Select the issue that best matches your complaint.">
+          <Section title="Section A: Complaint Type" subtitle="Select all that apply.">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {issueTypes.map((option) => {
-                const active = issueType === option;
+                const active = selectedIssueTypes.includes(option);
 
                 return (
-                  <button
+                  <label
                     key={option}
-                    type="button"
-                    onClick={() => setValue('issueType', option, { shouldValidate: true })}
-                    className={`rounded-2xl border p-4 text-left transition ${
-                      active ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                    className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
+                      active ? 'border-emerald-600 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
-                    <p className="text-sm font-medium">{option}</p>
-                  </button>
+                    <span className="text-sm font-medium">{option}</span>
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={() => toggleIssueType(option)}
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                  </label>
                 );
               })}
             </div>
-            {errors.issueType && <p className="text-sm text-rose-600">{errors.issueType.message}</p>}
-            <input type="hidden" {...register('issueType')} />
+            {errors.issueTypes && <p className="text-sm text-rose-600">{errors.issueTypes.message}</p>}
           </Section>
 
-          <Section title="Section B: Complaint Context" subtitle="Identify where the complaint arose and who or which office is involved.">
+          <Section title="Section B: Complaint Context" subtitle="Add the relevant complaint context.">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">School / Faculty</label>
@@ -415,7 +418,7 @@ export default function NewComplaint() {
                   placeholder="Name if relevant"
                   className={`app-input ${errors.relatedStaff ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
                 />
-                {issueType === 'Lecturer / Staff conduct' && (
+                {selectedIssueTypes.includes('Lecturer / Staff conduct') && (
                   <p className="text-xs text-slate-500">Required for staff conduct complaints.</p>
                 )}
                 {errors.relatedStaff && <p className="text-sm text-rose-600">{errors.relatedStaff.message}</p>}
@@ -435,7 +438,7 @@ export default function NewComplaint() {
             </div>
           </Section>
 
-          <Section title="Section C: Complaint Details" subtitle="Provide a clear summary, a complete description, and the action you are requesting.">
+          <Section title="Section C: Complaint Details" subtitle="Provide the complaint details.">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium text-slate-700">Subject / title</label>
@@ -488,15 +491,15 @@ export default function NewComplaint() {
             </div>
           </Section>
 
-          <Section title="Section D: Attachments" subtitle="Upload supporting evidence if available. Maximum 5 files.">
+          <Section title="Section D: Attachments" subtitle="Upload supporting evidence if available.">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <label className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center transition hover:border-emerald-300 hover:bg-emerald-50/40">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm">
-                  <UploadCloud className="h-7 w-7" />
+              <label className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center transition hover:border-slate-300 hover:bg-slate-100">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm">
+                  <UploadCloud className="h-6 w-6" />
                 </div>
                 <p className="mt-4 text-base font-medium text-slate-900">Upload evidence</p>
                 <p className="mt-2 text-sm text-slate-500">PDF, JPG, PNG, DOC, DOCX</p>
-                <p className="mt-1 text-xs text-slate-400">Maximum {MAX_FILE_SIZE_MB}MB per file</p>
+                <p className="mt-1 text-xs text-slate-400">Up to {MAX_FILES} files, {MAX_FILE_SIZE_MB}MB each</p>
                 <input
                   type="file"
                   className="hidden"
@@ -506,7 +509,7 @@ export default function NewComplaint() {
                 />
               </label>
 
-              <div className="rounded-[28px] border border-slate-200 bg-white p-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
                   <Paperclip className="h-4 w-4 text-slate-500" />
                   Attached files ({files.length}/{MAX_FILES})
@@ -515,7 +518,7 @@ export default function NewComplaint() {
                 {files.length > 0 ? (
                   <div className="space-y-3">
                     {files.map((file, index) => (
-                      <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                      <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
                           <p className="mt-1 text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -531,7 +534,7 @@ export default function NewComplaint() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex min-h-[160px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-500">
+                  <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-500">
                     No files attached
                   </div>
                 )}
@@ -539,8 +542,8 @@ export default function NewComplaint() {
             </div>
           </Section>
 
-          <Section title="Section E: Declaration" subtitle="Confirm that the information provided is accurate to the best of your knowledge.">
-            <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+          <Section title="Section E: Declaration" subtitle="Confirm the submitted information is accurate.">
+            <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
               <input
                 type="checkbox"
                 {...register('declaration')}
