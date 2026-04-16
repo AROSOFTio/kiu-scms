@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,11 +19,11 @@
 
   body {
     background-color: var(--kiu-surface);
-    @apply text-slate-900 font-['Inter',sans-serif] antialiased selection:bg-emerald-100 selection:text-emerald-900;
+    @apply text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-emerald-100 selection:text-emerald-900;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-['Outfit',sans-serif] tracking-tighter;
+    @apply font-['Plus_Jakarta_Sans',sans-serif] tracking-tight;
   }
 }
 

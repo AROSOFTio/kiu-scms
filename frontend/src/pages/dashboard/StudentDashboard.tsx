@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowRight,
-  Calendar,
+  CalendarDays,
   CheckCircle2,
   Clock3,
-  FileSearch,
   FilePlus2,
+  FileSearch,
   FileText,
   ListFilter,
   LucideIcon,
@@ -28,10 +28,8 @@ interface ComplaintRecord {
   reference_number: string;
   title: string;
   status: string;
-  priority?: string;
   category_name: string;
   created_at: string;
-  updated_at?: string;
 }
 
 interface NotificationItem {
@@ -45,7 +43,6 @@ interface NotificationItem {
 interface AppointmentRecord {
   id: number;
   appointment_date: string;
-  time_slot: string;
   status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rejected';
   hod_first_name?: string;
   hod_last_name?: string;
@@ -141,8 +138,8 @@ export default function StudentDashboard() {
           setAppointments([]);
           setAppointmentsActive(false);
         }
-      } catch (err) {
-        setError('Unable to load your dashboard right now.');
+      } catch {
+        setError('Unable to load dashboard data.');
       } finally {
         setLoading(false);
       }
@@ -165,7 +162,6 @@ export default function StudentDashboard() {
         complaint.category_name.toLowerCase().includes(search.toLowerCase());
 
       const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
-
       return matchesSearch && matchesStatus;
     });
   }, [complaints, search, statusFilter]);
@@ -173,10 +169,10 @@ export default function StudentDashboard() {
   const alerts = useMemo(() => {
     const notificationAlerts = notifications.slice(0, 4).map((item) => ({
       id: `notification-${item.id}`,
-      title: item.title,
+      title: item.title || 'Complaint updated',
       message: item.message,
       date: item.created_at,
-      tone: item.is_read ? 'border-slate-200 bg-white' : 'border-emerald-100 bg-emerald-50/70',
+      tone: item.is_read ? 'border-slate-200 bg-white' : 'border-emerald-100 bg-emerald-50',
     }));
 
     const appointmentAlerts = appointments
@@ -187,10 +183,10 @@ export default function StudentDashboard() {
         title: appointment.status === 'Confirmed' ? 'Appointment approved' : 'Appointment pending',
         message:
           appointment.status === 'Confirmed'
-            ? `Meeting with ${appointment.hod_first_name || ''} ${appointment.hod_last_name || ''} on ${formatDate(appointment.appointment_date)}.`
-            : `Appointment request for ${formatDate(appointment.appointment_date)} is awaiting confirmation.`,
+            ? `Meeting with ${appointment.hod_first_name || ''} ${appointment.hod_last_name || ''}`.trim()
+            : 'Appointment request awaiting confirmation',
         date: appointment.appointment_date,
-        tone: appointment.status === 'Confirmed' ? 'border-blue-100 bg-blue-50/70' : 'border-amber-100 bg-amber-50/70',
+        tone: appointment.status === 'Confirmed' ? 'border-blue-100 bg-blue-50' : 'border-amber-100 bg-amber-50',
       }));
 
     return [...notificationAlerts, ...appointmentAlerts].slice(0, 5);
@@ -201,47 +197,29 @@ export default function StudentDashboard() {
       label: 'Total Complaints',
       value: stats?.total || 0,
       icon: FileText,
-      tileTone: 'bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-indigo-200',
-      iconTone: 'bg-white/20 text-white',
+      tone: 'bg-indigo-600',
     },
     {
       label: 'Pending',
       value: stats?.pending || 0,
       icon: Clock3,
-      tileTone: 'bg-gradient-to-br from-amber-500 to-amber-400 text-white shadow-amber-200',
-      iconTone: 'bg-white/20 text-white',
+      tone: 'bg-slate-700',
     },
     {
       label: 'Resolved',
       value: stats?.resolved || 0,
       icon: CheckCircle2,
-      tileTone: 'bg-gradient-to-br from-emerald-600 to-emerald-500 text-white shadow-emerald-200',
-      iconTone: 'bg-white/20 text-white',
+      tone: 'bg-emerald-600',
     },
   ];
 
-  const actionCards: { label: string; icon: LucideIcon; href: string; tone: string }[] = [
-    {
-      label: 'Submit Complaint',
-      icon: FilePlus2,
-      href: '/dashboard/student/complaints/new',
-      tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-900',
-    },
-    {
-      label: 'Track Complaints',
-      icon: ListFilter,
-      href: '/dashboard/student/complaints',
-      tone: 'border-blue-200 bg-blue-50/70 text-blue-900',
-    },
+  const actionCards: { label: string; icon: LucideIcon; href: string }[] = [
+    { label: 'Submit Complaint', icon: FilePlus2, href: '/dashboard/student/complaints/new' },
+    { label: 'Track Complaints', icon: ListFilter, href: '/dashboard/student/complaints' },
   ];
 
   if (appointmentsActive) {
-    actionCards.push({
-      label: 'Appointments',
-      icon: Calendar,
-      href: '/dashboard/appointments',
-      tone: 'border-violet-200 bg-violet-50/70 text-violet-900',
-    });
+    actionCards.push({ label: 'Appointments', icon: CalendarDays, href: '/dashboard/appointments' });
   }
 
   if (error) {
@@ -259,43 +237,44 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-7 pb-16">
+    <div className="space-y-6 pb-16">
       <div className="app-page-header">
-        <span className="app-page-kicker">Student dashboard</span>
-        <h1 className="app-page-title">Complaint overview</h1>
-        <p className="app-page-subtitle">Track, submit, and review.</p>
+        <span className="app-page-kicker">Student</span>
+        <h1 className="app-page-title">Complaint dashboard</h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {loading
           ? Array(3)
               .fill(0)
               .map((_, index) => <StatSkeleton key={index} />)
           : statCards.map((card) => (
-              <div key={card.label} className={`rounded-3xl border p-6 shadow-sm ${card.tileTone}`}>
-                <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${card.iconTone}`}>
-                  <card.icon className="h-5 w-5" />
+              <div key={card.label} className={`${card.tone} rounded-2xl p-5 text-white shadow-sm`}>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-white/85">{card.label}</p>
+                  <div className="rounded-xl bg-white/15 p-2.5">
+                    <card.icon className="h-4 w-4" />
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-white/85">{card.label}</p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{card.value}</p>
+                <p className="mt-6 text-4xl font-semibold leading-none">{card.value}</p>
               </div>
             ))}
       </div>
 
-      <div className={`grid grid-cols-1 gap-4 ${appointmentsActive ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+      <div className={`grid grid-cols-1 gap-4 ${appointmentsActive ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         {actionCards.map((action) => (
           <Link
             key={action.label}
             to={action.href}
-            className={`group rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${action.tone}`}
+            className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-200"
           >
-            <div className="flex items-start justify-between gap-4">
-              <p className="text-lg font-semibold">{action.label}</p>
-              <div className="rounded-2xl bg-white/70 p-3">
-                <action.icon className="h-5 w-5" />
+            <div className="flex items-center justify-between">
+              <p className="text-base font-semibold text-slate-900">{action.label}</p>
+              <div className="rounded-xl bg-slate-100 p-2.5 text-slate-600">
+                <action.icon className="h-4 w-4" />
               </div>
             </div>
-            <div className="mt-5 flex items-center justify-end text-sm font-semibold">
+            <div className="mt-4 flex items-center justify-end text-sm font-semibold text-emerald-700">
               Open
               <ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-0.5" />
             </div>
@@ -305,11 +284,9 @@ export default function StudentDashboard() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="app-card overflow-hidden">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
-              </div>
+          <div className="border-b border-slate-200 px-5 py-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <label className="relative block">
@@ -319,14 +296,14 @@ export default function StudentDashboard() {
                     onChange={(event) => setSearch(event.target.value)}
                     type="text"
                     placeholder="Search"
-                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 sm:w-64"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 sm:w-56"
                   />
                 </label>
 
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                 >
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
@@ -340,47 +317,41 @@ export default function StudentDashboard() {
 
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="space-y-3 p-6">
+              <div className="space-y-3 p-5">
                 {Array(5)
                   .fill(0)
                   .map((_, index) => (
-                    <div key={index} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+                    <div key={index} className="h-14 animate-pulse rounded-xl bg-slate-100" />
                   ))}
               </div>
             ) : filteredComplaints.length > 0 ? (
               <table className="min-w-full text-left">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Reference</th>
-                    <th className="px-6 py-4 font-semibold">Subject</th>
-                    <th className="px-6 py-4 font-semibold">Category</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold">Date</th>
-                    <th className="px-6 py-4 font-semibold text-right">View</th>
+                    <th className="px-5 py-3.5 font-semibold">Ref</th>
+                    <th className="px-5 py-3.5 font-semibold">Subject</th>
+                    <th className="px-5 py-3.5 font-semibold">Type</th>
+                    <th className="px-5 py-3.5 font-semibold">Status</th>
+                    <th className="px-5 py-3.5 font-semibold">Date</th>
+                    <th className="px-5 py-3.5 text-right font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredComplaints.map((complaint) => (
                     <tr key={complaint.id} className="transition hover:bg-slate-50">
-                      <td className="px-6 py-4">
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                          {complaint.reference_number}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-slate-900">{complaint.title}</p>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500">{complaint.category_name}</td>
-                      <td className="px-6 py-4">
-                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusTone(complaint.status)}`}>
+                      <td className="px-5 py-4 text-xs font-semibold text-slate-700">{complaint.reference_number}</td>
+                      <td className="px-5 py-4 text-sm font-medium text-slate-900">{complaint.title}</td>
+                      <td className="px-5 py-4 text-sm text-slate-600">{complaint.category_name}</td>
+                      <td className="px-5 py-4">
+                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusTone(complaint.status)}`}>
                           {complaint.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-500">{formatDate(complaint.created_at)}</td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-5 py-4 text-sm text-slate-500">{formatDate(complaint.created_at)}</td>
+                      <td className="px-5 py-4 text-right">
                         <Link
                           to={`/dashboard/student/complaints/${complaint.id}`}
-                          className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+                          className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800"
                         >
                           Open
                         </Link>
@@ -390,7 +361,7 @@ export default function StudentDashboard() {
                 </tbody>
               </table>
             ) : (
-              <div className="p-8">
+              <div className="p-6">
                 <EmptyState
                   icon={FileSearch}
                   title="No records"
@@ -403,31 +374,26 @@ export default function StudentDashboard() {
           </div>
         </section>
 
-        <aside className="space-y-6">
-          <div className="app-card p-6">
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">Alerts</h2>
-            </div>
-
-            <div className="space-y-3">
-              {loading ? (
-                Array(4)
-                  .fill(0)
-                  .map((_, index) => <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />)
-              ) : alerts.length > 0 ? (
-                alerts.map((alert) => (
-                  <div key={alert.id} className={`rounded-2xl border p-4 ${alert.tone}`}>
-                    <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{alert.message}</p>
-                    <p className="mt-3 text-xs font-medium text-slate-500">{formatDate(alert.date)}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
-                  No alerts.
+        <aside className="app-card p-5">
+          <h2 className="text-lg font-semibold text-slate-900">Alerts</h2>
+          <div className="mt-4 space-y-3">
+            {loading ? (
+              Array(4)
+                .fill(0)
+                .map((_, index) => <div key={index} className="h-20 animate-pulse rounded-xl bg-slate-100" />)
+            ) : alerts.length > 0 ? (
+              alerts.map((alert) => (
+                <div key={alert.id} className={`rounded-xl border p-3.5 ${alert.tone}`}>
+                  <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                  <p className="mt-1 text-sm text-slate-600">{alert.message}</p>
+                  <p className="mt-2 text-xs font-medium text-slate-500">{formatDate(alert.date)}</p>
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                No alerts.
+              </div>
+            )}
           </div>
         </aside>
       </div>

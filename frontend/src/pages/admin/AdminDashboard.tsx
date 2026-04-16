@@ -83,13 +83,35 @@ export default function AdminDashboard() {
       setError('');
 
       try {
-        const [statsRes, complaintsRes] = await Promise.all([
+        const [statsRes, complaintsRes] = await Promise.allSettled([
           api.get('/admin/dashboard'),
           api.get('/admin/complaints', { params: { page: 1, limit: 8 } }),
         ]);
 
-        setStats(statsRes.data.data || null);
-        setRecentComplaints(complaintsRes.data.data || []);
+        const complaintsData =
+          complaintsRes.status === 'fulfilled' ? complaintsRes.value.data.data || [] : [];
+        const complaintsTotal =
+          complaintsRes.status === 'fulfilled' ? Number(complaintsRes.value.data.total || complaintsData.length) : 0;
+
+        setRecentComplaints(complaintsData);
+
+        if (statsRes.status === 'fulfilled') {
+          setStats(statsRes.value.data.data || null);
+        } else if (complaintsRes.status === 'fulfilled') {
+          const fallbackStatuses = complaintsData.reduce<Record<string, number>>((acc, complaint) => {
+            acc[complaint.status] = (acc[complaint.status] || 0) + 1;
+            return acc;
+          }, {});
+
+          setStats({
+            total: complaintsTotal,
+            byStatus: Object.entries(fallbackStatuses).map(([status, count]) => ({ status, count })),
+            slaMetrics: { breached: 0, onTrack: 0 },
+            urgentCases: [],
+          });
+        } else {
+          throw new Error('Dashboard requests failed');
+        }
       } catch (err) {
         setError('Unable to load dashboard data.');
       } finally {
