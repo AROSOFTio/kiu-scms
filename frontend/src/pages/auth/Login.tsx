@@ -100,7 +100,7 @@ export default function Login() {
       <div className="min-h-screen px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
         <div className="animate-slide-up w-full max-w-[470px] overflow-hidden rounded-[24px] border border-white/25 bg-white shadow-[0_36px_80px_-42px_rgba(0,0,0,0.48)] backdrop-blur-[2px]">
           <section className="border-b border-[#e4e8e5] bg-white px-8 pb-7 pt-8 text-center">
-            <div className="mx-auto mb-5 flex w-fit items-center justify-center rounded-[22px] border border-[#e2ebe4] bg-white px-7 py-5 shadow-[0_18px_34px_-30px_rgba(51,179,90,0.22)]">
+            <div className="mx-auto mb-5 flex w-fit items-center justify-center rounded-[22px] bg-white px-7 py-5">
               <img
                 src="/kiu-logo.png"
                 alt="Kampala International University"
