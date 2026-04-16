@@ -99,17 +99,17 @@ export default function Login() {
     >
       <div className="min-h-screen px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
         <div className="animate-slide-up w-full max-w-[470px] overflow-hidden rounded-[24px] border border-white/25 bg-white shadow-[0_36px_80px_-42px_rgba(0,0,0,0.48)] backdrop-blur-[2px]">
-          <section className="border-b border-[#e4e8e5] bg-white px-8 pb-7 pt-8 text-center">
-            <div className="mx-auto mb-5 flex w-fit items-center justify-center rounded-[22px] bg-white px-7 py-5">
+          <section className="border-b border-[#e4e8e5] bg-white px-8 pb-7 pt-7 text-center">
+            <div className="mx-auto mb-3 flex w-fit items-center justify-center bg-white px-4 py-2">
               <img
                 src="/kiu-logo.png"
                 alt="Kampala International University"
-                className="h-[88px] w-auto max-w-[260px] object-contain"
+                className="h-[112px] w-auto max-w-[320px] object-contain"
               />
             </div>
             <h1 className="text-[15px] font-semibold uppercase tracking-[0.18em] text-[#292929]">Student Complaint System</h1>
             <p className="mt-1 text-sm text-[#5d655f]">Sign in to continue</p>
-            <div className="mt-5 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f1f4f2] p-1.5">
+            <div className="mt-4 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f1f4f2] p-1.5">
               {accessOptions.map(({ value, label, icon: Icon, hint }) => {
                 const isActive = accessMode === value;
 
