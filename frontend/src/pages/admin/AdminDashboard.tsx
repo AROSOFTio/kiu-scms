@@ -152,7 +152,7 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
-      label: 'Total',
+      label: 'Total Complaints',
       value: stats?.total || 0,
       icon: FileText,
       tone: 'bg-[#292929]',
@@ -276,7 +276,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Alerts</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Priority Alerts</h2>
           <div className="mt-5 space-y-3">
             {loading
               ? Array(3)
@@ -293,7 +293,7 @@ export default function AdminDashboard() {
 
         <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
           <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Complaint Queue</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recent Complaints</h2>
           </div>
 
           <div className="overflow-x-auto">
