@@ -155,37 +155,69 @@ export default function AdminDashboard() {
       label: 'Total',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-[#5b5ce6] text-white',
-      iconTone: 'bg-white/20 text-white',
+      tone: 'bg-[#292929]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15 text-white',
     },
     {
       label: 'Pending',
       value: pendingCount,
       icon: Clock3,
-      tone: 'bg-[#7a8191] text-white',
-      iconTone: 'bg-white/20 text-white',
+      tone: 'bg-[#393836]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15 text-white',
     },
     {
       label: 'Resolved',
       value: resolvedCount,
       icon: CheckCircle2,
-      tone: 'bg-[#24c16b] text-white',
-      iconTone: 'bg-white/20 text-white',
+      tone: 'bg-[#34b05a]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15 text-white',
     },
     {
       label: 'Escalated',
       value: escalatedCount,
       icon: TrendingUp,
-      tone: 'bg-[#10b5cc] text-white',
-      iconTone: 'bg-white/20 text-white',
+      tone: 'bg-white border border-slate-200',
+      textTone: 'text-[#292929]',
+      iconTone: 'bg-[#34b05a]/10 text-[#34b05a]',
     },
   ];
 
   const quickActions = [
-    { label: 'Review Complaints', href: '/dashboard/admin/complaints', icon: FileText, tone: 'bg-[#1f5eff] text-white' },
-    { label: 'Route Complaint', href: '/dashboard/admin/complaints', icon: Route, tone: 'bg-[#0f766e] text-white' },
-    { label: 'View Reports', href: '/dashboard/admin/reports', icon: TrendingUp, tone: 'bg-[#475569] text-white' },
-    { label: 'View Appointments', href: '/dashboard/appointments', icon: Clock3, tone: 'bg-[#7c3aed] text-white' },
+    {
+      label: 'Review Complaints',
+      href: '/dashboard/admin/complaints',
+      icon: FileText,
+      tone: 'bg-[#34b05a]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15',
+    },
+    {
+      label: 'Route Complaint',
+      href: '/dashboard/admin/complaints',
+      icon: Route,
+      tone: 'bg-[#292929]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15',
+    },
+    {
+      label: 'View Reports',
+      href: '/dashboard/admin/reports',
+      icon: TrendingUp,
+      tone: 'bg-[#393836]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15',
+    },
+    {
+      label: 'View Appointments',
+      href: '/dashboard/appointments',
+      icon: Clock3,
+      tone: 'border border-slate-200 bg-white',
+      textTone: 'text-[#292929]',
+      iconTone: 'bg-[#34b05a]/10',
+    },
   ];
 
   if (error) {
@@ -212,14 +244,14 @@ export default function AdminDashboard() {
           : statCards.map((card) => (
               <div
                 key={card.label}
-                className={`rounded-[26px] p-5 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)] ${card.tone}`}
+                className={`rounded-[22px] p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.38)] ${card.tone} ${card.textTone}`}
               >
-                <div className="flex min-h-[154px] flex-col items-center justify-center text-center">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconTone}`}>
+                <div className="flex min-h-[146px] flex-col items-center justify-center text-center">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${card.iconTone}`}>
                     <card.icon className="h-6 w-6" />
                   </div>
-                  <p className="mt-5 text-4xl font-bold leading-none text-white">{card.value}</p>
-                  <p className="mt-3 text-sm font-medium text-white/90">{card.label}</p>
+                  <p className="mt-5 text-4xl font-bold leading-none">{card.value}</p>
+                  <p className="mt-3 text-sm font-medium">{card.label}</p>
                 </div>
               </div>
             ))}
@@ -230,20 +262,20 @@ export default function AdminDashboard() {
           <Link
             key={action.label}
             to={action.href}
-            className={`rounded-[26px] p-5 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)] transition hover:-translate-y-0.5 ${action.tone}`}
+            className={`rounded-[22px] p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.28)] transition hover:-translate-y-0.5 ${action.tone} ${action.textTone}`}
           >
-            <div className="flex min-h-[154px] flex-col items-center justify-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+            <div className="flex min-h-[146px] flex-col items-center justify-center text-center">
+              <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${action.iconTone}`}>
                 <action.icon className="h-6 w-6" />
               </div>
-              <p className="mt-5 text-base font-semibold">{action.label}</p>
+              <p className="mt-5 text-[15px] font-semibold">{action.label}</p>
             </div>
           </Link>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
+        <aside className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
           <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Alerts</h2>
           <div className="mt-5 space-y-3">
             {loading
@@ -259,7 +291,7 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
+        <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
           <div className="border-b border-slate-200 px-6 py-5">
             <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Complaint Queue</h2>
           </div>
@@ -306,7 +338,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-right">
                         <Link
                           to="/dashboard/admin/complaints"
-                          className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+                          className="text-sm font-medium text-[#34b05a] transition hover:text-[#2b8f48]"
                         >
                           Review
                         </Link>

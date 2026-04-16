@@ -196,34 +196,41 @@ export default function StudentDashboard() {
       label: 'Total',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-[#5b5ce6]',
+      tone: 'bg-[#292929]',
+      textTone: 'text-white',
     },
     {
       label: 'Pending',
       value: stats?.pending || 0,
       icon: Clock3,
-      tone: 'bg-[#7a8191]',
+      tone: 'bg-[#393836]',
+      textTone: 'text-white',
     },
     {
       label: 'Resolved',
       value: stats?.resolved || 0,
       icon: CheckCircle2,
-      tone: 'bg-[#24c16b]',
+      tone: 'bg-[#34b05a]',
+      textTone: 'text-white',
     },
   ];
 
-  const actionCards: { label: string; icon: LucideIcon; href: string; tone: string }[] = [
+  const actionCards: { label: string; icon: LucideIcon; href: string; tone: string; textTone: string; iconTone: string }[] = [
     {
       label: 'Submit Complaint',
       icon: FilePlus2,
       href: '/dashboard/student/complaints/new',
-      tone: 'bg-[#1f5eff]',
+      tone: 'bg-[#34b05a]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15',
     },
     {
       label: 'Track Complaints',
       icon: ListFilter,
       href: '/dashboard/student/complaints',
-      tone: 'bg-[#0ea5c6]',
+      tone: 'bg-[#292929]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15',
     },
   ];
 
@@ -232,7 +239,9 @@ export default function StudentDashboard() {
       label: 'Appointments',
       icon: CalendarDays,
       href: '/dashboard/appointments',
-      tone: 'bg-[#475569]',
+      tone: 'border border-slate-200 bg-white',
+      textTone: 'text-[#292929]',
+      iconTone: 'bg-[#34b05a]/10',
     });
   }
 
@@ -262,14 +271,14 @@ export default function StudentDashboard() {
                 {statCards.map((tile) => (
                   <div
                     key={tile.label}
-                    className={`rounded-[26px] ${tile.tone} p-5 text-white shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)]`}
+                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.55)]`}
                   >
-                    <div className="flex h-full min-h-[154px] flex-col items-center justify-center text-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+                    <div className="flex h-full min-h-[146px] flex-col items-center justify-center text-center">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white/15">
                         <tile.icon className="h-6 w-6" />
                       </div>
                       <p className="mt-5 text-4xl font-bold leading-none">{tile.value}</p>
-                      <p className="mt-3 text-sm font-medium text-white/90">{tile.label}</p>
+                      <p className="mt-3 text-sm font-medium">{tile.label}</p>
                     </div>
                   </div>
                 ))}
@@ -277,13 +286,13 @@ export default function StudentDashboard() {
                   <Link
                     key={tile.label}
                     to={tile.href}
-                    className={`rounded-[26px] ${tile.tone} p-5 text-white shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)] transition hover:-translate-y-0.5`}
+                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.28)] transition hover:-translate-y-0.5`}
                   >
-                    <div className="flex h-full min-h-[154px] flex-col items-center justify-center text-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+                    <div className="flex h-full min-h-[146px] flex-col items-center justify-center text-center">
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${tile.iconTone}`}>
                         <tile.icon className="h-6 w-6" />
                       </div>
-                      <p className="mt-5 text-base font-semibold text-white">{tile.label}</p>
+                      <p className="mt-5 text-[15px] font-semibold">{tile.label}</p>
                     </div>
                   </Link>
                 ))}
@@ -292,7 +301,7 @@ export default function StudentDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
+        <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
           <div className="border-b border-slate-200 px-5 py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Complaints</h2>
@@ -305,14 +314,14 @@ export default function StudentDashboard() {
                     onChange={(event) => setSearch(event.target.value)}
                     type="text"
                     placeholder="Search"
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 sm:w-56"
+                    className="w-full rounded-[16px] border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:ring-4 focus:ring-[#34b05a]/10 sm:w-56"
                   />
                 </label>
 
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                  className="rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-[#34b05a] focus:ring-4 focus:ring-[#34b05a]/10"
                 >
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
@@ -360,7 +369,7 @@ export default function StudentDashboard() {
                       <td className="px-5 py-4 text-right">
                         <Link
                           to={`/dashboard/student/complaints/${complaint.id}`}
-                          className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800"
+                          className="text-sm font-semibold text-[#34b05a] transition hover:text-[#2b8f48]"
                         >
                           Open
                         </Link>
@@ -383,7 +392,7 @@ export default function StudentDashboard() {
           </div>
         </section>
 
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
+        <aside className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
           <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Alerts</h2>
           <div className="mt-4 space-y-3">
             {loading ? (

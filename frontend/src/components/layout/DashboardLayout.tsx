@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   BarChart3,
-  Building2,
   CalendarDays,
   ClipboardList,
   FilePlus2,
@@ -107,7 +106,7 @@ export default function DashboardLayout() {
   }, [isSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-[#eef1f5] text-slate-900">
+    <div className="min-h-screen bg-[#f4f5f7] text-slate-900">
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-sm lg:hidden"
@@ -116,20 +115,20 @@ export default function DashboardLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#1e2340] text-white transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#393836] text-white transition-transform duration-300 lg:translate-x-0 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="relative border-b border-white/10 px-6 py-6">
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-emerald-400 via-amber-300 to-rose-500" />
+        <div className="relative border-b border-white/10 px-6 py-5">
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-[#34b05a]" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white">
-                <Building2 className="h-5 w-5" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white p-2.5 shadow-sm">
+                <img src="/kiu-logo.png" alt="Kampala International University" className="h-full w-full object-contain" />
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">KIU SCMS</p>
-                <h1 className="text-sm font-semibold text-white">Complaint System</h1>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#34b05a]">KIU</p>
+                <h1 className="text-sm font-semibold text-white">Student Complaint System</h1>
               </div>
             </div>
             <button
@@ -144,11 +143,11 @@ export default function DashboardLayout() {
 
         <div className="border-b border-white/10 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-white/10 text-sm font-semibold text-white">
               {initials}
             </div>
-            <div>
-              <p className="text-base font-semibold text-white">{user ? `${user.firstName} ${user.lastName}` : 'User'}</p>
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-white">{user ? `${user.firstName} ${user.lastName}` : 'User'}</p>
             </div>
           </div>
           <div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/80">
@@ -160,17 +159,17 @@ export default function DashboardLayout() {
           <div className="px-3 pb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
             Navigation
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {navigation.map((item) => {
               const active = isActivePath(location.pathname, item.href);
               return (
                 <li key={item.href}>
                   <Link
                     to={item.href}
-                    className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm transition ${
+                    className={`flex items-center gap-3 rounded-[18px] px-4 py-3.5 text-sm transition ${
                       active
-                        ? 'bg-white/12 text-white shadow-[inset_3px_0_0_#ffffff]'
-                        : 'text-white/78 hover:bg-white/8 hover:text-white'
+                        ? 'bg-white/10 text-white ring-1 ring-inset ring-white/20'
+                        : 'text-white/78 hover:bg-white/7 hover:text-white'
                     }`}
                   >
                     <item.icon className="h-4 w-4" />
@@ -186,7 +185,7 @@ export default function DashboardLayout() {
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium text-white/75 transition hover:bg-white/8 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-[18px] px-4 py-3.5 text-sm font-medium text-white/75 transition hover:bg-white/7 hover:text-white"
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -195,19 +194,19 @@ export default function DashboardLayout() {
       </aside>
 
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-[#1e2340] bg-[#1e2340] text-white">
+        <header className="sticky top-0 z-30 border-b border-[#292929] bg-[#292929] text-white">
           <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-4">
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white lg:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/15 bg-white/10 text-white lg:hidden"
               >
                 <Menu className="h-5 w-5" />
               </button>
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
-                  <h2 className="truncate text-xl font-semibold text-white">{pageTitle}</h2>
+                  <h2 className="truncate text-[22px] font-semibold text-white">{pageTitle}</h2>
                   <span className="hidden rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-white/75 sm:inline-flex">
                     {roleMeta.title}
                   </span>
@@ -218,7 +217,7 @@ export default function DashboardLayout() {
             <div className="flex items-center gap-3">
               <TimeDisplay />
               <NotificationDropdown />
-              <div className="hidden items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-2 md:flex">
+              <div className="hidden items-center gap-3 rounded-[18px] border border-white/15 bg-white/10 px-3 py-2 md:flex">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
                   <UserRound className="h-4 w-4" />
                 </div>
@@ -231,7 +230,7 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className="px-4 py-5 sm:px-6 lg:px-8">
+        <main className="px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-7xl space-y-6">
             <Outlet />
           </div>
