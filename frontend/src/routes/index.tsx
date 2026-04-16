@@ -1,8 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/auth/Login';
-import Register from '../pages/auth/Register';
-import ForgotPassword from '../pages/auth/ForgotPassword';
-import ResetPassword from '../pages/auth/ResetPassword';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 
@@ -11,16 +8,13 @@ import ProtectedRoute from '../components/layout/ProtectedRoute';
 import StudentDashboard from '../pages/dashboard/StudentDashboard';
 import ComplaintList from '../pages/complaints/ComplaintList';
 import NewComplaint from '../pages/complaints/NewComplaint';
-import ComplaintDetail from '../pages/complaints/ComplaintDetail';
-import ComplaintsList from '../pages/dashboard/ComplaintsList';
+import StudentComplaintDetail from '../pages/complaints/StudentComplaintDetail';
+import ComplaintQueue from '../pages/dashboard/ComplaintQueue';
 import StaffDashboard from '../pages/dashboard/StaffDashboard';
-import StaffComplaintWorkspace from '../pages/dashboard/StaffComplaintWorkspace';
+import ComplaintWorkspace from '../pages/dashboard/ComplaintWorkspace';
 
 // Phase 5: Administrative Control Panel
 import AdminDashboard from '../pages/admin/AdminDashboard';
-import OrgManagement from '../pages/admin/OrgManagement';
-import SystemConfig from '../pages/admin/SystemConfig';
-import AuditLogs from '../pages/admin/AuditLogs';
 import ReportsOverview from '../pages/admin/ReportsOverview';
 import Appointments from '../pages/appointments/Appointments';
 
@@ -51,11 +45,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
 
-      {/* Public Auth Routes */}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Protected Dashboard Routes */}
       <Route path="/dashboard" element={
@@ -79,7 +69,7 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={['Student']}><NewComplaint /></ProtectedRoute>
         } />
         <Route path="student/complaints/:id" element={
-          <ProtectedRoute allowedRoles={['Student']}><ComplaintDetail /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Student']}><StudentComplaintDetail /></ProtectedRoute>
         } />
         
         {/* Administrative Management Routes */}
@@ -87,16 +77,10 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>
         } />
         <Route path="admin/complaints" element={
-          <ProtectedRoute allowedRoles={['Admin']}><ComplaintsList /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin']}><ComplaintQueue /></ProtectedRoute>
         } />
-        <Route path="admin/org" element={
-          <ProtectedRoute allowedRoles={['Admin']}><OrgManagement /></ProtectedRoute>
-        } />
-        <Route path="admin/config" element={
-          <ProtectedRoute allowedRoles={['Admin']}><SystemConfig /></ProtectedRoute>
-        } />
-        <Route path="admin/logs" element={
-          <ProtectedRoute allowedRoles={['Admin']}><AuditLogs /></ProtectedRoute>
+        <Route path="admin/complaints/:id" element={
+          <ProtectedRoute allowedRoles={['Admin']}><ComplaintWorkspace /></ProtectedRoute>
         } />
         <Route path="admin/reports" element={
           <ProtectedRoute allowedRoles={['Admin']}><ReportsOverview /></ProtectedRoute>
@@ -107,10 +91,10 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><StaffDashboard /></ProtectedRoute>
         } />
         <Route path="staff/worklist" element={
-          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><StaffDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><ComplaintQueue /></ProtectedRoute>
         } />
         <Route path="staff/complaints/:id" element={
-          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><StaffComplaintWorkspace /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><ComplaintWorkspace /></ProtectedRoute>
         } />
 
       </Route>

@@ -12,23 +12,27 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ComplaintStatusBadge } from '../../components/complaints/ComplaintLifecycle';
 
 interface Complaint {
   id: number;
   reference_number: string;
   title: string;
   status: string;
+  display_status?: string;
   category_name: string;
   created_at: string;
   student_first_name: string;
   student_last_name: string;
 }
 
-type QueueFilter = 'all' | 'Pending' | 'In Progress' | 'Awaiting Student' | 'Resolved';
+type QueueFilter = 'all' | 'Submitted' | 'Under Review' | 'Forwarded' | 'In Progress' | 'Awaiting Student' | 'Resolved';
 
-const FILTERS: QueueFilter[] = ['all', 'Pending', 'In Progress', 'Awaiting Student', 'Resolved'];
+const FILTERS: QueueFilter[] = ['all', 'Submitted', 'Under Review', 'Forwarded', 'In Progress', 'Awaiting Student', 'Resolved'];
 const FILTER_STATUS_MAP: Record<Exclude<QueueFilter, 'all'>, string[]> = {
-  Pending: ['Submitted', 'Under Review'],
+  Submitted: ['Submitted'],
+  'Under Review': ['Under Review'],
+  Forwarded: ['Forwarded'],
   'In Progress': ['In Progress'],
   'Awaiting Student': ['Awaiting Student'],
   Resolved: ['Resolved', 'Closed'],
@@ -43,23 +47,8 @@ function formatDate(value: string) {
 }
 
 function getStatusLabel(status: string) {
-  if (status === 'Submitted' || status === 'Under Review') return 'Pending';
   if (status === 'Closed') return 'Resolved';
   return status;
-}
-
-function getStatusTone(status: string) {
-  switch (status) {
-    case 'Resolved':
-    case 'Closed':
-      return 'bg-[#34b05a]/12 text-[#2d8f49] border-[#34b05a]/15';
-    case 'Awaiting Student':
-      return 'bg-amber-50 text-amber-700 border-amber-100';
-    case 'In Progress':
-      return 'bg-slate-100 text-slate-700 border-slate-200';
-    default:
-      return 'bg-white text-slate-700 border-slate-200';
-  }
 }
 
 export default function StaffDashboard() {
@@ -118,9 +107,9 @@ export default function StaffDashboard() {
   const summary = useMemo(() => {
     return complaints.reduce(
       (acc, complaint) => {
-        const label = getStatusLabel(complaint.status);
+        const label = getStatusLabel(complaint.display_status || complaint.status);
         acc.total += 1;
-        if (label === 'Pending') acc.pending += 1;
+        if (label === 'Submitted' || label === 'Under Review') acc.pending += 1;
         if (label === 'In Progress') acc.inProgress += 1;
         if (label === 'Awaiting Student') acc.awaitingStudent += 1;
         if (label === 'Resolved') acc.resolved += 1;
@@ -248,9 +237,7 @@ export default function StaffDashboard() {
                 </div>
 
                 <div>
-                  <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${getStatusTone(getStatusLabel(complaint.status))}`}>
-                    {getStatusLabel(complaint.status)}
-                  </span>
+                  <ComplaintStatusBadge status={getStatusLabel(complaint.display_status || complaint.status)} />
                 </div>
 
                 <div className="flex items-center justify-end">

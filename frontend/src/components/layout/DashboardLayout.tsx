@@ -36,7 +36,8 @@ function getNavigation(role?: string): NavigationItem[] {
 
   if (role === 'Staff' || role === 'Department Officer') {
     return [
-      { label: 'Complaint Queue', href: '/dashboard/staff', icon: ClipboardList },
+      { label: 'Workspace', href: '/dashboard/staff', icon: LayoutDashboard },
+      { label: 'Assigned Complaints', href: '/dashboard/staff/worklist', icon: ClipboardList },
       { label: 'Appointments', href: '/dashboard/appointments', icon: CalendarDays },
     ];
   }
@@ -67,11 +68,12 @@ function getPageTitle(pathname: string) {
     { match: /^\/dashboard\/student\/complaints\/new$/, title: 'Submit Complaint' },
     { match: /^\/dashboard\/student\/complaints\/[^/]+$/, title: 'Complaint Details' },
     { match: /^\/dashboard\/student\/complaints$/, title: 'My Complaints' },
-    { match: /^\/dashboard\/staff$/, title: 'Complaint Queue' },
-    { match: /^\/dashboard\/staff\/worklist$/, title: 'Complaint Queue' },
+    { match: /^\/dashboard\/staff$/, title: 'Workspace' },
+    { match: /^\/dashboard\/staff\/worklist$/, title: 'Assigned Complaints' },
     { match: /^\/dashboard\/staff\/complaints\/[^/]+$/, title: 'Complaint Workspace' },
     { match: /^\/dashboard\/admin$/, title: 'Dashboard' },
     { match: /^\/dashboard\/admin\/complaints$/, title: 'Complaint Queue' },
+    { match: /^\/dashboard\/admin\/complaints\/[^/]+$/, title: 'Complaint Workspace' },
     { match: /^\/dashboard\/admin\/reports$/, title: 'Reports' },
     { match: /^\/dashboard\/appointments$/, title: 'Appointments' },
   ];

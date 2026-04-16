@@ -7,6 +7,7 @@ import { NotificationService } from '../services/notification.service';
 export const getAllComplaints = async (req: Request, res: Response) => {
   const { status, statuses, category, search, priority, page = '1', limit = '10', startDate, endDate } = req.query as any;
   const offset = (parseInt(page) - 1) * parseInt(limit);
+  const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
   try {
     let where = 'WHERE 1=1';
@@ -18,10 +19,10 @@ export const getAllComplaints = async (req: Request, res: Response) => {
       .filter(Boolean);
 
     if (statusList.length > 0) {
-      where += ` AND c.status IN (${statusList.map(() => '?').join(',')})`;
+      where += ` AND ${displayStatusSql} IN (${statusList.map(() => '?').join(',')})`;
       params.push(...statusList);
     } else if (status) {
-      where += ' AND c.status = ?';
+      where += ` AND ${displayStatusSql} = ?`;
       params.push(status);
     }
     if (category) { where += ' AND cc.id = ?'; params.push(category); }
@@ -60,6 +61,7 @@ export const getAllComplaints = async (req: Request, res: Response) => {
     const [countRows]: any = await db.query(
       `SELECT COUNT(*) as total 
        FROM complaints c
+       JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
        ${where}`, 
@@ -69,6 +71,7 @@ export const getAllComplaints = async (req: Request, res: Response) => {
 
     const [rows]: any = await db.query(
       `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at, c.updated_at,
+              ${displayStatusSql} as display_status,
               cc.name as category_name,
               u.first_name as student_first_name, u.last_name as student_last_name,
               su.first_name as staff_first_name, su.last_name as staff_last_name,
@@ -151,12 +154,14 @@ export const getComplaintById = async (req: Request, res: Response) => {
       [id]
     );
     const reviewed_at = reviewEvent.length > 0 ? reviewEvent[0].changed_at : null;
+    const display_status = timeline.length > 0 ? timeline[timeline.length - 1].status : complaint.status;
 
     // Format response to match expected UI structure
     res.json({
       status: 'success',
       data: { 
         ...complaint, 
+        display_status,
         reviewed_at,
         attachments: attachments.map((a: any) => ({...a, file_name: a.file_path.split('/').pop()})), 
         timeline,
@@ -216,6 +221,75 @@ export const assignStaff = async (req: Request, res: Response) => {
     await NotificationService.notifyStatusChange(parseInt(id), 'Under Review', `Complaint has been assigned to ${staff[0].first_name} ${staff[0].last_name}`);
 
     res.json({ status: 'success', message: 'Staff assigned successfully' });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
+// @desc    Route a complaint to a unit and optionally assign a staff member
+export const routeComplaint = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { destination, otherUnit, staffId, remarks } = req.body;
+  const adminId = (req as any).user?.userId;
+  const roleName = (req as any).user?.roleName;
+
+  if (!destination) {
+    return res.status(400).json({ status: 'error', message: 'Routing destination is required' });
+  }
+
+  try {
+    if (!await verifyHODScope(adminId, roleName, parseInt(id))) {
+      return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage complaints outside your Faculty.' });
+    }
+
+    let assignedStaff: any = null;
+    if (staffId) {
+      const [staffRows]: any = await db.query(
+        `SELECT u.id, u.first_name, u.last_name, r.name as role_name
+         FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE u.id = ? AND r.name IN ('Staff', 'Admin', 'Department Officer')`,
+        [staffId]
+      );
+
+      if (staffRows.length === 0) {
+        return res.status(400).json({ status: 'error', message: 'Invalid staff member selected' });
+      }
+
+      assignedStaff = staffRows[0];
+    }
+
+    const targetUnit = destination === 'Other unit' ? (otherUnit || '').trim() : destination;
+    if (!targetUnit) {
+      return res.status(400).json({ status: 'error', message: 'Target unit is required' });
+    }
+
+    await db.query(
+      'UPDATE complaints SET assigned_staff_id = ?, status = ? WHERE id = ?',
+      [assignedStaff ? staffId : null, 'Under Review', id]
+    );
+
+    const routingMessage = [
+      `Forwarded to ${targetUnit}`,
+      assignedStaff ? `Assigned to ${assignedStaff.first_name} ${assignedStaff.last_name}` : '',
+      remarks ? String(remarks).trim() : '',
+    ]
+      .filter(Boolean)
+      .join('. ');
+
+    await db.query(
+      `INSERT INTO complaint_status_history (complaint_id, status, changed_by_user_id, remarks)
+       VALUES (?, 'Forwarded', ?, ?)`,
+      [id, adminId, routingMessage]
+    );
+
+    if (assignedStaff) {
+      await NotificationService.notifyAssignment(parseInt(id), Number(staffId));
+    }
+
+    await NotificationService.notifyStatusChange(parseInt(id), 'Forwarded', routingMessage);
+
+    res.json({ status: 'success', message: 'Complaint routed successfully' });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
@@ -322,9 +396,13 @@ export const getAdminStats = async (req: Request, res: Response) => {
     }
 
     const params = filterParam !== null ? [filterParam] : [];
+    const scopedComplaintFilter = filterSQL
+      .replace(/\bassigned_staff_id\b/g, 'c.assigned_staff_id')
+      .replace(/\bdepartment_id\b/g, 'c.department_id');
+    const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
     const statsQuery = `SELECT COUNT(*) as count FROM complaints WHERE ${filterSQL}`;
-    const statusQuery = `SELECT status, COUNT(*) as count FROM complaints WHERE ${filterSQL} GROUP BY status`;
+    const statusQuery = `SELECT ${displayStatusSql} as status, COUNT(*) as count FROM complaints c WHERE ${scopedComplaintFilter} GROUP BY ${displayStatusSql}`;
     const categoryQuery = `SELECT cc.name as category, COUNT(c.id) as count FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id AND c.${filterSQL} GROUP BY cc.name`;
     const slaQuery = `SELECT 
                   SUM(CASE WHEN status NOT IN ('Resolved', 'Closed', 'Rejected') AND TIMESTAMPDIFF(HOUR, created_at, NOW()) > CASE priority WHEN 'Critical' THEN 24 WHEN 'High' THEN 48 WHEN 'Medium' THEN 72 WHEN 'Low' THEN 120 ELSE 72 END THEN 1 ELSE 0 END) as breached,

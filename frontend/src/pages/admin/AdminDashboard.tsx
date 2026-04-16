@@ -11,6 +11,7 @@ import {
 import api from '../../lib/api';
 import { StatSkeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ComplaintStatusBadge } from '../../components/complaints/ComplaintLifecycle';
 
 interface StatusCount {
   status: string;
@@ -31,6 +32,7 @@ interface ComplaintRecord {
   id: number;
   reference_number: string;
   status: string;
+  display_status?: string;
   category_name: string;
   created_at: string;
   student_first_name: string;
@@ -43,26 +45,6 @@ const formatDate = (value: string) =>
     month: 'short',
     year: 'numeric',
   });
-
-const getStatusTone = (status: string) => {
-  switch (status) {
-    case 'Resolved':
-    case 'Closed':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-    case 'Rejected':
-      return 'bg-rose-50 text-rose-700 border-rose-100';
-    case 'In Progress':
-      return 'bg-amber-50 text-amber-700 border-amber-100';
-    case 'Awaiting Student':
-      return 'bg-violet-50 text-violet-700 border-violet-100';
-    case 'Forwarded':
-    case 'Under Review':
-      return 'bg-blue-50 text-blue-700 border-blue-100';
-    case 'Submitted':
-    default:
-      return 'bg-slate-100 text-slate-700 border-slate-200';
-  }
-};
 
 function statusCount(statuses: StatusCount[], keys: string[]) {
   return statuses
@@ -330,14 +312,12 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">{complaint.category_name}</td>
                       <td className="px-6 py-4">
-                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusTone(complaint.status)}`}>
-                          {complaint.status}
-                        </span>
+                        <ComplaintStatusBadge status={complaint.display_status || complaint.status} />
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-500">{formatDate(complaint.created_at)}</td>
                       <td className="px-6 py-4 text-right">
                         <Link
-                          to="/dashboard/admin/complaints"
+                          to={`/dashboard/admin/complaints/${complaint.id}`}
                           className="text-sm font-medium text-[#34b05a] transition hover:text-[#2b8f48]"
                         >
                           Review

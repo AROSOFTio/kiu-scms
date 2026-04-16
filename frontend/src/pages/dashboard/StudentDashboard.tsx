@@ -15,6 +15,7 @@ import {
 import api from '../../lib/api';
 import { StatSkeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ComplaintStatusBadge } from '../../components/complaints/ComplaintLifecycle';
 
 interface DashboardStats {
   total: number;
@@ -27,6 +28,7 @@ interface ComplaintRecord {
   reference_number: string;
   title: string;
   status: string;
+  display_status?: string;
   category_name: string;
   created_at: string;
 }
@@ -53,26 +55,6 @@ const formatDate = (value: string) =>
     month: 'short',
     year: 'numeric',
   });
-
-const getStatusTone = (status: string) => {
-  switch (status) {
-    case 'Resolved':
-    case 'Closed':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-    case 'Rejected':
-      return 'bg-rose-50 text-rose-700 border-rose-100';
-    case 'In Progress':
-      return 'bg-amber-50 text-amber-700 border-amber-100';
-    case 'Awaiting Student':
-      return 'bg-violet-50 text-violet-700 border-violet-100';
-    case 'Forwarded':
-    case 'Under Review':
-      return 'bg-blue-50 text-blue-700 border-blue-100';
-    case 'Submitted':
-    default:
-      return 'bg-slate-100 text-slate-700 border-slate-200';
-  }
-};
 
 export default function StudentDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -149,7 +131,7 @@ export default function StudentDashboard() {
 
   const statusOptions = useMemo(() => {
     const values = new Set<string>(['All']);
-    complaints.forEach((complaint) => values.add(complaint.status));
+    complaints.forEach((complaint) => values.add(complaint.display_status || complaint.status));
     return Array.from(values);
   }, [complaints]);
 
@@ -160,7 +142,7 @@ export default function StudentDashboard() {
         complaint.reference_number.toLowerCase().includes(search.toLowerCase()) ||
         complaint.category_name.toLowerCase().includes(search.toLowerCase());
 
-      const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
+      const matchesStatus = statusFilter === 'All' || (complaint.display_status || complaint.status) === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [complaints, search, statusFilter]);
@@ -364,9 +346,7 @@ export default function StudentDashboard() {
                       <td className="px-5 py-4 text-sm font-medium text-slate-900">{complaint.title}</td>
                       <td className="px-5 py-4 text-sm text-slate-600">{complaint.category_name}</td>
                       <td className="px-5 py-4">
-                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusTone(complaint.status)}`}>
-                          {complaint.status}
-                        </span>
+                        <ComplaintStatusBadge status={complaint.display_status || complaint.status} />
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-500">{formatDate(complaint.created_at)}</td>
                       <td className="px-5 py-4 text-right">

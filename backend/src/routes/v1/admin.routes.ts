@@ -5,6 +5,7 @@ import {
   getAdminStats, 
   getStaffMembers, 
   assignStaff, 
+  routeComplaint,
   updateStatus,
   addInternalNote,
   getInternalNotes,
@@ -43,6 +44,10 @@ router.get('/staff', requireAuth, requireRole(['Admin', 'Staff', 'Department Off
 // @route   PATCH /api/v1/admin/complaints/:id/assign
 // @desc    Assign a complaint to a specific staff member
 router.patch('/complaints/:id/assign', requireAuth, requireRole(['Admin', 'Department Officer']), assignStaff);
+
+// @route   PATCH /api/v1/admin/complaints/:id/route
+// @desc    Route a complaint to a unit and optionally assign a staff member
+router.patch('/complaints/:id/route', requireAuth, requireRole(['Admin', 'Department Officer']), routeComplaint);
 
 // @route   PATCH /api/v1/admin/complaints/:id/status
 // @desc    Update complaint status with remarks (Timeline)

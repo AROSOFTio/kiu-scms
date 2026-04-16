@@ -11,8 +11,7 @@ import {
 import api from '../../lib/api';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { PriorityBadge } from '../../components/ui/PriorityBadge';
-import { SLAIndicator } from '../../components/ui/SLAIndicator';
+import { ComplaintStatusBadge, LIFECYCLE_STATUSES } from '../../components/complaints/ComplaintLifecycle';
 
 export default function ComplaintList() {
   const [complaints, setComplaints] = useState<any[]>([]);
@@ -62,17 +61,6 @@ export default function ComplaintList() {
     setPage(1);
   }, [search, statusFilter, categoryFilter]);
 
-  const getStatusStyle = (status: string) => {
-    switch(status) {
-      case 'Resolved': return 'bg-emerald-100 text-emerald-700';
-      case 'Rejected': return 'bg-red-100 text-red-700';
-      case 'In Progress': return 'bg-amber-100 text-amber-700';
-      case 'Under Review': return 'bg-blue-100 text-blue-700';
-      case 'Submitted': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
@@ -99,14 +87,13 @@ export default function ComplaintList() {
             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <select
               value={statusFilter}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className="premium-input pl-11 pr-8 bg-slate-50 appearance-none font-bold"
             >
               <option value="">All Statuses</option>
-              <option value="Submitted">Pending</option>
-              <option value="Under Review">Under Review</option>
-              <option value="Resolved">Resolved</option>
-              <option value="Rejected">Rejected</option>
+              {LIFECYCLE_STATUSES.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
           </div>
 
@@ -114,7 +101,7 @@ export default function ComplaintList() {
             <FileText className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <select
               value={categoryFilter}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCategoryFilter(e.target.value)}
+              onChange={(e) => setCategoryFilter(e.target.value)}
               className="premium-input pl-11 pr-8 bg-slate-50 appearance-none font-bold"
             >
               <option value="">All Categories</option>
@@ -149,7 +136,9 @@ export default function ComplaintList() {
             </div>
           ) : complaints.length > 0 ? (
             <div className="divide-y divide-slate-50/80 text-slate-800 border-b border-slate-50">
-              {complaints.map((complaint) => (
+              {complaints.map((complaint) => {
+                const currentStatus = complaint.display_status || complaint.status;
+                return (
                 <Link
                   key={complaint.id}
                   to={`/dashboard/student/complaints/${complaint.id}`}
@@ -161,16 +150,12 @@ export default function ComplaintList() {
                         <span className="text-[10px] md:text-xs font-black text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg tracking-widest uppercase">
                           {complaint.reference_number}
                         </span>
-                        <span className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest ${getStatusStyle(complaint.status)}`}>
-                          {complaint.status === 'Submitted' ? 'Pending' : complaint.status}
-                        </span>
+                        <ComplaintStatusBadge status={currentStatus} />
                       </div>
                       <h3 className="font-black text-slate-900 leading-tight group-hover:text-[#008540] transition-colors text-xl md:text-2xl tracking-tight">{complaint.title}</h3>
                       <div className="flex flex-wrap items-center text-xs text-slate-500 gap-x-6 gap-y-3 font-bold">
                         <span className="flex items-center"><FileText className="h-4 w-4 mr-2" /> {complaint.category_name}</span>
                         <span className="flex items-center"><Calendar className="h-4 w-4 mr-2" /> {new Date(complaint.created_at).toLocaleDateString()}</span>
-                        <PriorityBadge priority={complaint.priority} />
-                        <SLAIndicator priority={complaint.priority} createdAt={complaint.created_at} status={complaint.status} />
                       </div>
                     </div>
                     <div className="h-12 w-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center mt-4 group-hover:bg-[#008540] group-hover:border-[#008540] transition-all duration-300">
@@ -178,7 +163,8 @@ export default function ComplaintList() {
                     </div>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="p-20">

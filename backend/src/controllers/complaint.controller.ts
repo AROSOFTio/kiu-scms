@@ -97,6 +97,7 @@ export const getMyComplaints = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
   const { status, category, search, page = '1', limit = '10' } = req.query as any;
   const offset = (parseInt(page) - 1) * parseInt(limit);
+  const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
   try {
     const [students]: any = await db.query('SELECT id FROM students WHERE user_id = ?', [userId]);
@@ -106,7 +107,7 @@ export const getMyComplaints = async (req: Request, res: Response) => {
     let where = 'WHERE c.student_id = ?';
     const params: any[] = [studentId];
 
-    if (status) { where += ' AND c.status = ?'; params.push(status); }
+    if (status) { where += ` AND ${displayStatusSql} = ?`; params.push(status); }
     if (category) { where += ' AND c.category_id = ?'; params.push(category); }
     if (search) { where += ' AND (c.title LIKE ? OR c.reference_number LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
 
@@ -117,6 +118,7 @@ export const getMyComplaints = async (req: Request, res: Response) => {
 
     const [rows]: any = await db.query(
       `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at, c.updated_at,
+              ${displayStatusSql} as display_status,
               cc.name as category_name
        FROM complaints c
        JOIN complaint_categories cc ON c.category_id = cc.id
@@ -168,7 +170,12 @@ export const getComplaintById = async (req: Request, res: Response) => {
 
     res.json({
       status: 'success',
-      data: { ...rows[0], attachments, timeline }
+      data: {
+        ...rows[0],
+        display_status: timeline.length > 0 ? timeline[timeline.length - 1].status : rows[0].status,
+        attachments,
+        timeline
+      }
     });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
@@ -188,7 +195,9 @@ export const getStudentStats = async (req: Request, res: Response) => {
     const [open]: any = await db.query(`SELECT COUNT(*) as count FROM complaints WHERE student_id = ? AND status NOT IN ('Resolved','Closed','Rejected')`, [studentId]);
     const [resolved]: any = await db.query(`SELECT COUNT(*) as count FROM complaints WHERE student_id = ? AND status = 'Resolved'`, [studentId]);
     const [recent]: any = await db.query(
-      `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at, cc.name as category_name
+      `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at,
+              COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status) as display_status,
+              cc.name as category_name
        FROM complaints c JOIN complaint_categories cc ON c.category_id = cc.id
        WHERE c.student_id = ? ORDER BY c.created_at DESC LIMIT 5`,
       [studentId]
