@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { 
+  getStudentDepartments,
   getHODAvailability, 
   updateHODAvailability, 
   bookAppointment, 
@@ -7,17 +8,18 @@ import {
   updateAppointmentStatus,
   getHODs
 } from '../../controllers/appointment.controller';
-import { requireAuth } from '../../middlewares/auth.middleware';
+import { requireAuth, requireRole } from '../../middlewares/auth.middleware';
 
 const router = Router();
 
 router.use(requireAuth);
 
 router.get('/availability/:hodId', getHODAvailability);
-router.put('/availability', updateHODAvailability);
-router.post('/', bookAppointment);
+router.get('/departments', requireRole(['Student']), getStudentDepartments);
+router.get('/hods', requireRole(['Student']), getHODs);
+router.put('/availability', requireRole(['Admin', 'Staff', 'Department Officer']), updateHODAvailability);
+router.post('/', requireRole(['Student']), bookAppointment);
 router.get('/', getMyAppointments);
 router.patch('/:id/status', updateAppointmentStatus);
-router.get('/hods', getHODs);
 
 export default router;

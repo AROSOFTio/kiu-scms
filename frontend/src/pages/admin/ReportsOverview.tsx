@@ -1,48 +1,57 @@
-import { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Download, 
-  PieChart as PieChartIcon,
-  RefreshCcw,
+import { useEffect, useMemo, useState } from 'react';
+import {
+  BarChart3,
+  CheckCircle2,
+  Clock3,
+  Download,
   FileText,
-  Activity
+  RefreshCcw,
+  Route,
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area
-} from 'recharts';
 import api from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Skeleton } from '../../components/ui/Skeleton';
 
-const COLORS = ['#008540', '#ed1c24', '#005596', '#fdb813', '#7a2182', '#00aed9'];
+interface AnalyticsRecord {
+  name?: string;
+  value?: number | string;
+  month?: string;
+  count?: number | string;
+  category?: string;
+  avgHours?: number | string;
+  action?: string;
+}
+
+interface ReportsData {
+  byCategory: AnalyticsRecord[];
+  byStatus: AnalyticsRecord[];
+  trends: AnalyticsRecord[];
+  resolutionTime: AnalyticsRecord[];
+  topActions: AnalyticsRecord[];
+}
+
+function toNumber(value: number | string | undefined) {
+  return Number(value || 0);
+}
 
 export default function ReportsOverview() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<ReportsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState('');
   const toast = useToast();
 
   const fetchAnalytics = async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await api.get('/admin/reports/analytics');
-      setData(res.data.data);
-    } catch (err) {
-      console.error('Failed to fetch analytics');
+      setData(res.data.data || null);
+    } catch {
+      setError('Unable to load report data.');
     } finally {
-      setTimeout(() => setLoading(false), 500);
+      setLoading(false);
     }
   };
 
@@ -57,184 +66,226 @@ export default function ReportsOverview() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `SCMS_Institutional_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `KIU_Complaint_Report_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('Complaint export complete');
-    } catch (err) {
+      toast.success('Report export complete');
+    } catch {
       toast.error('Export failed');
     } finally {
       setExporting(false);
     }
   };
 
-  const handlePdfGeneration = () => {
-    toast.success('PDF Generation Engine is being initialized for your institution.');
-  };
+  const summary = useMemo(() => {
+    const byStatus = data?.byStatus || [];
+    const resolutionValues = (data?.resolutionTime || []).map((item) => toNumber(item.avgHours)).filter((value) => value > 0);
+    const total = byStatus.reduce((sum, item) => sum + toNumber(item.value), 0);
+    const pending = byStatus
+      .filter((item) => ['Submitted', 'Under Review', 'Forwarded', 'In Progress', 'Awaiting Student'].includes(String(item.name || '')))
+      .reduce((sum, item) => sum + toNumber(item.value), 0);
+    const resolved = byStatus
+      .filter((item) => ['Resolved', 'Closed'].includes(String(item.name || '')))
+      .reduce((sum, item) => sum + toNumber(item.value), 0);
+    const averageResolution = resolutionValues.length
+      ? (resolutionValues.reduce((sum, value) => sum + value, 0) / resolutionValues.length).toFixed(1)
+      : '0.0';
+
+    return {
+      total,
+      pending,
+      resolved,
+      averageResolution,
+    };
+  }, [data]);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-        <RefreshCcw className="h-12 w-12 text-primary-200 animate-spin mb-4" />
-        <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Aggregating Institutional Insights...</p>
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-[150px] w-full" />
+          ))}
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Skeleton className="h-[320px] w-full" />
+          <Skeleton className="h-[320px] w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto mt-16 max-w-2xl">
+        <EmptyState
+          icon={BarChart3}
+          title="Reports unavailable"
+          description={error}
+          actionLabel="Open dashboard"
+          actionLink="/dashboard/admin"
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tighter">Institutional Reporting</h1>
-          <p className="text-gray-500 font-medium">Comprehensive data analytics and performance benchmarks.</p>
+    <div className="space-y-5 pb-10">
+      <section className="app-card px-5 py-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="app-page-header">
+            <p className="app-page-kicker">Reports</p>
+            <h1 className="app-page-title">Complaint Reports</h1>
+            <p className="app-page-subtitle">Category, status, trend, and resolution activity for complaint management.</p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={fetchAnalytics}
+              className="inline-flex items-center gap-2 rounded-[16px] border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-[#34b05a]/25 hover:text-[#34b05a]"
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 rounded-[16px] bg-[#34b05a] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#2d9a4e] disabled:bg-slate-300"
+            >
+              {exporting ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Export
+            </button>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={fetchAnalytics}
-            className="p-2 border border-gray-100 bg-white rounded-xl text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </button>
-          <button 
-            onClick={handleExport}
-            disabled={exporting}
-            className="inline-flex items-center px-6 py-3 bg-[#008540] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-900/10 hover:shadow-xl hover:translate-y-[-2px] transition-all disabled:bg-gray-200 active:scale-95"
-          >
-             {exporting ? <RefreshCcw className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-             Export Snapshot
-          </button>
-        </div>
+      </section>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Total complaints', value: summary.total, icon: FileText, tone: 'bg-[#292929] text-white', iconTone: 'bg-white/12 text-white' },
+          { label: 'Pending', value: summary.pending, icon: Clock3, tone: 'bg-[#393836] text-white', iconTone: 'bg-white/10 text-white' },
+          { label: 'Resolved', value: summary.resolved, icon: CheckCircle2, tone: 'bg-[#34b05a] text-white', iconTone: 'bg-white/12 text-white' },
+          { label: 'Avg resolution (hrs)', value: summary.averageResolution, icon: Route, tone: 'bg-white text-slate-900 border border-slate-200', iconTone: 'bg-[#34b05a]/10 text-[#34b05a]' },
+        ].map((card) => (
+          <div key={card.label} className={`rounded-[22px] p-5 shadow-[0_18px_40px_-32px_rgba(41,41,41,0.24)] ${card.tone}`}>
+            <div className="flex min-h-[136px] flex-col justify-between">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-[16px] ${card.iconTone}`}>
+                <card.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] opacity-80">{card.label}</p>
+                <p className="mt-3 text-3xl font-semibold">{card.value}</p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Analytics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Category Distribution */}
-        <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm relative group overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#008540] opacity-50 transition-all group-hover:w-3" />
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-between">
-            Category Load Distribution
-            <PieChartIcon className="h-4 w-4 text-emerald-100" />
-          </h3>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data?.byCategory}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={80}
-                  outerRadius={120}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {data?.byCategory.map((_: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
-                />
-                <Legend iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Status Trends */}
-        <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm relative group overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-red-600 opacity-50 transition-all group-hover:w-3" />
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-between">
-            Complaint Intake Trends
-            <TrendingUp className="h-4 w-4 text-red-50" />
-          </h3>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data?.trends}>
-                <defs>
-                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#008540" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#008540" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" fontSize={12} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
-                <YAxis fontSize={12} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area type="monotone" dataKey="count" stroke="#008540" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Resolution Efficiency */}
-        <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm relative group overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-600 opacity-50 transition-all group-hover:w-3" />
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-between">
-            Resolution Efficiency (Avg Hours)
-            <BarChart3 className="h-4 w-4 text-blue-50" />
-          </h3>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.resolutionTime}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="category" fontSize={12} axisLine={false} tickLine={false} />
-                <YAxis fontSize={12} axisLine={false} tickLine={false} />
-                <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="avgHours" fill="#008540" radius={[8, 8, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Top Resolution Actions */}
-        <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm relative group overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500 opacity-50 transition-all group-hover:w-3" />
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-between">
-            Top Resolution Actions
-            <Activity className="h-4 w-4 text-amber-50" />
-          </h3>
-          <div className="space-y-4">
-            {data?.topActions?.length === 0 ? (
-               <p className="text-sm font-medium text-gray-400">No resolutions logged yet.</p>
+      <div className="grid gap-5 xl:grid-cols-2">
+        <section className="app-card p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">By status</h2>
+          <div className="mt-5 space-y-3">
+            {(data?.byStatus || []).length ? (
+              data!.byStatus.map((item) => {
+                const value = toNumber(item.value);
+                const width = summary.total > 0 ? Math.max(8, Math.round((value / summary.total) * 100)) : 8;
+                return (
+                  <div key={String(item.name)}>
+                    <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                      <span className="font-medium text-slate-700">{item.name}</span>
+                      <span className="font-semibold text-slate-900">{value}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-[#34b05a]" style={{ width: `${width}%` }} />
+                    </div>
+                  </div>
+                );
+              })
             ) : (
-               data?.topActions?.map((item: any, i: number) => (
-                 <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                   <p className="text-sm font-black text-slate-700 w-3/4 truncate">{item.action}</p>
-                   <span className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-black text-slate-500 shadow-sm">
-                     {item.count} Uses
-                   </span>
-                 </div>
-               ))
+              <EmptyState icon={BarChart3} title="No status data" description="Complaint status summaries will appear here." />
             )}
           </div>
-        </div>
+        </section>
+
+        <section className="app-card p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">By type</h2>
+          <div className="mt-5 space-y-3">
+            {(data?.byCategory || []).length ? (
+              data!.byCategory.map((item) => {
+                const value = toNumber(item.value);
+                const width = summary.total > 0 ? Math.max(8, Math.round((value / summary.total) * 100)) : 8;
+                return (
+                  <div key={String(item.name)}>
+                    <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                      <span className="font-medium text-slate-700">{item.name}</span>
+                      <span className="font-semibold text-slate-900">{value}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-2 rounded-full bg-[#292929]" style={{ width: `${width}%` }} />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <EmptyState icon={FileText} title="No category data" description="Complaint categories will appear here once complaints are filed." />
+            )}
+          </div>
+        </section>
       </div>
 
-      {/* Info Card */}
-      <div className="bg-[#008540] p-12 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-900/20 relative overflow-hidden group">
-         <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000" />
-         <div className="max-w-2xl relative">
-            <BarChart3 className="h-10 w-10 text-emerald-200 mb-8" />
-            <h2 className="text-4xl font-black tracking-tighter leading-tight mb-6">Visual Intelligence<br/>Empowers Quick Action.</h2>
-            <p className="text-lg text-emerald-50 font-medium leading-relaxed opacity-90 mb-8">
-               Our institutional reporting engine analyzes case data to help resolve bottlenecks and ensure every Student's voice is heard at Kampala International University.
-            </p>
-            <div className="flex gap-4">
-               <button 
-                onClick={handlePdfGeneration}
-                className="px-8 py-4 bg-white text-emerald-900 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:translate-y-[-2px] transition-all flex items-center gap-2 active:scale-95"
-               >
-                  <FileText className="h-4 w-4" />
-                  Detailed PDF Summary
-               </button>
-            </div>
-         </div>
+      <div className="grid gap-5 xl:grid-cols-2">
+        <section className="app-card p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Monthly activity</h2>
+          <div className="mt-5 overflow-hidden rounded-[18px] border border-slate-200">
+            {(data?.trends || []).length ? (
+              <table className="min-w-full text-left">
+                <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Month</th>
+                    <th className="px-4 py-3 text-right">Complaints</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {data!.trends.map((item) => (
+                    <tr key={String(item.month)}>
+                      <td className="px-4 py-3 text-sm text-slate-700">{item.month}</td>
+                      <td className="px-4 py-3 text-right text-sm font-semibold text-slate-900">{toNumber(item.count)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-4">
+                <EmptyState icon={Clock3} title="No trend data" description="Monthly complaint totals will appear here." />
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="app-card p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Resolution actions</h2>
+          <div className="mt-5 space-y-3">
+            {(data?.topActions || []).length ? (
+              data!.topActions.map((item, index) => (
+                <div key={`${item.action}-${index}`} className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-sm font-medium leading-6 text-slate-800">{item.action}</p>
+                  <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Used {toNumber(item.count)} times
+                  </p>
+                </div>
+              ))
+            ) : (
+              <EmptyState
+                icon={CheckCircle2}
+                title="No resolution actions"
+                description="Resolved complaint actions will appear here after case updates are recorded."
+              />
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

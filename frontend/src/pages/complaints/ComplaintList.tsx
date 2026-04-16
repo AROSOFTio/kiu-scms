@@ -1,12 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Search, 
-  Filter, 
-  FileText, 
-  ChevronRight, 
-  Calendar,
-  AlertCircle
+import {
+  AlertCircle,
+  FileText,
+  Search,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
@@ -15,10 +12,10 @@ import { ComplaintStatusBadge, LIFECYCLE_STATUSES } from '../../components/compl
 
 export default function ComplaintList() {
   const [complaints, setComplaints] = useState<any[]>([]);
-  const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -29,181 +26,184 @@ export default function ComplaintList() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError('');
       try {
         const [compRes, catRes] = await Promise.all([
-          api.get('/complaints', { 
-            params: { 
+          api.get('/complaints', {
+            params: {
               search: search || undefined,
               status: statusFilter || undefined,
               category: categoryFilter || undefined,
               page,
-              limit
-            }
+              limit,
+            },
           }),
-          api.get('/complaints/categories')
+          api.get('/complaints/categories'),
         ]);
-        setComplaints(compRes.data.data);
-        setTotal(compRes.data.total);
-        setCategories(catRes.data.data);
-      } catch (err: any) {
-        setError('Failed to load complaints');
+        setComplaints(compRes.data.data || []);
+        setTotal(Number(compRes.data.total || 0));
+        setCategories(catRes.data.data || []);
+      } catch {
+        setError('Unable to load complaint records.');
       } finally {
-        setTimeout(() => setLoading(false), 300);
+        setLoading(false);
       }
     };
 
-    const timer = setTimeout(fetchData, 300); // Debounce search
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(fetchData, 250);
+    return () => window.clearTimeout(timer);
   }, [search, statusFilter, categoryFilter, page]);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [search, statusFilter, categoryFilter]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
-        <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Complaint Records</h1>
-          <p className="text-slate-500 mt-2 font-medium">Manage and track your submitted complaints.</p>
-        </div>
-      </div>
+    <div className="space-y-5 pb-10">
+      <section className="app-page-header">
+        <p className="app-page-kicker">Complaints</p>
+        <h1 className="app-page-title">My Complaints</h1>
+        <p className="app-page-subtitle">Track submitted complaints, current status, and recent activity.</p>
+      </section>
 
-      <div className="bg-white p-6 rounded-[2rem] border border-slate-100/60 shadow-sm flex flex-col xl:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full text-gray-800">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by reference or subject..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="premium-input pl-12 pr-4 bg-slate-50"
-          />
-        </div>
-        
-        <div className="flex gap-4 w-full xl:w-auto">
-          <div className="relative flex-1 xl:w-48 text-slate-800">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="premium-input pl-11 pr-8 bg-slate-50 appearance-none font-bold"
-            >
-              <option value="">All Statuses</option>
-              {LIFECYCLE_STATUSES.map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
+      <section className="app-toolbar">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px_auto]">
+          <label className="relative block">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by reference or subject"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="app-input pl-11"
+            />
+          </label>
 
-          <div className="relative flex-1 md:w-52 text-slate-800">
-            <FileText className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="premium-input pl-11 pr-8 bg-slate-50 appearance-none font-bold"
-            >
-              <option value="">All Categories</option>
-              {categories.map((cat: any) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="app-input">
+            <option value="">All statuses</option>
+            {LIFECYCLE_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
 
-      <div className="bg-white rounded-[2rem] border border-slate-100/60 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-        <div className="flex-1">
+          <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="app-input">
+            <option value="">All types</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSearch('');
+              setStatusFilter('');
+              setCategoryFilter('');
+              setPage(1);
+            }}
+            className="rounded-[18px] border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-[#34b05a]/25 hover:text-[#34b05a]"
+          >
+            Reset
+          </button>
+        </div>
+      </section>
+
+      <section className="app-card overflow-hidden">
+        <div className="hidden grid-cols-[160px_minmax(0,1fr)_180px_160px_120px] gap-4 border-b border-slate-200 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 lg:grid">
+          <span>Ref No</span>
+          <span>Subject</span>
+          <span>Type</span>
+          <span>Status</span>
+          <span className="text-right">Action</span>
+        </div>
+
+        <div className="divide-y divide-slate-100">
           {loading ? (
-            <div className="divide-y divide-slate-50 border-b border-slate-50">
-              <TableRowSkeleton />
-              <TableRowSkeleton />
-              <TableRowSkeleton />
-              <TableRowSkeleton />
-              <TableRowSkeleton />
-            </div>
+            Array.from({ length: 5 }).map((_, index) => <TableRowSkeleton key={index} />)
           ) : error ? (
-            <div className="p-24 text-center text-red-500 flex flex-col items-center">
-              <AlertCircle className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-xl font-bold">{error}</p>
-              <button 
-                onClick={() => window.location.reload()}
-                className="mt-6 px-6 py-2 bg-red-50 text-red-600 rounded-lg font-bold hover:bg-red-100 transition-all"
-              >
-                Retry Loading
-              </button>
+            <div className="p-6">
+              <EmptyState icon={AlertCircle} title="Records unavailable" description={error} />
             </div>
-          ) : complaints.length > 0 ? (
-            <div className="divide-y divide-slate-50/80 text-slate-800 border-b border-slate-50">
-              {complaints.map((complaint) => {
-                const currentStatus = complaint.display_status || complaint.status;
-                return (
-                <Link
+          ) : complaints.length ? (
+            complaints.map((complaint) => {
+              const currentStatus = complaint.display_status || complaint.status;
+              return (
+                <div
                   key={complaint.id}
-                  to={`/dashboard/student/complaints/${complaint.id}`}
-                  className="block hover:bg-slate-50/50 hover:-translate-y-[1px] hover:shadow-md hover:shadow-slate-200/20 transition-all p-6 md:p-8 lg:p-10 group bg-white border-b border-transparent relative z-10"
+                  className="grid gap-4 px-6 py-5 transition hover:bg-slate-50 lg:grid-cols-[160px_minmax(0,1fr)_180px_160px_120px] lg:items-center"
                 >
-                  <div className="flex items-start justify-between gap-6">
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-[10px] md:text-xs font-black text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg tracking-widest uppercase">
-                          {complaint.reference_number}
-                        </span>
-                        <ComplaintStatusBadge status={currentStatus} />
-                      </div>
-                      <h3 className="font-black text-slate-900 leading-tight group-hover:text-[#008540] transition-colors text-xl md:text-2xl tracking-tight">{complaint.title}</h3>
-                      <div className="flex flex-wrap items-center text-xs text-slate-500 gap-x-6 gap-y-3 font-bold">
-                        <span className="flex items-center"><FileText className="h-4 w-4 mr-2" /> {complaint.category_name}</span>
-                        <span className="flex items-center"><Calendar className="h-4 w-4 mr-2" /> {new Date(complaint.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <div className="h-12 w-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center mt-4 group-hover:bg-[#008540] group-hover:border-[#008540] transition-all duration-300">
-                       <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-white transition-colors" />
-                    </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-900">{complaint.reference_number}</p>
+                    <p className="mt-1 text-xs text-slate-400 lg:hidden">
+                      {new Date(complaint.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
                   </div>
-                </Link>
-                );
-              })}
-            </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{complaint.title}</p>
+                    <p className="mt-1 text-sm text-slate-500 lg:hidden">{complaint.category_name}</p>
+                  </div>
+
+                  <div className="text-sm text-slate-600">{complaint.category_name}</div>
+
+                  <div>
+                    <ComplaintStatusBadge status={currentStatus} />
+                  </div>
+
+                  <div className="flex items-center justify-end">
+                    <Link
+                      to={`/dashboard/student/complaints/${complaint.id}`}
+                      className="text-sm font-medium text-[#34b05a] transition hover:text-[#2d9a4e]"
+                    >
+                      Open
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
           ) : (
-            <div className="p-20">
-               <EmptyState 
+            <div className="p-6">
+              <EmptyState
                 icon={FileText}
-                title="No Complaints found"
-                description="Your search did not match any of your submitted records. Try clearing filters or submit a new case."
-                actionLabel="Submit New Complaint"
+                title="No complaints"
+                description="Your complaint records will appear here after submission."
+                actionLabel="Submit complaint"
                 actionLink="/dashboard/student/complaints/new"
               />
             </div>
           )}
         </div>
+      </section>
 
-        {/* Pagination UI */}
-        {total > limit && (
-          <div className="px-6 py-4 border-t border-gray-50 flex items-center justify-between bg-gray-50/50">
-            <p className="text-sm text-gray-500 font-medium text-gray-800">
-              Showing <span className="font-bold">{((page - 1) * limit) + 1}</span> to <span className="font-bold">{Math.min(page * limit, total)}</span> of <span className="font-bold">{total}</span> complaints
-            </p>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 text-sm font-bold rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-800"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={page * limit >= total}
-                className="px-4 py-2 text-sm font-bold rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors text-gray-800"
-              >
-                Next
-              </button>
-            </div>
+      {total > limit && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-medium text-slate-400">
+            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page === 1}
+              className="rounded-[14px] border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-500 transition hover:border-[#34b05a]/25 hover:text-[#34b05a] disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((current) => current + 1)}
+              disabled={page * limit >= total}
+              className="rounded-[14px] bg-[#34b05a] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#2d9a4e] disabled:opacity-40"
+            >
+              Next
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

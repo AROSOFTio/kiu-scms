@@ -1,6 +1,33 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
 
+const getRoleName = async (roleId: number): Promise<string> => {
+    const [rows]: any = await db.query('SELECT name FROM roles WHERE id = ?', [roleId]);
+    return rows.length > 0 ? rows[0].name : '';
+};
+
+const getStudentScope = async (userId: number) => {
+    const [rows]: any = await db.query(
+        `SELECT s.id as student_id, s.department_id, d.faculty_id
+         FROM students s
+         JOIN departments d ON s.department_id = d.id
+         WHERE s.user_id = ?`,
+        [userId]
+    );
+    return rows.length > 0 ? rows[0] : null;
+};
+
+const getStaffScope = async (userId: number) => {
+    const [rows]: any = await db.query(
+        `SELECT s.department_id, d.faculty_id
+         FROM staff s
+         JOIN departments d ON s.department_id = d.id
+         WHERE s.user_id = ?`,
+        [userId]
+    );
+    return rows.length > 0 ? rows[0] : null;
+};
+
 // Helper to ensure tables exist (Production self-healing)
 const ensureTablesExist = async () => {
     try {
@@ -87,38 +114,94 @@ export const updateHODAvailability = async (req: Request, res: Response) => {
   }
 };
 
+// @desc    Get departments available for student appointments
+// @route   GET /api/v1/appointments/departments
+export const getStudentDepartments = async (req: Request, res: Response) => {
+  await ensureTablesExist();
+  const userId = (req as any).user.userId;
+
+  try {
+    const scope = await getStudentScope(userId);
+    if (!scope) {
+      return res.status(403).json({ status: 'error', message: 'Only students can book appointments' });
+    }
+
+    const [departments]: any = await db.query(
+      `SELECT d.id, d.name, d.faculty_id,
+              CASE WHEN d.id = ? THEN TRUE ELSE FALSE END as is_default
+       FROM departments d
+       WHERE d.faculty_id = ?
+       ORDER BY d.name`,
+      [scope.department_id, scope.faculty_id]
+    );
+
+    res.json({
+      status: 'success',
+      data: {
+        facultyId: scope.faculty_id,
+        defaultDepartmentId: scope.department_id,
+        departments,
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+};
+
 // @desc    Book an appointment
 // @route   POST /api/v1/appointments
 export const bookAppointment = async (req: Request, res: Response) => {
   await ensureTablesExist();
   const studentId = (req as any).user.userId;
-  const { hodId, date, timeSlot, reason } = req.body;
+  const { hodId, contactId, departmentId, date, timeSlot, reason } = req.body;
 
   try {
+    const studentScope = await getStudentScope(studentId);
+    if (!studentScope) {
+      return res.status(403).json({ status: 'error', message: 'Only students can book appointments' });
+    }
+
+    const targetContactId = contactId || hodId;
+    if (!targetContactId) {
+      return res.status(400).json({ status: 'error', message: 'Appointment contact is required' });
+    }
+
+    const [contacts]: any = await db.query(
+      `SELECT u.id, d.id as department_id, d.faculty_id
+       FROM users u
+       JOIN roles r ON u.role_id = r.id
+       JOIN staff s ON u.id = s.user_id
+       JOIN departments d ON s.department_id = d.id
+       WHERE u.id = ? AND r.name IN ('Admin', 'Department Officer', 'Staff')`,
+      [targetContactId]
+    );
+
+    if (contacts.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'Selected contact is not available for appointments' });
+    }
+
+    const contact = contacts[0];
+    if (contact.faculty_id !== studentScope.faculty_id) {
+      return res.status(403).json({ status: 'error', message: 'You can only book appointments within your faculty' });
+    }
+
+    if (departmentId && Number(departmentId) !== Number(contact.department_id)) {
+      return res.status(400).json({ status: 'error', message: 'Selected contact does not belong to the chosen department' });
+    }
+
     // Check if slot is already taken
     const [existing]: any = await db.query(
       'SELECT id FROM appointments WHERE hod_id = ? AND appointment_date = ? AND time_slot = ? AND status NOT IN ("Cancelled", "Rejected")',
-      [hodId, date, timeSlot]
+      [targetContactId, date, timeSlot]
     );
 
     if (existing.length > 0) {
       return res.status(400).json({ status: 'error', message: 'This time slot is already booked' });
     }
 
-    // SCOPE CHECK: Ensure student is booking with an HOD in their own Faculty
-    const [sc]: any = await db.query(
-      `SELECT (SELECT d.faculty_id FROM students s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?) as studentFaculty,
-              (SELECT d.faculty_id FROM staff st JOIN departments d ON st.department_id = d.id WHERE st.user_id = ?) as hodFaculty`,
-      [studentId, hodId]
-    );
-    
-    if (sc.length > 0 && sc[0].studentFaculty && sc[0].hodFaculty && sc[0].studentFaculty !== sc[0].hodFaculty) {
-      return res.status(403).json({ status: 'error', message: 'Forbidden: You can only book appointments with HODs in your own Faculty' });
-    }
-
     await db.query(
       'INSERT INTO appointments (student_id, hod_id, appointment_date, time_slot, reason) VALUES (?, ?, ?, ?, ?)',
-      [studentId, hodId, date, timeSlot, reason]
+      [studentId, targetContactId, date, timeSlot, reason]
     );
 
     res.status(201).json({ status: 'success', message: 'Appointment booked successfully' });
@@ -135,11 +218,11 @@ export const getMyAppointments = async (req: Request, res: Response) => {
   const roleId = (req as any).user.roleId;
 
   try {
+    const roleName = await getRoleName(roleId);
     let query = '';
     let params: any[] = [];
 
-    // roleId 1 is Admin (HOD)
-    if (roleId === 1) { 
+    if (roleName === 'Admin' || roleName === 'Department Officer' || roleName === 'Staff') {
       query = `
         SELECT a.*, u.first_name as student_first_name, u.last_name as student_last_name 
         FROM appointments a 
@@ -193,26 +276,27 @@ export const updateAppointmentStatus = async (req: Request, res: Response) => {
 // @route   GET /api/v1/appointments/hods
 export const getHODs = async (req: Request, res: Response) => {
     const userId = (req as any).user.userId;
+    const { departmentId } = req.query as any;
     try {
-        // 1. Get student's faculty
-        const [si]: any = await db.query(
-            `SELECT d.faculty_id FROM students s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?`,
-            [userId]
-        );
-        
+        const scope = await getStudentScope(userId);
+        if (!scope) {
+            return res.status(403).json({ status: 'error', message: 'Only students can view appointment contacts' });
+        }
+
+        const targetDepartmentId = departmentId ? Number(departmentId) : Number(scope.department_id);
+
         let query = `
-            SELECT u.id, u.first_name, u.last_name, r.name as role_name 
-            FROM users u 
-            JOIN roles r ON u.role_id = r.id 
+            SELECT u.id, u.first_name, u.last_name, r.name as role_name, d.id as department_id, d.name as department_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
             JOIN staff s ON u.id = s.user_id
             JOIN departments d ON s.department_id = d.id
-            WHERE r.name = "Admin"`;
-        const params: any[] = [];
+            WHERE r.name IN ("Admin", "Department Officer", "Staff")
+              AND d.faculty_id = ?
+              AND d.id = ?`;
+        const params: any[] = [scope.faculty_id, targetDepartmentId];
 
-        if (si.length > 0) {
-            query += ' AND d.faculty_id = ?';
-            params.push(si[0].faculty_id);
-        }
+        query += ' ORDER BY CASE WHEN r.name = "Admin" THEN 0 WHEN r.name = "Department Officer" THEN 1 ELSE 2 END, u.first_name';
 
         const [hods]: any = await db.query(query, params);
         res.json({ status: 'success', data: hods });

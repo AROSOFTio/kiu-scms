@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, Clock, CheckCircle2, MessageSquare } from 'lucide-react';
 import api from '../../lib/api';
+import { EmptyState } from '../ui/EmptyState';
 
 interface Notification {
   id: number;
@@ -95,9 +96,12 @@ export default function NotificationDropdown() {
                 <p className="text-xs text-slate-500">Loading...</p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-10 text-center">
-                <CheckCircle2 className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-                <p className="text-sm font-medium text-slate-500">No alerts</p>
+              <div className="p-4">
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="No notifications"
+                  description="New complaint updates and appointment actions will appear here."
+                />
               </div>
             ) : (
               <div className="divide-y divide-slate-100">

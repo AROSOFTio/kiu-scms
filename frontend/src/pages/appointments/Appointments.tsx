@@ -1,26 +1,36 @@
-import { useState, useEffect } from 'react';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  User, 
-  CheckCircle2, 
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
   Loader2,
-  Plus,
-  History,
-  Info
+  UserRound,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Skeleton } from '../../components/ui/Skeleton';
 import Calendar from '../../components/ui/Calendar';
 
-interface HOD {
+interface DepartmentOption {
+  id: number;
+  name: string;
+  faculty_id: number;
+  is_default?: boolean;
+}
+
+interface OfficeContact {
   id: number;
   first_name: string;
   last_name: string;
+  role_name: string;
+  department_id: number;
+  department_name: string;
 }
 
-interface Appointment {
+interface AppointmentRecord {
   id: number;
   student_first_name?: string;
   student_last_name?: string;
@@ -29,95 +39,167 @@ interface Appointment {
   appointment_date: string;
   time_slot: string;
   reason: string;
-  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rejected';
 }
 
-interface Availability {
+interface AvailabilityRecord {
   available_date: string;
   start_time: string;
   end_time: string;
   is_available: boolean;
 }
 
+const TIME_SLOTS = [
+  '09:00 - 10:00 AM',
+  '10:00 - 11:00 AM',
+  '11:00 - 12:00 PM',
+  '02:00 - 03:00 PM',
+  '03:00 - 04:00 PM',
+];
+
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
 export default function Appointments() {
   const { user } = useAuth();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
-  const [hods, setHods] = useState<HOD[]>([]);
-  const [selectedHOD, setSelectedHOD] = useState<HOD | null>(null);
-  const [availability, setAvailability] = useState<Availability[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [error, setError] = useState('');
+
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [contacts, setContacts] = useState<OfficeContact[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [selectedContactId, setSelectedContactId] = useState('');
+
+  const [availability, setAvailability] = useState<AvailabilityRecord[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [reason, setReason] = useState('');
-  const [timeSlot, setTimeSlot] = useState('10:00 - 11:00 AM');
+  const [timeSlot, setTimeSlot] = useState(TIME_SLOTS[1]);
   const [isBooking, setIsBooking] = useState(false);
 
-  const isHOD = user?.role === 'Admin';
+  const isOfficeRole = user?.role === 'Admin' || user?.role === 'Staff' || user?.role === 'Department Officer';
 
-  const fetchHODs = async () => {
-    try {
-      const res = await api.get('/appointments/hods');
-      setHods(res.data.data);
-      if (res.data.data.length > 0 && !isHOD) setSelectedHOD(res.data.data[0]);
-    } catch (err) {
-      toast.error('Failed to fetch staff list');
+  const selectedContact = useMemo(
+    () => contacts.find((contact) => String(contact.id) === selectedContactId) || null,
+    [contacts, selectedContactId],
+  );
+
+  const availableDateStrings = useMemo(
+    () => availability.map((item) => item.available_date),
+    [availability],
+  );
+
+  const loadAppointments = async () => {
+    const response = await api.get('/appointments');
+    setAppointments(response.data.data || []);
+  };
+
+  const loadAvailability = async (contactId: number) => {
+    const response = await api.get(`/appointments/availability/${contactId}`);
+    setAvailability(response.data.data || []);
+  };
+
+  const loadStudentDepartments = async () => {
+    const response = await api.get('/appointments/departments');
+    const departmentData = response.data.data?.departments || [];
+    const defaultDepartmentId = response.data.data?.defaultDepartmentId;
+    setDepartments(departmentData);
+    if (defaultDepartmentId) {
+      setSelectedDepartmentId(String(defaultDepartmentId));
+    } else if (departmentData.length > 0) {
+      setSelectedDepartmentId(String(departmentData[0].id));
     }
   };
 
-  const fetchAvailability = async (hodId: number) => {
-    try {
-      const res = await api.get(`/appointments/availability/${hodId}`);
-      setAvailability(res.data.data);
-    } catch (err) {
-      console.error('Failed to fetch availability');
+  const loadContacts = async (departmentId: string) => {
+    if (!departmentId) {
+      setContacts([]);
+      setSelectedContactId('');
+      setAvailability([]);
+      setSelectedDate(null);
+      return;
     }
-  };
 
-  const fetchAppointments = async () => {
     try {
-      const res = await api.get('/appointments');
-      setAppointments(res.data.data);
-    } catch (err) {
-      console.error('Failed to fetch appointments');
-    } finally {
-      setLoading(false);
+      const response = await api.get('/appointments/hods', { params: { departmentId } });
+      const contactData = response.data.data || [];
+      setContacts(contactData);
+      setSelectedContactId(contactData.length ? String(contactData[0].id) : '');
+    } catch {
+      setContacts([]);
+      setSelectedContactId('');
+      setAvailability([]);
+      toast.error('Failed to load department contacts');
     }
   };
 
   useEffect(() => {
-    if (isHOD) {
-      fetchAvailability(user.id);
+    const initialise = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        if (isOfficeRole && user) {
+          await Promise.all([loadAvailability(user.id), loadAppointments()]);
+        } else {
+          await Promise.all([loadStudentDepartments(), loadAppointments()]);
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Unable to load appointments.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initialise();
+  }, [isOfficeRole, user?.id]);
+
+  useEffect(() => {
+    if (!isOfficeRole && selectedDepartmentId) {
+      loadContacts(selectedDepartmentId);
+    }
+  }, [isOfficeRole, selectedDepartmentId]);
+
+  useEffect(() => {
+    if (isOfficeRole && user) {
+      loadAvailability(user.id).catch(() => setAvailability([]));
+      return;
+    }
+
+    if (selectedContactId) {
+      loadAvailability(Number(selectedContactId)).catch(() => setAvailability([]));
     } else {
-      fetchHODs();
+      setAvailability([]);
+      setSelectedDate(null);
     }
-    fetchAppointments();
-  }, [user]);
+  }, [isOfficeRole, selectedContactId, user?.id]);
 
-  useEffect(() => {
-    if (selectedHOD) {
-      fetchAvailability(selectedHOD.id);
-    }
-  }, [selectedHOD]);
+  const handleBook = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-  const handleBook = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedHOD) {
-      toast.error('Please select a date and staff member');
+    if (!selectedDate || !selectedContactId || !selectedDepartmentId) {
+      toast.error('Select a department, contact, and date');
       return;
     }
 
     setIsBooking(true);
     try {
       await api.post('/appointments', {
-        hodId: selectedHOD.id,
+        contactId: Number(selectedContactId),
+        departmentId: Number(selectedDepartmentId),
         date: selectedDate.toISOString().split('T')[0],
         timeSlot,
-        reason
+        reason: reason.trim(),
       });
       toast.success('Appointment requested successfully');
       setReason('');
       setSelectedDate(null);
-      fetchAppointments();
+      await loadAppointments();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to book appointment');
     } finally {
@@ -125,233 +207,298 @@ export default function Appointments() {
     }
   };
 
-  const handleStatusUpdate = async (id: number, status: string) => {
+  const handleStatusUpdate = async (id: number, status: AppointmentRecord['status']) => {
     try {
       await api.patch(`/appointments/${id}/status`, { status });
       toast.success(`Appointment ${status.toLowerCase()}`);
-      fetchAppointments();
-    } catch (err) {
-      toast.error('Failed to update status');
+      await loadAppointments();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update appointment');
     }
   };
 
   const handleToggleAvailability = async (date: string, isAvailable: boolean) => {
     try {
-        await api.put('/appointments/availability', { date, isAvailable });
-        fetchAvailability(user!.id);
-        toast.success(`Office presence updated for ${date}`);
+      await api.put('/appointments/availability', { date, isAvailable });
+      if (user) {
+        await loadAvailability(user.id);
+      }
+      toast.success('Availability updated');
     } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Failed to update availability');
+      toast.error(err.response?.data?.message || 'Failed to update availability');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full" />
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <Skeleton className="h-[520px] w-full" />
+          <Skeleton className="h-[520px] w-full" />
+        </div>
       </div>
     );
   }
 
-  const availableDateStrings = availability.map(a => a.available_date);
+  if (error) {
+    return (
+      <div className="mx-auto mt-16 max-w-2xl">
+        <EmptyState
+          icon={CalendarDays}
+          title="Appointments unavailable"
+          description={error}
+          actionLabel="Open dashboard"
+          actionLink={user?.role === 'Admin' ? '/dashboard/admin' : isOfficeRole ? '/dashboard/staff' : '/dashboard/student'}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700 pb-24">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-            {isHOD ? 'Appointment Scheduler' : 'Book Appointment'}
-          </h1>
-          <p className="text-slate-500 font-medium mt-2">
-            {isHOD 
-              ? 'Click on the calendar to mark your office presence for students.' 
-              : 'Schedule a formal session with the responsible staff office.'}
+    <div className="space-y-5 pb-10">
+      <section className="app-card px-5 py-5">
+        <div className="app-page-header">
+          <p className="app-page-kicker">Appointments</p>
+          <h1 className="app-page-title">{isOfficeRole ? 'Office Appointments' : 'Book Appointment'}</h1>
+          <p className="app-page-subtitle">
+            {isOfficeRole
+              ? 'Manage your availability and respond to appointment requests.'
+              : 'Select your department, choose the office contact, and request a meeting.'}
           </p>
         </div>
-        <div className="hidden sm:flex items-center gap-3 px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-           <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Institutional Calendar Live</span>
-        </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left Column: Calendar Interaction */}
-        <div className="lg:col-span-8 space-y-8">
-          {!isHOD && (
-            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-wrap gap-3 items-center">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 border-r border-slate-100">Select Department</span>
-              {hods.map(h => (
-                <button
-                  key={h.id}
-                  onClick={() => setSelectedHOD(h)}
-                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black transition-all border uppercase tracking-widest ${
-                    selectedHOD?.id === h.id 
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-900/20' 
-                      : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-white hover:border-emerald-200'
-                  }`}
-                >
-                  {h.first_name} {h.last_name}
-                </button>
-              ))}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="space-y-5">
+          {!isOfficeRole && (
+            <div className="app-card p-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Department</label>
+                  <select
+                    value={selectedDepartmentId}
+                    onChange={(event) => {
+                      setSelectedDepartmentId(event.target.value);
+                      setSelectedDate(null);
+                    }}
+                    className="app-input"
+                  >
+                    <option value="">Select department</option>
+                    {departments.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Office contact</label>
+                  <select
+                    value={selectedContactId}
+                    onChange={(event) => {
+                      setSelectedContactId(event.target.value);
+                      setSelectedDate(null);
+                    }}
+                    disabled={!contacts.length}
+                    className={`app-input ${!contacts.length ? 'cursor-not-allowed bg-slate-50 text-slate-400' : ''}`}
+                  >
+                    <option value="">Select contact</option>
+                    {contacts.map((contact) => (
+                      <option key={contact.id} value={contact.id}>
+                        {contact.first_name} {contact.last_name} ({contact.role_name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {!departments.length && (
+                <div className="mt-4">
+                  <EmptyState
+                    icon={Building2}
+                    title="No departments available"
+                    description="Departments must be configured before students can request appointments."
+                  />
+                </div>
+              )}
+
+              {Boolean(selectedDepartmentId && !contacts.length) && (
+                <div className="mt-4">
+                  <EmptyState
+                    icon={UserRound}
+                    title="No contacts in this department"
+                    description="Select another department or ask an administrator to assign an office contact."
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          <Calendar 
-            availableDates={availableDateStrings} 
-            onDateSelect={setSelectedDate} 
+          <Calendar
+            availableDates={availableDateStrings}
+            onDateSelect={setSelectedDate}
             selectedDate={selectedDate}
-            mode={isHOD ? 'hod' : 'student'}
-            onToggleAvailability={isHOD ? handleToggleAvailability : undefined}
+            mode={isOfficeRole ? 'office' : 'student'}
+            onToggleAvailability={isOfficeRole ? handleToggleAvailability : undefined}
           />
 
-          {!isHOD && selectedDate && (
-             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/20 animate-in slide-in-from-bottom-6 duration-500">
-                <div className="flex items-center gap-4 mb-10">
-                   <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                      <Plus className="h-6 w-6" />
-                   </div>
-                   <div>
-                      <h3 className="text-xl font-black text-slate-900 tracking-tight">Finalize Booking</h3>
-                      <p className="text-xs text-slate-400 font-medium tracking-wide">Enter session details for the selected slot.</p>
-                   </div>
+          {!isOfficeRole && selectedContact && selectedDate && (
+            <div className="app-card p-5 animate-in fade-in duration-300">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Request appointment</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {selectedContact.first_name} {selectedContact.last_name} • {formatDate(selectedDate.toISOString())}
+                  </p>
                 </div>
-                
-                <form onSubmit={handleBook} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">Time Window</label>
-                      <div className="relative">
-                         <Clock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />
-                         <select 
-                           value={timeSlot}
-                           onChange={(e) => setTimeSlot(e.target.value)}
-                           className="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-100 rounded-[1.5rem] outline-none focus:border-emerald-500 font-black text-xs uppercase tracking-widest appearance-none"
-                         >
-                           <option>09:00 - 10:00 AM</option>
-                           <option>10:00 - 11:00 AM</option>
-                           <option>11:00 - 12:00 PM</option>
-                           <option>02:00 - 03:00 PM</option>
-                           <option>03:00 - 04:00 PM</option>
-                         </select>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">Selected Engagement Date</label>
-                       <div className="w-full px-6 py-5 bg-emerald-50/50 border border-emerald-100 rounded-[1.5rem] font-black text-xs text-emerald-700 uppercase tracking-widest flex items-center gap-3">
-                          <CheckCircle2 className="h-4 w-4" />
-                          {selectedDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-                       </div>
+                <div className="rounded-full bg-[#34b05a]/10 px-3 py-1 text-xs font-semibold text-[#34b05a]">
+                  {timeSlot}
+                </div>
+              </div>
+
+              <form onSubmit={handleBook} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Time slot</label>
+                    <select value={timeSlot} onChange={(event) => setTimeSlot(event.target.value)} className="app-input">
+                      {TIME_SLOTS.map((slot) => (
+                        <option key={slot} value={slot}>
+                          {slot}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Selected date</label>
+                    <div className="app-input flex items-center gap-2 bg-slate-50">
+                      <CheckCircle2 className="h-4 w-4 text-[#34b05a]" />
+                      <span>{formatDate(selectedDate.toISOString())}</span>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">Context of Consultation</label>
-                    <textarea 
-                      required
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      placeholder="Institutional context or specific academic issue..."
-                      className="w-full px-6 py-6 bg-slate-50/50 border border-slate-100 rounded-[1.5rem] outline-none focus:border-emerald-500 font-medium text-sm resize-none h-40 leading-relaxed"
-                    />
-                  </div>
-                  <div className="flex items-center justify-end gap-6 pt-4">
-                     <button type="button" onClick={() => setSelectedDate(null)} className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] hover:text-slate-900 transition-colors">Discard Draft</button>
-                     <button 
-                       disabled={isBooking}
-                       type="submit"
-                       className="px-14 py-6 bg-slate-900 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-slate-900/30 hover:bg-emerald-600 transition-all flex items-center justify-center gap-4 active:scale-95 disabled:bg-slate-200"
-                     >
-                       {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Engagement Request'}
-                     </button>
-                  </div>
-                </form>
-             </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Reason</label>
+                  <textarea
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    rows={4}
+                    placeholder="State the issue you want to discuss."
+                    className="app-input min-h-[130px] resize-y"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={!reason.trim() || isBooking}
+                    className="inline-flex items-center gap-2 rounded-[16px] bg-[#34b05a] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#2d9a4e] disabled:bg-slate-300"
+                  >
+                    {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    Send request
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
-        </div>
+        </section>
 
-        {/* Right Column: List of Appointments */}
-        <div className="lg:col-span-4 space-y-8">
-           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden h-fit">
-              <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
-                 <div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">My Session History</h3>
-                    <p className="text-[10px] text-slate-400 font-bold mt-1">Timeline of engagements</p>
-                 </div>
-                 <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                    <History className="h-4 w-4 text-emerald-600" />
-                 </div>
+        <aside className="space-y-5">
+          {!isOfficeRole && selectedContact && (
+            <section className="app-card p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Selected office</h2>
+              <div className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-900">
+                  {selectedContact.first_name} {selectedContact.last_name}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">{selectedContact.role_name}</p>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  {selectedContact.department_name}
+                </p>
               </div>
+            </section>
+          )}
 
-              <div className="divide-y divide-slate-50 max-h-[1000px] overflow-y-auto custom-scrollbar">
-                {appointments.map((appt) => (
-                  <div key={appt.id} className="p-8 hover:bg-slate-50/50 transition-all group">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
-                        appt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                        appt.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                        appt.status === 'Cancelled' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                        'bg-slate-100 text-slate-400 border-slate-200'
-                      }`}>
-                        {appt.status}
+          <section className="app-card overflow-hidden">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {isOfficeRole ? 'Requests' : 'My appointments'}
+              </h2>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {appointments.length ? (
+                appointments.map((appointment) => {
+                  const statusTone =
+                    appointment.status === 'Confirmed'
+                      ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
+                      : appointment.status === 'Pending'
+                        ? 'border-amber-100 bg-amber-50 text-amber-700'
+                        : appointment.status === 'Completed'
+                          ? 'border-blue-100 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 bg-slate-50 text-slate-500';
+
+                  return (
+                    <div key={appointment.id} className="px-5 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {isOfficeRole
+                              ? `${appointment.student_first_name} ${appointment.student_last_name}`
+                              : `${appointment.hod_first_name} ${appointment.hod_last_name}`}
+                          </p>
+                          <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                            <CalendarDays className="h-4 w-4" />
+                            <span>{formatDate(appointment.appointment_date)}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                            <Clock3 className="h-4 w-4" />
+                            <span>{appointment.time_slot}</span>
+                          </div>
+                        </div>
+                        <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${statusTone}`}>
+                          {appointment.status}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-black tabular-nums">{appt.appointment_date}</span>
+
+                      <p className="mt-3 text-sm leading-6 text-slate-600">{appointment.reason}</p>
+
+                      {isOfficeRole && appointment.status === 'Pending' && (
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleStatusUpdate(appointment.id, 'Confirmed')}
+                            className="rounded-[14px] bg-[#34b05a] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#2d9a4e]"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleStatusUpdate(appointment.id, 'Rejected')}
+                            className="rounded-[14px] border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="h-12 w-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-emerald-50 group-hover:text-emerald-600 group-hover:border-emerald-100 transition-all">
-                        <User className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-slate-900 uppercase tracking-tight">
-                          {isHOD ? `${appt.student_first_name} ${appt.student_last_name}` : `${appt.hod_first_name} ${appt.hod_last_name}`}
-                        </p>
-                        <p className="text-[10px] text-slate-500 font-bold mt-1 flex items-center gap-1.5">
-                          <Clock className="h-3 w-3" /> {appt.time_slot}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-[12px] text-slate-500 font-medium mb-6 leading-relaxed italic border-l-2 border-slate-100 pl-4">
-                      "{appt.reason}"
-                    </p>
-
-                    {isHOD && appt.status === 'Pending' && (
-                      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-50">
-                        <button 
-                          onClick={() => handleStatusUpdate(appt.id, 'Confirmed')}
-                          className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-900/10 transition-all active:scale-95"
-                        >
-                           Confirm
-                        </button>
-                        <button 
-                          onClick={() => handleStatusUpdate(appt.id, 'Cancelled')}
-                          className="flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-95"
-                        >
-                           Reject
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {appointments.length === 0 && (
-                  <div className="p-20 text-center">
-                    <CalendarIcon className="h-10 w-10 text-slate-100 mx-auto mb-4" />
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No engagements recorded</p>
-                  </div>
-                )}
-              </div>
-           </div>
-
-           <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-10">
-                 <Info size={100} />
-              </div>
-              <h4 className="text-sm font-black uppercase tracking-widest mb-4">Scheduling Protocol</h4>
-              <p className="text-[11px] text-emerald-50/70 font-medium leading-relaxed">
-                 Sessions are strictly academic. Please ensure you are present at the selected office 5 minutes before your scheduled window.
-              </p>
-           </div>
-        </div>
+                  );
+                })
+              ) : (
+                <div className="p-4">
+                  <EmptyState
+                    icon={CalendarDays}
+                    title={isOfficeRole ? 'No assigned appointments' : 'No appointments'}
+                    description={isOfficeRole ? 'New student requests will appear here.' : 'Your upcoming and past appointments will appear here.'}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        </aside>
       </div>
     </div>
   );

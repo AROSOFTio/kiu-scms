@@ -16,7 +16,7 @@ const generateReference = async (): Promise<string> => {
 // @desc    Submit a new complaint
 export const submitComplaint = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
-  const { title, categoryId, description, priority } = req.body;
+  const { title, categoryId, description } = req.body;
 
   try {
     // Get student record
@@ -24,7 +24,10 @@ export const submitComplaint = async (req: Request, res: Response) => {
       'SELECT id, department_id FROM students WHERE user_id = ?', [userId]
     );
     if (students.length === 0) {
-      return res.status(403).json({ status: 'error', message: 'Only students can submit complaints' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only student accounts linked to a student profile can submit complaints',
+      });
     }
     const studentId = students[0].id;
     const departmentId = students[0].department_id;
@@ -35,7 +38,7 @@ export const submitComplaint = async (req: Request, res: Response) => {
     const [result]: any = await db.query(
       `INSERT INTO complaints (student_id, category_id, department_id, title, description, priority, status, reference_number)
        VALUES (?, ?, ?, ?, ?, ?, 'Submitted', ?)`,
-      [studentId, categoryId, departmentId, title, description, priority || 'Medium', reference]
+      [studentId, categoryId, departmentId, title, description, 'Medium', reference]
     );
     const complaintId = result.insertId;
 
@@ -185,6 +188,7 @@ export const getComplaintById = async (req: Request, res: Response) => {
 // @desc    Get student dashboard stats
 export const getStudentStats = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
+  const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
   try {
     const [students]: any = await db.query('SELECT id FROM students WHERE user_id = ?', [userId]);
@@ -192,8 +196,18 @@ export const getStudentStats = async (req: Request, res: Response) => {
     const studentId = students[0].id;
 
     const [total]: any = await db.query('SELECT COUNT(*) as count FROM complaints WHERE student_id = ?', [studentId]);
-    const [open]: any = await db.query(`SELECT COUNT(*) as count FROM complaints WHERE student_id = ? AND status NOT IN ('Resolved','Closed','Rejected')`, [studentId]);
-    const [resolved]: any = await db.query(`SELECT COUNT(*) as count FROM complaints WHERE student_id = ? AND status = 'Resolved'`, [studentId]);
+    const [open]: any = await db.query(
+      `SELECT COUNT(*) as count
+       FROM complaints c
+       WHERE c.student_id = ? AND ${displayStatusSql} NOT IN ('Resolved','Closed','Rejected')`,
+      [studentId],
+    );
+    const [resolved]: any = await db.query(
+      `SELECT COUNT(*) as count
+       FROM complaints c
+       WHERE c.student_id = ? AND ${displayStatusSql} IN ('Resolved','Closed')`,
+      [studentId],
+    );
     const [recent]: any = await db.query(
       `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at,
               COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status) as display_status,

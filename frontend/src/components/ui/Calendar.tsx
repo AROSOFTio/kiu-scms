@@ -6,7 +6,7 @@ interface CalendarProps {
   onToggleAvailability?: (date: string, isAvailable: boolean) => void;
   availableDates: string[]; // ['2026-04-12', '2026-04-15']
   selectedDate: Date | null;
-  mode: 'student' | 'hod';
+  mode: 'student' | 'office';
 }
 
 export default function Calendar({ onDateSelect, availableDates, selectedDate, onToggleAvailability, mode }: CalendarProps) {
@@ -43,10 +43,10 @@ export default function Calendar({ onDateSelect, availableDates, selectedDate, o
     const date = new Date(year, month, day);
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    if (mode === 'hod' && onToggleAvailability) {
+    if (mode === 'office' && onToggleAvailability) {
       onToggleAvailability(dateStr, !isAvailable(day));
     } else {
-      if (isAvailable(day) || mode === 'hod') {
+      if (isAvailable(day) || mode === 'office') {
         onDateSelect(date);
       }
     }
@@ -64,64 +64,64 @@ export default function Calendar({ onDateSelect, availableDates, selectedDate, o
         key={i}
         disabled={isPast && mode === 'student'}
         onClick={() => handleDayClick(i)}
-        className={`h-14 w-full flex flex-col items-center justify-center rounded-2xl text-xs font-bold transition-all relative group
-          ${mode === 'hod' || (available && !isPast) ? 'cursor-pointer' : 'cursor-not-allowed'}
-          ${available ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm' : 'bg-white text-slate-400 border border-slate-50'}
-          ${selected ? 'ring-2 ring-emerald-600 ring-offset-2 !bg-emerald-600 !text-white z-10' : 'hover:scale-105'}
+        className={`relative flex h-11 w-full flex-col items-center justify-center rounded-[16px] border text-xs font-semibold transition
+          ${mode === 'office' || (available && !isPast) ? 'cursor-pointer' : 'cursor-not-allowed'}
+          ${available ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-400'}
+          ${selected ? 'z-10 border-[#34b05a] bg-[#34b05a] text-white ring-2 ring-[#34b05a]/20' : 'hover:border-slate-300'}
           ${isPast ? 'opacity-40 grayscale' : ''}
         `}
       >
-        <span className="text-sm font-black">{i}</span>
+        <span className="text-sm font-semibold">{i}</span>
         {available && !selected && (
-            <div className="w-1 h-1 rounded-full bg-emerald-500 mt-1" />
+            <div className="mt-1 h-1 w-1 rounded-full bg-emerald-500" />
         )}
       </button>
     );
   }
 
   return (
-    <div className="bg-white p-8 lg:p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/40">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+    <div className="app-card p-5 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-           <div className="flex items-center gap-2 text-emerald-600 mb-1">
+           <div className="mb-1 flex items-center gap-2 text-[#34b05a]">
               <CalendarIcon className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Institutional Scheduler</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Calendar</span>
            </div>
-           <h3 className="text-2xl font-black text-slate-900 tracking-tight">{monthNames[month]} {year}</h3>
+           <h3 className="text-xl font-semibold text-slate-900">{monthNames[month]} {year}</h3>
         </div>
         <div className="flex gap-2">
-          <button onClick={prevMonth} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all text-slate-400 hover:text-slate-900 border border-slate-100">
-            <ChevronLeft className="h-5 w-5" />
+          <button onClick={prevMonth} className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50">
+            <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={nextMonth} className="p-3 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded-2xl transition-all text-slate-900 border border-slate-100">
-            <ChevronRight className="h-5 w-5" />
+          <button onClick={nextMonth} className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50">
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-3 mb-8">
+      <div className="mb-5 grid grid-cols-7 gap-2">
         {dayLabels.map(label => (
-          <div key={label} className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center py-2">
+          <div key={label} className="py-1 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
             {label}
           </div>
         ))}
         {days}
       </div>
       
-      <div className="p-6 bg-slate-50/50 rounded-3xl border border-slate-100">
-         <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+      <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-2.5">
-               <div className="w-4 h-4 rounded-lg bg-emerald-600 shadow-sm" />
-               <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">In Office / Available</span>
+               <div className="h-3.5 w-3.5 rounded-md bg-[#34b05a]" />
+               <span className="text-[11px] font-medium text-slate-600">Available</span>
             </div>
             <div className="flex items-center gap-2.5">
-               <div className="w-4 h-4 rounded-lg bg-white border border-slate-100 shadow-sm" />
-               <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Out of Office</span>
+               <div className="h-3.5 w-3.5 rounded-md border border-slate-200 bg-white" />
+               <span className="text-[11px] font-medium text-slate-500">Unavailable</span>
             </div>
-            {mode === 'hod' && (
-               <div className="flex items-center gap-2.5 ml-auto text-emerald-600">
+            {mode === 'office' && (
+               <div className="ml-auto flex items-center gap-2 text-[#34b05a]">
                   <Clock className="h-3 w-3" />
-                  <span className="text-[10px] font-black uppercase tracking-widest italic">Click any date to toggle your presence</span>
+                  <span className="text-[11px] font-medium">Select a date to update availability.</span>
                </div>
             )}
          </div>

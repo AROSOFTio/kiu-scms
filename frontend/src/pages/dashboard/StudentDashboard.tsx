@@ -96,13 +96,13 @@ export default function StudentDashboard() {
           });
         } else {
           const pendingFallback = complaintData.filter(
-            (complaint: ComplaintRecord) => !['Resolved', 'Closed', 'Rejected'].includes(complaint.status),
+            (complaint: ComplaintRecord) => !['Resolved', 'Closed', 'Rejected'].includes(complaint.display_status || complaint.status),
           ).length;
 
           setStats({
             total: complaintData.length,
             pending: pendingFallback,
-            resolved: complaintData.filter((complaint: ComplaintRecord) => complaint.status === 'Resolved').length,
+            resolved: complaintData.filter((complaint: ComplaintRecord) => ['Resolved', 'Closed'].includes(complaint.display_status || complaint.status)).length,
           });
         }
 
@@ -390,8 +390,12 @@ export default function StudentDashboard() {
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-                No alerts.
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
+                <EmptyState
+                  icon={AlertCircle}
+                  title="No notifications"
+                  description="Complaint updates and appointment actions will appear here."
+                />
               </div>
             )}
           </div>

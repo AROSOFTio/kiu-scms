@@ -32,29 +32,23 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" 
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-500 border border-white/20">
-        {/* Header */}
-        <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-          <div>
-             <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] leading-none mb-2 block">Case Inspector</span>
-             <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase">{title}</h3>
-          </div>
+      <div className="relative w-full max-w-lg overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_64px_-28px_rgba(41,41,41,0.28)] animate-in zoom-in-95 duration-300">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button 
             onClick={onClose}
-            className="p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all text-slate-400 hover:text-slate-900 active:scale-95"
+            className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 text-slate-400 transition hover:bg-slate-50 hover:text-slate-900"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="px-10 py-8 overflow-y-auto max-h-[60vh] custom-scrollbar">
+        <div className="max-h-[60vh] overflow-y-auto px-6 py-5 custom-scrollbar">
           {children}
         </div>
 
-        {/* Footer */}
         {footer && (
-          <div className="px-10 py-8 border-t border-slate-50 bg-slate-50/50 flex justify-end gap-3">
+          <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-5">
             {footer}
           </div>
         )}
