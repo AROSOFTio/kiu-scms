@@ -111,7 +111,7 @@ export default function DashboardLayout() {
   }, [isSidebarOpen]);
 
   return (
-    <div className={`min-h-screen text-slate-900 ${isAdminRole ? 'bg-[#eeedf4]' : 'bg-[#eef1f4]'}`}>
+    <div className={`min-h-screen text-slate-900 ${isAdminRole ? 'bg-[#292929]' : 'bg-[#eef1f4]'}`}>
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-sm lg:hidden"
@@ -198,7 +198,7 @@ export default function DashboardLayout() {
         </div>
       </aside>
 
-      <div className={isAdminRole ? 'lg:pl-[310px]' : 'lg:pl-72'}>
+      <div className={isAdminRole ? 'bg-[#292929] lg:pl-[310px]' : 'lg:pl-72'}>
         <header className={`sticky top-0 z-30 text-white ${isAdminRole ? 'bg-[#292929] shadow-[0_18px_40px_-28px_rgba(17,17,17,0.82)]' : 'border-b border-[#393836] bg-[#292929]'}`}>
           <div className={`mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 ${isAdminRole ? 'h-20 max-w-none' : 'h-20 max-w-7xl'}`}>
             <div className="flex min-w-0 items-center gap-4">
@@ -244,26 +244,28 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <div className="overflow-hidden bg-[#eef1f4] lg:rounded-tl-[34px]">
-          <main className={`${isAdminRole ? 'bg-[#eef1f4] px-4 py-5 sm:px-6 lg:px-8' : 'bg-[#eef1f4] px-4 py-6 sm:px-6 lg:px-8'}`}>
-            <div className={`mx-auto w-full space-y-6 ${isAdminRole ? 'max-w-none' : 'max-w-7xl'}`}>
-              {isAdminRole && (
-                <div className="overflow-hidden rounded-[18px] border border-[#d9e2dc] bg-white shadow-[0_18px_48px_-34px_rgba(41,41,41,0.22)]">
-                  <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
-                    <div className="h-12 w-1 rounded-full bg-[#33b35a]" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6e7a72]">HOD Workspace</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <h3 className="text-[22px] font-semibold text-[#292929]">{pageTitle}</h3>
-                        <span className="text-sm font-medium text-[#33b35a]">Complaint review, routing and lecturer assignment</span>
+        <div className="bg-[#292929] pt-1">
+          <div className="min-h-[calc(100vh-81px)] overflow-hidden bg-[#eef1f4] lg:rounded-tl-[42px]">
+            <main className={`${isAdminRole ? 'bg-[#eef1f4] px-4 py-5 sm:px-6 lg:px-8' : 'bg-[#eef1f4] px-4 py-6 sm:px-6 lg:px-8'}`}>
+              <div className={`mx-auto w-full space-y-6 ${isAdminRole ? 'max-w-none' : 'max-w-7xl'}`}>
+                {isAdminRole && (
+                  <div className="overflow-hidden rounded-[18px] border border-[#d9e2dc] bg-white shadow-[0_18px_48px_-34px_rgba(41,41,41,0.22)]">
+                    <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
+                      <div className="h-12 w-1 rounded-full bg-[#33b35a]" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6e7a72]">HOD Workspace</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <h3 className="text-[22px] font-semibold text-[#292929]">{pageTitle}</h3>
+                          <span className="text-sm font-medium text-[#33b35a]">Complaint review, routing and lecturer assignment</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-              <Outlet />
-            </div>
-          </main>
+                )}
+                <Outlet />
+              </div>
+            </main>
+          </div>
         </div>
       </div>
     </div>

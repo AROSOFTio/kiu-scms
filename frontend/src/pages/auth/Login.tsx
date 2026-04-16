@@ -100,8 +100,12 @@ export default function Login() {
       <div className="min-h-screen px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
         <div className="animate-slide-up w-full max-w-[470px] overflow-hidden rounded-[26px] border border-white/20 bg-white shadow-[0_36px_80px_-42px_rgba(0,0,0,0.48)] backdrop-blur-[2px]">
           <section className="border-b border-slate-200 bg-white px-8 pb-7 pt-8 text-center">
-            <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-[26px] border border-[#e4f1e7] bg-[#f5fbf7] p-4 shadow-[0_20px_40px_-32px_rgba(51,179,90,0.5)]">
-              <img src="/kiu-logo.png" alt="Kampala International University" className="h-full w-full object-contain" />
+            <div className="mx-auto mb-5 flex w-fit items-center justify-center rounded-[24px] border border-[#dcecdf] bg-[#f5fbf7] px-7 py-5 shadow-[0_20px_40px_-32px_rgba(51,179,90,0.5)]">
+              <img
+                src="/kiu-logo.png"
+                alt="Kampala International University"
+                className="h-[82px] w-auto max-w-[250px] object-contain"
+              />
             </div>
             <h1 className="text-[14px] font-semibold uppercase tracking-[0.22em] text-[#6b7280]">Student Complaint System</h1>
             <div className="mt-5 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f3f5f6] p-1.5">
