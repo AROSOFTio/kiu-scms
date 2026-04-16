@@ -5,14 +5,25 @@ import { NotificationService } from '../services/notification.service';
 
 // @desc    Get all complaints (Admin/Staff only)
 export const getAllComplaints = async (req: Request, res: Response) => {
-  const { status, category, search, priority, page = '1', limit = '10', startDate, endDate } = req.query as any;
+  const { status, statuses, category, search, priority, page = '1', limit = '10', startDate, endDate } = req.query as any;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   try {
     let where = 'WHERE 1=1';
     const params: any[] = [];
 
-    if (status) { where += ' AND c.status = ?'; params.push(status); }
+    const statusList = (Array.isArray(statuses) ? statuses.join(',') : String(statuses || ''))
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    if (statusList.length > 0) {
+      where += ` AND c.status IN (${statusList.map(() => '?').join(',')})`;
+      params.push(...statusList);
+    } else if (status) {
+      where += ' AND c.status = ?';
+      params.push(status);
+    }
     if (category) { where += ' AND cc.id = ?'; params.push(category); }
     if (priority) { where += ' AND c.priority = ?'; params.push(priority); }
     if (startDate) { where += ' AND c.created_at >= ?'; params.push(startDate); }

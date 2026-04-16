@@ -11,10 +11,10 @@ import {
   Loader2,
   Lock,
   Send,
-  UserPlus,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 interface TimelineEvent {
@@ -45,42 +45,35 @@ interface ComplaintDetail {
   student_first_name: string;
   student_last_name: string;
   student_email: string;
-  assigned_staff_id: number;
+  assigned_staff_id: number | null;
   attachments: { id: number; file_path: string; file_name: string }[];
   timeline: TimelineEvent[];
   feedback?: { rating: number; comments: string; date: string } | null;
 }
 
-interface StaffMember {
-  id: number;
-  first_name: string;
-  last_name: string;
-  role_name: string;
-}
-
-type TabKey = 'timeline' | 'notes' | 'reassign';
+type TabKey = 'timeline' | 'notes';
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString();
+}
+
+function getStatusLabel(status: string) {
+  if (status === 'Submitted' || status === 'Under Review') return 'Pending';
+  if (status === 'Closed') return 'Resolved';
+  return status;
 }
 
 function getStatusTone(status: string) {
   switch (status) {
     case 'Resolved':
     case 'Closed':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-    case 'Rejected':
-      return 'bg-rose-50 text-rose-700 border-rose-100';
-    case 'In Progress':
-      return 'bg-amber-50 text-amber-700 border-amber-100';
+      return 'bg-[#34b05a]/12 text-[#2d8f49] border-[#34b05a]/15';
     case 'Awaiting Student':
-      return 'bg-violet-50 text-violet-700 border-violet-100';
-    case 'Forwarded':
-    case 'Under Review':
-      return 'bg-blue-50 text-blue-700 border-blue-100';
-    case 'Submitted':
-    default:
+      return 'bg-amber-50 text-amber-700 border-amber-100';
+    case 'In Progress':
       return 'bg-slate-100 text-slate-700 border-slate-200';
+    default:
+      return 'bg-white text-slate-700 border-slate-200';
   }
 }
 
@@ -88,26 +81,22 @@ export default function StaffComplaintWorkspace() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'Admin';
-  const isDeptOfficer = user?.role === 'Department Officer';
-  const canAssign = isAdmin || isDeptOfficer;
 
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('timeline');
-  const [statusUpdate, setStatusUpdate] = useState({ status: '', remarks: '' });
+  const [statusUpdate, setStatusUpdate] = useState({ status: 'In Progress', remarks: '' });
   const [newNote, setNewNote] = useState('');
   const [internalNotes, setInternalNotes] = useState<InternalNote[]>([]);
-  const [staffList, setStaffList] = useState<StaffMember[]>([]);
-  const [selectedStaff, setSelectedStaff] = useState('');
 
   const fetchDetail = async () => {
     try {
       const res = await api.get(`/admin/complaints/${id}`);
-      setComplaint(res.data.data);
-      setStatusUpdate({ status: res.data.data.status, remarks: '' });
+      const detail = res.data.data as ComplaintDetail;
+      setComplaint(detail);
+      setStatusUpdate({ status: detail.status === 'Resolved' || detail.status === 'Closed' ? 'Resolved' : detail.status === 'Awaiting Student' ? 'Awaiting Student' : detail.status === 'In Progress' ? 'In Progress' : 'Under Review', remarks: '' });
     } finally {
       setLoading(false);
     }
@@ -122,61 +111,43 @@ export default function StaffComplaintWorkspace() {
     }
   };
 
-  const fetchStaff = async () => {
-    if (!canAssign) return;
-    try {
-      const res = await api.get('/admin/staff');
-      setStaffList(res.data.data || []);
-    } catch {
-      setStaffList([]);
-    }
-  };
-
   useEffect(() => {
     fetchDetail();
     fetchNotes();
-    fetchStaff();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    window.setTimeout(() => setCopied(false), 1600);
   };
 
-  const handleUpdateStatus = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateStatus = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!statusUpdate.remarks.trim()) return;
+
     setSubmitting(true);
     try {
-      await api.patch(`/admin/complaints/${id}/status`, statusUpdate);
+      await api.patch(`/admin/complaints/${id}/status`, {
+        status: statusUpdate.status,
+        remarks: statusUpdate.remarks.trim(),
+      });
       await fetchDetail();
-      setStatusUpdate((prev) => ({ ...prev, remarks: '' }));
+      setStatusUpdate((current) => ({ ...current, remarks: '' }));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleAddNote = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddNote = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!newNote.trim()) return;
+
     setSubmitting(true);
     try {
-      await api.post(`/admin/complaints/${id}/notes`, { note: newNote });
+      await api.post(`/admin/complaints/${id}/notes`, { note: newNote.trim() });
       await fetchNotes();
       setNewNote('');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleReassign = async () => {
-    if (!selectedStaff) return;
-    setSubmitting(true);
-    try {
-      await api.patch(`/admin/complaints/${id}/assign`, { staffId: selectedStaff });
-      await fetchDetail();
-      setSelectedStaff('');
     } finally {
       setSubmitting(false);
     }
@@ -195,12 +166,26 @@ export default function StaffComplaintWorkspace() {
     return <div className="p-8 text-sm text-slate-500">Complaint not found.</div>;
   }
 
+  if (!complaint.assigned_staff_id || complaint.assigned_staff_id !== user?.id) {
+    return (
+      <div className="mx-auto mt-16 max-w-2xl">
+        <EmptyState
+          icon={Lock}
+          title="Not in your queue"
+          description=""
+          actionLabel="Open queue"
+          actionLink="/dashboard/staff"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-[calc(100vh-120px)] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
         <div className="flex min-w-0 items-center gap-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/dashboard/staff')}
             className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 text-slate-500 transition hover:bg-slate-50"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -220,19 +205,18 @@ export default function StaffComplaintWorkspace() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusTone(complaint.status)}`}>
-            {complaint.status === 'Submitted' ? 'Pending' : complaint.status}
+          <span className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusTone(getStatusLabel(complaint.status))}`}>
+            {getStatusLabel(complaint.status)}
           </span>
           <select
             value={statusUpdate.status}
-            onChange={(e) => setStatusUpdate((prev) => ({ ...prev, status: e.target.value }))}
+            onChange={(event) => setStatusUpdate((current) => ({ ...current, status: event.target.value }))}
             className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] outline-none focus:ring-2 focus:ring-[#34b05a]"
           >
-            <option value="Under Review">Under Review</option>
+            <option value="Under Review">Pending</option>
             <option value="In Progress">In Progress</option>
             <option value="Awaiting Student">Awaiting Student</option>
             <option value="Resolved">Resolved</option>
-            <option value="Rejected">Rejected</option>
           </select>
         </div>
       </div>
@@ -240,7 +224,7 @@ export default function StaffComplaintWorkspace() {
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-[410px] shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-6">
           <div className="space-y-8">
-            {complaint.feedback && complaint.status === 'Resolved' && (
+            {complaint.feedback && getStatusLabel(complaint.status) === 'Resolved' && (
               <section className="rounded-[18px] border border-emerald-100 bg-emerald-50 p-4">
                 <h2 className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -270,8 +254,8 @@ export default function StaffComplaintWorkspace() {
               <h2 className="border-b border-slate-100 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Details</h2>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-[16px] border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Priority</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{complaint.priority}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Type</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{complaint.category_name}</p>
                 </div>
                 <div className="rounded-[16px] border border-slate-200 bg-slate-50 p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Date</p>
@@ -313,23 +297,20 @@ export default function StaffComplaintWorkspace() {
         <section className="flex flex-1 flex-col overflow-hidden bg-slate-50/60">
           <div className="flex items-center gap-8 border-b border-slate-200 bg-white px-6">
             {[
-              { id: 'timeline', label: 'Timeline', icon: History, show: true },
-              { id: 'notes', label: 'Notes', icon: Lock, show: true },
-              { id: 'reassign', label: 'Reassign', icon: UserPlus, show: canAssign },
-            ]
-              .filter((tab) => tab.show)
-              .map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as TabKey)}
-                  className={`flex items-center gap-2 border-b-2 py-4 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
-                    activeTab === tab.id ? 'border-[#34b05a] text-[#34b05a]' : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  <tab.icon className="h-3.5 w-3.5" />
-                  {tab.label}
-                </button>
-              ))}
+              { id: 'timeline', label: 'History', icon: History },
+              { id: 'notes', label: 'Notes', icon: Lock },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabKey)}
+                className={`flex items-center gap-2 border-b-2 py-4 text-[11px] font-semibold uppercase tracking-[0.16em] transition ${
+                  activeTab === tab.id ? 'border-[#34b05a] text-[#34b05a]' : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <tab.icon className="h-3.5 w-3.5" />
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           <div className="flex-1 overflow-y-auto p-8">
@@ -339,9 +320,9 @@ export default function StaffComplaintWorkspace() {
                   <div key={event.id} className="relative border-l-2 border-slate-200 pb-8 pl-8 last:pb-0">
                     <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 border-[#34b05a] bg-white" />
                     <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="rounded bg-[#34b05a]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#34b05a]">
-                          {event.status === 'Submitted' ? 'Pending' : event.status}
+                      <div className="mb-2 flex items-center justify-between gap-4">
+                        <span className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${getStatusTone(getStatusLabel(event.status))}`}>
+                          {getStatusLabel(event.status)}
                         </span>
                         <span className="text-[10px] text-slate-400">{formatDateTime(event.created_at)}</span>
                       </div>
@@ -352,20 +333,20 @@ export default function StaffComplaintWorkspace() {
                 ))}
 
                 <div className="rounded-[20px] border border-[#34b05a]/20 bg-white p-6 shadow-lg shadow-[#34b05a]/5">
-                  <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#34b05a]">Status Update</h3>
+                  <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#34b05a]">Post update</h3>
                   <form onSubmit={handleUpdateStatus} className="space-y-4">
                     <textarea
                       required
-                      placeholder="Add remarks for the student"
+                      placeholder="Action update"
                       value={statusUpdate.remarks}
-                      onChange={(e) => setStatusUpdate((prev) => ({ ...prev, remarks: e.target.value }))}
+                      onChange={(event) => setStatusUpdate((current) => ({ ...current, remarks: event.target.value }))}
                       className="min-h-[110px] w-full rounded-[16px] border border-slate-200 bg-slate-50 p-4 text-sm outline-none focus:ring-2 focus:ring-[#34b05a]"
                     />
                     <button
-                      disabled={submitting || !statusUpdate.remarks}
+                      disabled={submitting || !statusUpdate.remarks.trim()}
                       className="flex w-full items-center justify-center rounded-[16px] bg-[#34b05a] py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[#2d9a4e] disabled:opacity-50"
                     >
-                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Post Update <Send className="ml-2 h-3.5 w-3.5" /></>}
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Save update <Send className="ml-2 h-3.5 w-3.5" /></>}
                     </button>
                   </form>
                 </div>
@@ -376,14 +357,14 @@ export default function StaffComplaintWorkspace() {
               <div className="mx-auto max-w-2xl space-y-8">
                 <div className="flex items-center gap-3 rounded-[16px] border border-amber-100 bg-amber-50 px-4 py-3">
                   <Lock className="h-4 w-4 text-amber-600" />
-                  <p className="text-[11px] font-medium text-amber-700">Visible to staff and admin only.</p>
+                  <p className="text-[11px] font-medium text-amber-700">Internal only.</p>
                 </div>
 
                 <form onSubmit={handleAddNote} className="rounded-[20px] border border-slate-200 bg-white p-2 shadow-sm">
                   <textarea
-                    placeholder="Add internal note"
+                    placeholder="Add note"
                     value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
+                    onChange={(event) => setNewNote(event.target.value)}
                     className="h-24 w-full rounded-xl border-none p-4 text-sm outline-none focus:ring-0"
                   />
                   <div className="flex justify-end p-2">
@@ -401,7 +382,7 @@ export default function StaffComplaintWorkspace() {
                   {internalNotes.length ? (
                     internalNotes.map((note) => (
                       <div key={note.id} className="rounded-[20px] border border-slate-200 bg-white p-6 shadow-sm">
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-4 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-2">
                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-semibold text-slate-400">
                               {note.first_name[0]}{note.last_name[0]}
@@ -418,41 +399,6 @@ export default function StaffComplaintWorkspace() {
                       No notes
                     </div>
                   )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'reassign' && canAssign && (
-              <div className="mx-auto max-w-md space-y-8 py-12 text-center">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#34b05a]/10">
-                  <UserPlus className="h-10 w-10 text-[#34b05a]" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-900">Reassign Complaint</h3>
-                </div>
-
-                <div className="space-y-4">
-                  <select
-                    value={selectedStaff}
-                    onChange={(e) => setSelectedStaff(e.target.value)}
-                    className="w-full rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#34b05a]"
-                  >
-                    <option value="">Select staff</option>
-                    {staffList
-                      .filter((staff) => staff.id !== complaint.assigned_staff_id)
-                      .map((staff) => (
-                        <option key={staff.id} value={staff.id}>
-                          {staff.first_name} {staff.last_name} ({staff.role_name})
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    onClick={handleReassign}
-                    disabled={submitting || !selectedStaff}
-                    className="w-full rounded-[16px] bg-[#34b05a] py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-[#2d9a4e] disabled:opacity-50"
-                  >
-                    Reassign
-                  </button>
                 </div>
               </div>
             )}

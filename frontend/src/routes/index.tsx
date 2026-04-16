@@ -107,7 +107,7 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><StaffDashboard /></ProtectedRoute>
         } />
         <Route path="staff/worklist" element={
-          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><ComplaintsList /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><StaffDashboard /></ProtectedRoute>
         } />
         <Route path="staff/complaints/:id" element={
           <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><StaffComplaintWorkspace /></ProtectedRoute>
