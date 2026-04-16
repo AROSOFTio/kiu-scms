@@ -107,7 +107,7 @@ export default function ComplaintsList() {
         const res = await api.get('/admin/complaints', { params });
         setComplaints(res.data.data);
         setTotal(res.data.total);
-      } catch (err) {
+      } catch {
         console.error('Fetch failed');
       } finally {
         setTimeout(() => setLoading(false), 500);
@@ -133,7 +133,7 @@ export default function ComplaintsList() {
       setAssignModalOpen(false);
       const res = await api.get('/admin/complaints', { params: { search, status, priority, page, limit } });
       setComplaints(res.data.data);
-    } catch (err) {
+    } catch {
       alert('Failed to assign staff');
     } finally {
       setSubmitting(false);
@@ -149,7 +149,7 @@ export default function ComplaintsList() {
       setRemarks('');
       const res = await api.get('/admin/complaints', { params: { search, status, priority, page, limit } });
       setComplaints(res.data.data);
-    } catch (err) {
+    } catch {
       alert('Failed to update status');
     } finally {
       setSubmitting(false);
@@ -170,56 +170,54 @@ export default function ComplaintsList() {
 
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      {/* Header Section */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-16">
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-             <div className="h-1 w-12 bg-[#008540] rounded-full" />
-             <span className="text-[10px] font-black text-[#008540] uppercase tracking-[0.4em]">Case Repository</span>
+          <div className="mb-2 flex items-center gap-3">
+             <div className="h-1 w-10 rounded-full bg-[#34b05a]" />
+             <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#34b05a]">Complaints</span>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-            {isWorklist ? 'Resolution Worklist' : 'Complaint Intelligence'}
+          <h1 className="text-[30px] font-semibold text-slate-900">
+            {isWorklist ? 'Worklist' : 'Complaint Queue'}
           </h1>
-          <p className="text-slate-500 mt-3 font-medium max-w-2xl leading-relaxed">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             {isWorklist 
-              ? 'Managed workspace for cases explicitly assigned to your jurisdiction.' 
-              : 'End-to-end audit trail of all institutional Complaints logged across Kampala International University.'}
+              ? 'Assigned complaints only.' 
+              : 'All complaints in the system.'}
           </p>
         </div>
         {isDeptOfficer && !isWorklist && (
            <button 
              onClick={() => setAssignedToMe(!assignedToMe)}
-             className={`group relative px-8 py-4 rounded-3xl text-xs font-black transition-all overflow-hidden ${
+             className={`group relative overflow-hidden rounded-[18px] px-6 py-3 text-xs font-semibold uppercase tracking-[0.16em] transition-all ${
                assignedToMe 
-                 ? 'bg-[#008540] text-white shadow-[0_20px_40px_-10px_rgba(0,133,64,0.3)]' 
-                 : 'bg-white border border-slate-100 text-slate-500 hover:border-emerald-200 hover:text-emerald-600'
+                 ? 'bg-[#34b05a] text-white shadow-[0_20px_40px_-18px_rgba(52,176,90,0.32)]' 
+                 : 'border border-slate-200 bg-white text-slate-500 hover:border-[#34b05a]/35 hover:text-[#34b05a]'
              }`}
            >
              <span className="relative z-10 flex items-center gap-2">
-                {assignedToMe ? 'Viewing: Exclusive Worklist' : 'Switch to: Assigned Cases'}
+                {assignedToMe ? 'Assigned Only' : 'Assigned View'}
                 <ArrowRight className={`h-4 w-4 transition-transform duration-500 ${assignedToMe ? 'rotate-180' : 'group-hover:translate-x-1'}`} />
              </span>
           </button>
         )}
       </div>
 
-      {/* Enhanced Multi-Layer Filters */}
-      <div className="space-y-6">
-        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+      <div className="space-y-4">
+        <div className="flex flex-col items-stretch gap-4 lg:flex-row">
           <div className="relative flex-1 group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-[#34b05a] transition-colors" />
             <input 
               type="text" 
-              placeholder="Search by Reference, Title or Student Identity..."
+              placeholder="Search complaints"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="premium-input pl-16 py-5 text-base w-full shadow-sm"
+              className="premium-input w-full pl-14 py-4 text-sm shadow-sm"
             />
             {search && (
               <button 
                 onClick={() => setSearch('')}
-                className="absolute right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-slate-100 rounded-full transition-colors"
+                className="absolute right-5 top-1/2 -translate-y-1/2 rounded-full p-2 transition-colors hover:bg-slate-100"
               >
                 <X className="h-4 w-4 text-slate-400" />
               </button>
@@ -227,10 +225,10 @@ export default function ComplaintsList() {
           </div>
           <button 
             onClick={clearFilters}
-            className="flex items-center justify-center gap-3 px-8 bg-white border border-slate-100 rounded-3xl text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all active:scale-95 shadow-sm"
+            className="flex items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-6 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 shadow-sm transition-all hover:border-[#34b05a]/35 hover:text-[#34b05a]"
           >
             <RefreshCw className="h-4 w-4" />
-            Reset Intelligence
+            Reset
           </button>
         </div>
 
@@ -240,14 +238,14 @@ export default function ComplaintsList() {
             <select 
               value={status} 
               onChange={(e) => setStatus(e.target.value)}
-              className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+              className="premium-input bg-slate-50/50 pl-12 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]"
             >
-              <option value="">Status: All Realms</option>
-              <option value="Submitted">Realm: Pending</option>
-              <option value="Under Review">Realm: Under Review</option>
-              <option value="In Progress">Realm: In Progress</option>
-              <option value="Resolved">Realm: Resolved</option>
-              <option value="Rejected">Realm: Rejected</option>
+              <option value="">All Statuses</option>
+              <option value="Submitted">Pending</option>
+              <option value="Under Review">Under Review</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Rejected">Rejected</option>
             </select>
           </div>
 
@@ -256,13 +254,13 @@ export default function ComplaintsList() {
             <select 
               value={priority} 
               onChange={(e) => setPriority(e.target.value)}
-              className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+              className="premium-input bg-slate-50/50 pl-12 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]"
             >
-              <option value="">Priority: Unified</option>
-              <option value="Critical">Severity: Critical</option>
-              <option value="High">Severity: High</option>
-              <option value="Medium">Severity: Medium</option>
-              <option value="Low">Severity: Low</option>
+              <option value="">All Priorities</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
             </select>
           </div>
 
@@ -271,9 +269,9 @@ export default function ComplaintsList() {
             <select 
               value={category} 
               onChange={(e) => setCategory(e.target.value)}
-              className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+              className="premium-input bg-slate-50/50 pl-12 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]"
             >
-              <option value="">Category: All</option>
+              <option value="">All Categories</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
@@ -286,7 +284,7 @@ export default function ComplaintsList() {
                type="date"
                value={startDate}
                onChange={(e) => setStartDate(e.target.value)}
-               className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50 placeholder:text-slate-300"
+               className="premium-input bg-slate-50/50 pl-12 py-4 text-[11px] font-semibold uppercase tracking-[0.14em] placeholder:text-slate-300"
              />
           </div>
 
@@ -296,24 +294,22 @@ export default function ComplaintsList() {
                type="date"
                value={endDate}
                onChange={(e) => setEndDate(e.target.value)}
-               className="premium-input pl-12 py-4 text-[11px] font-black uppercase tracking-widest bg-slate-50/50"
+               className="premium-input bg-slate-50/50 pl-12 py-4 text-[11px] font-semibold uppercase tracking-[0.14em]"
              />
           </div>
         </div>
       </div>
 
-      {/* Main Data View */}
       <div className="premium-card min-h-[600px] flex flex-col">
-        {/* Desktop Table View */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] border-b border-slate-50">
-                <th className="px-10 py-6">Identity Reference</th>
-                <th className="px-10 py-6">Complaint Origin</th>
-                <th className="px-10 py-6">Intellectual Map</th>
-                <th className="px-10 py-6">Assigned Jurisdiction</th>
-                <th className="px-10 py-6">Lifecycle Status</th>
+              <tr className="border-b border-slate-50 bg-slate-50/50 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <th className="px-10 py-6">Ref</th>
+                <th className="px-10 py-6">Student</th>
+                <th className="px-10 py-6">Complaint</th>
+                <th className="px-10 py-6">Assigned</th>
+                <th className="px-10 py-6">Status</th>
                 <th className="px-10 py-6 text-right">Actions</th>
               </tr>
             </thead>
@@ -325,7 +321,7 @@ export default function ComplaintsList() {
                   <td colSpan={6} className="py-40 text-center">
                      <div className="flex flex-col items-center opacity-30">
                         <Loader2 className="h-12 w-12 mb-4 animate-spin-slow rotate-12" />
-                        <p className="text-sm font-black uppercase tracking-widest">Zero matches in historical data</p>
+                        <p className="text-sm font-semibold uppercase tracking-[0.18em]">No complaints found</p>
                      </div>
                   </td>
                 </tr>
@@ -341,7 +337,7 @@ export default function ComplaintsList() {
                        </div>
                        <div>
                           <p className="font-black text-sm text-slate-900 uppercase tracking-tight leading-none mb-1">{c.student_first_name} {c.student_last_name}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Institutional Student</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Student</p>
                        </div>
                     </div>
                   </td>
@@ -368,7 +364,7 @@ export default function ComplaintsList() {
                     ) : (
                       <div className="flex items-center gap-2 opacity-30">
                          <MoreHorizontal className="h-4 w-4" />
-                         <span className="text-[10px] font-black uppercase tracking-widest">Vacant</span>
+                         <span className="text-[10px] font-semibold uppercase tracking-[0.16em]">Unassigned</span>
                       </div>
                     )}
                   </td>
@@ -463,13 +459,12 @@ export default function ComplaintsList() {
         </div>
       </div>
 
-      {/* Pagination Footer */}
       {total > limit && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-10">
           <div className="flex items-center gap-4">
              <span className="h-2 w-2 rounded-full bg-emerald-200" />
-             <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">
-               Page {page} / {Math.ceil(total / limit)} <span className="mx-2 opacity-20">|</span> Total Capacity: {total}
+             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+               Page {page} / {Math.ceil(total / limit)} <span className="mx-2 opacity-20">|</span> Total {total}
              </p>
           </div>
           <div className="flex items-center gap-3">
@@ -485,18 +480,17 @@ export default function ComplaintsList() {
               onClick={() => setPage(p => p + 1)}
               className="h-14 px-8 bg-[#008540] text-white rounded-2xl shadow-xl shadow-emerald-900/20 disabled:opacity-30 transition-all hover:translate-y-[-2px] active:scale-95 flex items-center gap-3"
             >
-               <span className="text-xs font-black uppercase tracking-widest">Next Phase</span>
+               <span className="text-xs font-semibold uppercase tracking-[0.16em]">Next</span>
                <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         </div>
       )}
 
-      {/* Reused Modals with Premium Touches */}
       <Modal 
         isOpen={isAssignModalOpen} 
         onClose={() => setAssignModalOpen(false)} 
-        title="Institutional Delegation"
+        title="Assign Complaint"
         footer={
           <>
             <button onClick={() => setAssignModalOpen(false)} className="px-6 py-3 text-slate-400 font-bold text-xs uppercase tracking-widest">Cancel</button>
@@ -505,7 +499,7 @@ export default function ComplaintsList() {
               disabled={!targetStaffId || submitting}
               className="px-10 py-4 bg-[#008540] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-900/10 disabled:bg-slate-200"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Assignment"}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign"}
             </button>
           </>
         }
@@ -516,18 +510,18 @@ export default function ComplaintsList() {
                  <AlertCircle className="h-7 w-7" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Target Assessment</p>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Complaint</p>
                 <p className="text-lg text-slate-900 font-black tracking-tighter">{selectedComplaint?.reference_number}</p>
               </div>
            </div>
            <div className="space-y-3">
-             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Select Operator</label>
+             <label className="pl-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Staff</label>
              <select 
                value={targetStaffId} 
                onChange={(e) => setTargetStaffId(e.target.value)}
                className="premium-input bg-slate-50 py-5"
              >
-               <option value="">-- Institutional Staff Directory --</option>
+               <option value="">Select staff</option>
                {staffList.map(s => (
                  <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.role_name})</option>
                ))}
@@ -539,7 +533,7 @@ export default function ComplaintsList() {
       <Modal 
         isOpen={isStatusModalOpen} 
         onClose={() => setStatusModalOpen(false)} 
-        title="Progression Enforcement"
+        title="Update Status"
         footer={
           <>
             <button onClick={() => setStatusModalOpen(false)} className="px-6 py-3 text-slate-400 font-bold text-xs uppercase tracking-widest">Cancel</button>
@@ -548,14 +542,14 @@ export default function ComplaintsList() {
               disabled={!targetStatus || !remarks || submitting}
               className="px-10 py-4 bg-[#008540] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-900/10 disabled:bg-slate-200"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Authorize Shift"}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
             </button>
           </>
         }
       >
         <div className="space-y-8">
            <div className="space-y-3">
-             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">State Transition</label>
+             <label className="pl-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</label>
              <select 
                value={targetStatus} 
                onChange={(e) => setTargetStatus(e.target.value)}
@@ -568,11 +562,11 @@ export default function ComplaintsList() {
              </select>
            </div>
            <div className="space-y-3">
-             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Auditable Log Entry</label>
+             <label className="pl-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Remarks</label>
              <textarea 
                value={remarks} 
                onChange={(e) => setRemarks(e.target.value)}
-               placeholder="Technical justification for this state change..."
+               placeholder="Add remarks"
                rows={5}
                className="premium-input bg-slate-50 py-5 resize-none"
              />

@@ -109,9 +109,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-5 border-b border-slate-200 pb-10 last:border-b-0 last:pb-0">
+    <section className="space-y-4 border-b border-slate-200 pb-8 last:border-b-0 last:pb-0">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-[#292929]">{title}</h2>
         <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
       </div>
       {children}
@@ -180,7 +180,7 @@ export default function NewComplaint() {
         setCategories(categoriesRes.data.data || []);
         setFaculties(facultiesRes.data.data || []);
         setDepartments(departmentsRes.data.data || []);
-      } catch (err) {
+      } catch {
         toast.error('Failed to load form options');
       }
     };
@@ -312,17 +312,14 @@ export default function NewComplaint() {
 
   if (success) {
     return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="mb-6 flex h-18 w-18 items-center justify-center rounded-full bg-[#34b05a]/10 text-[#34b05a]">
           <CheckCircle2 className="h-10 w-10" />
         </div>
         <h2 className="text-3xl font-semibold text-slate-900">Complaint submitted</h2>
-        <p className="mt-3 max-w-md text-center text-sm text-slate-500">
-          Your complaint has been recorded and will appear in your complaint list shortly.
-        </p>
         <button
           onClick={() => navigate('/dashboard/student/complaints')}
-          className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+          className="mt-8 inline-flex items-center gap-2 rounded-[18px] bg-[#34b05a] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#2d9a4e]"
         >
           Open complaints
           <ArrowRight className="h-4 w-4" />
@@ -332,24 +329,24 @@ export default function NewComplaint() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 pb-16">
-      <div className="flex flex-col gap-4">
+    <div className="mx-auto max-w-4xl space-y-6 pb-12">
+      <div className="flex flex-col gap-2">
         <div>
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-emerald-700"
+            className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-[#34b05a]"
           >
             <ChevronLeft className="h-4 w-4" />
             Back
           </button>
-          <h1 className="text-3xl font-semibold text-slate-900">Submit complaint</h1>
+          <h1 className="text-[30px] font-semibold text-slate-900">Submit Complaint</h1>
         </div>
       </div>
 
       <div className="app-card overflow-hidden">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 p-6 sm:p-8 lg:p-10">
-          <Section title="Section A: Complaint Type" subtitle="Select all that apply.">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 p-6 sm:p-7 lg:p-8">
+          <Section title="Complaint Type" subtitle="Select all that apply.">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {issueTypes.map((option) => {
                 const active = selectedIssueTypes.includes(option);
@@ -357,8 +354,8 @@ export default function NewComplaint() {
                 return (
                   <label
                     key={option}
-                    className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
-                      active ? 'border-emerald-600 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                    className={`flex cursor-pointer items-center justify-between rounded-[18px] border px-4 py-4 text-left transition ${
+                      active ? 'border-[#34b05a] bg-[#34b05a]/8 text-slate-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
                     <span className="text-sm font-medium">{option}</span>
@@ -366,7 +363,7 @@ export default function NewComplaint() {
                       type="checkbox"
                       checked={active}
                       onChange={() => toggleIssueType(option)}
-                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      className="h-4 w-4 rounded border-slate-300 text-[#34b05a] focus:ring-[#34b05a]"
                     />
                   </label>
                 );
@@ -375,7 +372,7 @@ export default function NewComplaint() {
             {errors.issueTypes && <p className="text-sm text-rose-600">{errors.issueTypes.message}</p>}
           </Section>
 
-          <Section title="Section B: Complaint Context" subtitle="Add the relevant complaint context.">
+          <Section title="Complaint Context" subtitle="Add the relevant context.">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">School / Faculty</label>
@@ -418,9 +415,6 @@ export default function NewComplaint() {
                   placeholder="Name if relevant"
                   className={`app-input ${errors.relatedStaff ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
                 />
-                {selectedIssueTypes.includes('Lecturer / Staff conduct') && (
-                  <p className="text-xs text-slate-500">Required for staff conduct complaints.</p>
-                )}
                 {errors.relatedStaff && <p className="text-sm text-rose-600">{errors.relatedStaff.message}</p>}
               </div>
 
@@ -438,7 +432,7 @@ export default function NewComplaint() {
             </div>
           </Section>
 
-          <Section title="Section C: Complaint Details" subtitle="Provide the complaint details.">
+          <Section title="Complaint Details" subtitle="Provide the details.">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium text-slate-700">Subject / title</label>
@@ -476,7 +470,7 @@ export default function NewComplaint() {
               <div className="space-y-2 md:col-span-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-slate-700">Detailed description</label>
-                  <span className={`text-xs ${descriptionValue.length < 60 ? 'text-rose-500' : 'text-emerald-700'}`}>
+                  <span className={`text-xs ${descriptionValue.length < 60 ? 'text-rose-500' : 'text-[#34b05a]'}`}>
                     {descriptionValue.length}/60 minimum
                   </span>
                 </div>
@@ -491,15 +485,15 @@ export default function NewComplaint() {
             </div>
           </Section>
 
-          <Section title="Section D: Attachments" subtitle="Upload supporting evidence if available.">
+          <Section title="Attachments" subtitle="Upload supporting evidence if available.">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <label className="flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center transition hover:border-slate-300 hover:bg-slate-100">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm">
+              <label className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center transition hover:border-[#34b05a]/50 hover:bg-white">
+                <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white text-slate-700 shadow-sm">
                   <UploadCloud className="h-6 w-6" />
                 </div>
                 <p className="mt-4 text-base font-medium text-slate-900">Upload evidence</p>
                 <p className="mt-2 text-sm text-slate-500">PDF, JPG, PNG, DOC, DOCX</p>
-                <p className="mt-1 text-xs text-slate-400">Up to {MAX_FILES} files, {MAX_FILE_SIZE_MB}MB each</p>
+                <p className="mt-1 text-xs text-slate-400">{MAX_FILES} files max, {MAX_FILE_SIZE_MB}MB each</p>
                 <input
                   type="file"
                   className="hidden"
@@ -509,7 +503,7 @@ export default function NewComplaint() {
                 />
               </label>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="rounded-[20px] border border-slate-200 bg-white p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
                   <Paperclip className="h-4 w-4 text-slate-500" />
                   Attached files ({files.length}/{MAX_FILES})
@@ -518,7 +512,7 @@ export default function NewComplaint() {
                 {files.length > 0 ? (
                   <div className="space-y-3">
                     {files.map((file, index) => (
-                      <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                      <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
                           <p className="mt-1 text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -526,7 +520,7 @@ export default function NewComplaint() {
                         <button
                           type="button"
                           onClick={() => removeFile(index)}
-                          className="rounded-xl p-2 text-slate-400 transition hover:bg-white hover:text-rose-600"
+                          className="rounded-[14px] p-2 text-slate-400 transition hover:bg-white hover:text-rose-600"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -534,7 +528,7 @@ export default function NewComplaint() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-500">
+                  <div className="flex min-h-[150px] items-center justify-center rounded-[16px] border border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-500">
                     No files attached
                   </div>
                 )}
@@ -542,32 +536,32 @@ export default function NewComplaint() {
             </div>
           </Section>
 
-          <Section title="Section E: Declaration" subtitle="Confirm the submitted information is accurate.">
-            <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+          <Section title="Declaration" subtitle="Confirm the information is accurate.">
+            <label className="flex items-start gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
               <input
                 type="checkbox"
                 {...register('declaration')}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-[#34b05a] focus:ring-[#34b05a]"
               />
               <span className="text-sm leading-6 text-slate-600">
-                I confirm that the information submitted in this complaint is true and accurate to the best of my knowledge.
+                I confirm the information submitted is accurate to the best of my knowledge.
               </span>
             </label>
             {errors.declaration && <p className="text-sm text-rose-600">{errors.declaration.message}</p>}
           </Section>
 
-          <div className="flex flex-col gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="rounded-2xl px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              className="rounded-[18px] px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-[#34b05a] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#2d9a4e] disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               {isSubmitting ? (
                 <>

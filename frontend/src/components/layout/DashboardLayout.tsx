@@ -92,8 +92,6 @@ export default function DashboardLayout() {
   const navigation = getNavigation(user?.role);
   const roleMeta = getRoleMeta(user?.role);
   const pageTitle = getPageTitle(location.pathname);
-  const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : 'U';
-
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
@@ -138,20 +136,6 @@ export default function DashboardLayout() {
             >
               <X className="h-4 w-4" />
             </button>
-          </div>
-        </div>
-
-        <div className="border-b border-white/10 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-white/10 text-sm font-semibold text-white">
-              {initials}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-[15px] font-semibold text-white">{user ? `${user.firstName} ${user.lastName}` : 'User'}</p>
-            </div>
-          </div>
-          <div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/80">
-            {roleMeta.badge}
           </div>
         </div>
 
