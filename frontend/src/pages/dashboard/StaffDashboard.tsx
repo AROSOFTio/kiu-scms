@@ -150,17 +150,17 @@ export default function StaffDashboard() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Assigned', value: total, icon: MessageSquareMore },
-              { label: 'Pending', value: summary.pending, icon: Clock3 },
-              { label: 'Awaiting Student', value: summary.awaitingStudent, icon: RefreshCw },
-              { label: 'Resolved', value: summary.resolved, icon: CheckCircle2 },
+              { label: 'Assigned', value: total, icon: MessageSquareMore, tone: 'bg-[#292929] text-white border-[#292929]', iconTone: 'text-white/80' },
+              { label: 'Pending', value: summary.pending, icon: Clock3, tone: 'bg-[#393836] text-white border-[#393836]', iconTone: 'text-white/80' },
+              { label: 'Awaiting Student', value: summary.awaitingStudent, icon: RefreshCw, tone: 'bg-white text-[#292929] border-slate-200', iconTone: 'text-[#34b05a]' },
+              { label: 'Resolved', value: summary.resolved, icon: CheckCircle2, tone: 'bg-[#34b05a] text-white border-[#34b05a]', iconTone: 'text-white/85' },
             ].map((item) => (
-              <div key={item.label} className="min-w-[112px] rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="flex items-center justify-between text-slate-500">
+              <div key={item.label} className={`min-w-[112px] rounded-[18px] border px-4 py-3 shadow-[0_18px_38px_-34px_rgba(41,41,41,0.4)] ${item.tone}`}>
+                <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{item.label}</span>
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className={`h-4 w-4 ${item.iconTone}`} />
                 </div>
-                <p className="mt-3 text-2xl font-semibold text-slate-900">{item.value}</p>
+                <p className="mt-3 text-2xl font-semibold">{item.value}</p>
               </div>
             ))}
           </div>

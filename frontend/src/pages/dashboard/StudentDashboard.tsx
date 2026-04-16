@@ -193,25 +193,28 @@ export default function StudentDashboard() {
 
   const statCards = [
     {
-      label: 'Total',
+      label: 'Total Complaints',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-[#34b05a]',
+      tone: 'bg-[#292929]',
       textTone: 'text-white',
+      iconTone: 'bg-white/12 text-white',
     },
     {
       label: 'Pending',
       value: stats?.pending || 0,
       icon: Clock3,
-      tone: 'bg-white border border-slate-200',
-      textTone: 'text-[#292929]',
+      tone: 'bg-[#34b05a]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15 text-white',
     },
     {
       label: 'Resolved',
       value: stats?.resolved || 0,
       icon: CheckCircle2,
-      tone: 'bg-[#34b05a]/15 border border-[#34b05a]/20',
+      tone: 'bg-white border border-slate-200',
       textTone: 'text-[#292929]',
+      iconTone: 'bg-[#34b05a]/10 text-[#34b05a]',
     },
   ];
 
@@ -228,9 +231,9 @@ export default function StudentDashboard() {
       label: 'Track Complaints',
       icon: ListFilter,
       href: '/dashboard/student/complaints',
-      tone: 'bg-[#34b05a]/12 border border-[#34b05a]/20',
-      textTone: 'text-[#292929]',
-      iconTone: 'bg-[#34b05a]/10',
+      tone: 'bg-[#393836]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/10',
     },
   ];
 
@@ -271,10 +274,10 @@ export default function StudentDashboard() {
                 {statCards.map((tile) => (
                   <div
                     key={tile.label}
-                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.55)]`}
+                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} border border-black/5 p-5 shadow-[0_24px_48px_-34px_rgba(41,41,41,0.42)]`}
                   >
                     <div className="flex h-full min-h-[146px] flex-col items-center justify-center text-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white/15">
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${tile.iconTone}`}>
                         <tile.icon className="h-6 w-6" />
                       </div>
                       <p className="mt-5 text-4xl font-bold leading-none">{tile.value}</p>
@@ -286,7 +289,7 @@ export default function StudentDashboard() {
                   <Link
                     key={tile.label}
                     to={tile.href}
-                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.28)] transition hover:-translate-y-0.5`}
+                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} border border-black/5 p-5 shadow-[0_24px_48px_-34px_rgba(41,41,41,0.34)] transition hover:-translate-y-0.5`}
                   >
                     <div className="flex h-full min-h-[146px] flex-col items-center justify-center text-center">
                       <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${tile.iconTone}`}>

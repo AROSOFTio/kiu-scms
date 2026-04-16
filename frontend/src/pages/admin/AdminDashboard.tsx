@@ -155,7 +155,7 @@ export default function AdminDashboard() {
       label: 'Total Complaints',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-[#34b05a]',
+      tone: 'bg-[#292929]',
       textTone: 'text-white',
       iconTone: 'bg-white/15 text-white',
     },
@@ -163,15 +163,15 @@ export default function AdminDashboard() {
       label: 'Pending',
       value: pendingCount,
       icon: Clock3,
-      tone: 'bg-[#34b05a]/15 border border-[#34b05a]/20',
-      textTone: 'text-[#292929]',
-      iconTone: 'bg-[#34b05a]/12 text-[#34b05a]',
+      tone: 'bg-[#393836]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/10 text-white',
     },
     {
       label: 'Resolved',
       value: resolvedCount,
       icon: CheckCircle2,
-      tone: 'bg-[#2d9a4e]',
+      tone: 'bg-[#34b05a]',
       textTone: 'text-white',
       iconTone: 'bg-white/15 text-white',
     },
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
       label: 'Review Complaints',
       href: '/dashboard/admin/complaints',
       icon: FileText,
-      tone: 'bg-[#34b05a]',
+      tone: 'bg-[#292929]',
       textTone: 'text-white',
       iconTone: 'bg-white/15',
     },
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
       label: 'Route Complaint',
       href: '/dashboard/admin/complaints',
       icon: Route,
-      tone: 'bg-[#2d9a4e]',
+      tone: 'bg-[#34b05a]',
       textTone: 'text-white',
       iconTone: 'bg-white/15',
     },
@@ -206,9 +206,9 @@ export default function AdminDashboard() {
       label: 'View Reports',
       href: '/dashboard/admin/reports',
       icon: TrendingUp,
-      tone: 'bg-[#34b05a]/12 border border-[#34b05a]/20',
-      textTone: 'text-[#292929]',
-      iconTone: 'bg-[#34b05a]/10',
+      tone: 'bg-[#393836]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/10',
     },
     {
       label: 'View Appointments',
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
           : statCards.map((card) => (
               <div
                 key={card.label}
-                className={`rounded-[22px] p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.38)] ${card.tone} ${card.textTone}`}
+                className={`rounded-[22px] border border-black/5 p-5 shadow-[0_24px_48px_-34px_rgba(41,41,41,0.42)] ${card.tone} ${card.textTone}`}
               >
                 <div className="flex min-h-[146px] flex-col items-center justify-center text-center">
                   <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${card.iconTone}`}>
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
           <Link
             key={action.label}
             to={action.href}
-            className={`rounded-[22px] p-5 shadow-[0_22px_45px_-34px_rgba(41,41,41,0.28)] transition hover:-translate-y-0.5 ${action.tone} ${action.textTone}`}
+            className={`rounded-[22px] border border-black/5 p-5 shadow-[0_24px_48px_-34px_rgba(41,41,41,0.34)] transition hover:-translate-y-0.5 ${action.tone} ${action.textTone}`}
           >
             <div className="flex min-h-[146px] flex-col items-center justify-center text-center">
               <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${action.iconTone}`}>
