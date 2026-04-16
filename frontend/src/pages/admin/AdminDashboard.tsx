@@ -88,8 +88,8 @@ export default function AdminDashboard() {
           api.get('/admin/complaints', { params: { page: 1, limit: 8 } }),
         ]);
 
-        const complaintsData =
-          complaintsRes.status === 'fulfilled' ? complaintsRes.value.data.data || [] : [];
+        const complaintsData: ComplaintRecord[] =
+          complaintsRes.status === 'fulfilled' ? (complaintsRes.value.data.data || []) as ComplaintRecord[] : [];
         const complaintsTotal =
           complaintsRes.status === 'fulfilled' ? Number(complaintsRes.value.data.total || complaintsData.length) : 0;
 
@@ -98,14 +98,14 @@ export default function AdminDashboard() {
         if (statsRes.status === 'fulfilled') {
           setStats(statsRes.value.data.data || null);
         } else if (complaintsRes.status === 'fulfilled') {
-          const fallbackStatuses = complaintsData.reduce<Record<string, number>>((acc, complaint) => {
+          const fallbackStatuses = complaintsData.reduce((acc: Record<string, number>, complaint: ComplaintRecord) => {
             acc[complaint.status] = (acc[complaint.status] || 0) + 1;
             return acc;
           }, {});
 
           setStats({
             total: complaintsTotal,
-            byStatus: Object.entries(fallbackStatuses).map(([status, count]) => ({ status, count })),
+            byStatus: Object.entries(fallbackStatuses).map(([status, count]) => ({ status, count: Number(count) })),
             slaMetrics: { breached: 0, onTrack: 0 },
             urgentCases: [],
           });
