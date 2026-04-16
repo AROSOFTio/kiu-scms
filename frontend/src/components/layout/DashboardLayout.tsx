@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   BarChart3,
   CalendarDays,
+  ChevronRight,
   ClipboardList,
   FilePlus2,
   FileText,
@@ -93,6 +94,7 @@ export default function DashboardLayout() {
   const navigation = getNavigation(user?.role);
   const roleMeta = getRoleMeta(user?.role);
   const pageTitle = getPageTitle(location.pathname);
+  const isAdminRole = user?.role === 'Admin';
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
@@ -105,7 +107,7 @@ export default function DashboardLayout() {
   }, [isSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-[#eef1f4] text-slate-900">
+    <div className={`min-h-screen text-slate-900 ${isAdminRole ? 'bg-[#eeedf4]' : 'bg-[#eef1f4]'}`}>
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-sm lg:hidden"
@@ -114,20 +116,31 @@ export default function DashboardLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#292929] text-white transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex ${isAdminRole ? 'w-[310px] bg-[#2f2151]' : 'w-72 bg-[#292929]'} flex-col text-white transition-transform duration-300 lg:translate-x-0 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="relative border-b border-white/8 px-6 py-5">
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-[#34b05a]" />
+        <div className={`relative ${isAdminRole ? 'border-b border-white/10 px-5 py-6' : 'border-b border-white/8 px-6 py-5'}`}>
+          {isAdminRole ? (
+            <div className="absolute inset-x-0 bottom-0 flex h-[6px] overflow-hidden">
+              <div className="h-full flex-1 bg-[#34b05a]" />
+              <div className="h-full w-16 bg-[#f0be00]" />
+              <div className="h-full w-12 bg-white/70" />
+            </div>
+          ) : (
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-[#34b05a]" />
+          )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white p-2.5 shadow-sm">
+              <div className={`flex items-center justify-center bg-white p-2.5 shadow-sm ${isAdminRole ? 'h-16 w-16 rounded-[20px]' : 'h-14 w-14 rounded-[18px]'}`}>
                 <img src="/kiu-logo.png" alt="Kampala International University" className="h-full w-full object-contain" />
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">KIU</p>
-                <h1 className="text-sm font-semibold text-white">Student Complaint System</h1>
+                <h1 className={`${isAdminRole ? 'max-w-[150px] text-base leading-tight' : 'text-sm'} font-semibold text-white`}>
+                  Student Complaint System
+                </h1>
+                {isAdminRole && <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/55">Administrative Control</p>}
               </div>
             </div>
             <button
@@ -140,9 +153,9 @@ export default function DashboardLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-5">
+        <nav className={`flex-1 ${isAdminRole ? 'px-4 py-6' : 'px-4 py-5'}`}>
           <div className="px-3 pb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
-            Navigation
+            {isAdminRole ? 'Command' : 'Navigation'}
           </div>
           <ul className="space-y-2.5">
             {navigation.map((item) => {
@@ -152,13 +165,18 @@ export default function DashboardLayout() {
                   <Link
                     to={item.href}
                     className={`flex items-center gap-3 rounded-[18px] px-4 py-3.5 text-sm transition ${
-                      active
-                        ? 'bg-[#393836] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
-                        : 'text-white/82 hover:bg-white/8 hover:text-white'
+                      isAdminRole
+                        ? active
+                          ? 'bg-white/12 text-white shadow-[inset_4px_0_0_0_#ffffff,0_16px_34px_-24px_rgba(0,0,0,0.8)]'
+                          : 'text-white/80 hover:bg-white/8 hover:text-white'
+                        : active
+                          ? 'bg-[#393836] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+                          : 'text-white/82 hover:bg-white/8 hover:text-white'
                     }`}
                   >
                     <item.icon className="h-4 w-4" />
                     <span className="font-medium">{item.label}</span>
+                    {isAdminRole && <ChevronRight className={`ml-auto h-4 w-4 ${active ? 'text-white' : 'text-white/55'}`} />}
                   </Link>
                 </li>
               );
@@ -170,7 +188,9 @@ export default function DashboardLayout() {
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center gap-3 rounded-[18px] px-4 py-3.5 text-sm font-medium text-white/72 transition hover:bg-white/8 hover:text-white"
+            className={`flex w-full items-center gap-3 rounded-[18px] px-4 py-3.5 text-sm font-medium transition ${
+              isAdminRole ? 'text-white/78 hover:bg-white/8 hover:text-white' : 'text-white/72 hover:bg-white/8 hover:text-white'
+            }`}
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -178,9 +198,9 @@ export default function DashboardLayout() {
         </div>
       </aside>
 
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-[#393836] bg-[#292929] text-white">
-          <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className={isAdminRole ? 'lg:pl-[310px]' : 'lg:pl-72'}>
+        <header className={`sticky top-0 z-30 text-white ${isAdminRole ? 'bg-[#2f2151] shadow-[0_18px_40px_-28px_rgba(25,14,46,0.85)]' : 'border-b border-[#393836] bg-[#292929]'}`}>
+          <div className={`mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 ${isAdminRole ? 'h-20 max-w-none' : 'h-20 max-w-7xl'}`}>
             <div className="flex min-w-0 items-center gap-4">
               <button
                 type="button"
@@ -190,19 +210,28 @@ export default function DashboardLayout() {
                 <Menu className="h-5 w-5" />
               </button>
               <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  <h2 className="truncate text-[22px] font-semibold text-white">{pageTitle}</h2>
-                  <span className="hidden rounded-full bg-white/8 px-2.5 py-1 text-[11px] text-white/72 sm:inline-flex">
-                    {roleMeta.title}
-                  </span>
-                </div>
+                {isAdminRole ? (
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold uppercase tracking-[0.16em] text-white/72">
+                      KIU Complaint Command Center
+                    </p>
+                    <h2 className="truncate text-[24px] font-bold text-white">Administrative Complaint Oversight</h2>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <h2 className="truncate text-[22px] font-semibold text-white">{pageTitle}</h2>
+                    <span className="hidden rounded-full bg-white/8 px-2.5 py-1 text-[11px] text-white/72 sm:inline-flex">
+                      {roleMeta.title}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="flex items-center gap-3">
               <TimeDisplay />
               <NotificationDropdown />
-              <div className="hidden items-center gap-3 rounded-[18px] border border-white/12 bg-white/8 px-3 py-2 md:flex">
+              <div className={`hidden items-center gap-3 rounded-[18px] border border-white/12 px-3 py-2 md:flex ${isAdminRole ? 'bg-white/10' : 'bg-white/8'}`}>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
                   <UserRound className="h-4 w-4" />
                 </div>
@@ -215,8 +244,22 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-7xl space-y-6">
+        <main className={`${isAdminRole ? 'px-4 py-5 sm:px-6 lg:px-8' : 'px-4 py-6 sm:px-6 lg:px-8'}`}>
+          <div className={`mx-auto w-full space-y-6 ${isAdminRole ? 'max-w-none' : 'max-w-7xl'}`}>
+            {isAdminRole && (
+              <div className="overflow-hidden rounded-[18px] border border-[#ddd8ea] bg-white shadow-[0_18px_48px_-34px_rgba(47,33,81,0.28)]">
+                <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
+                  <div className="h-12 w-1 rounded-full bg-[#f0be00]" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#7969a3]">Administrative Workspace</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <h3 className="text-[22px] font-semibold text-[#2f2151]">{pageTitle}</h3>
+                      <span className="text-sm font-medium text-[#34b05a]">Complaint review, routing and case control</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <Outlet />
           </div>
         </main>
