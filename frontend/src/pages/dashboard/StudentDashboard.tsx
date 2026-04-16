@@ -178,29 +178,32 @@ export default function StudentDashboard() {
       label: 'Total Complaints',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-[#292929]',
+      tone: 'bg-[#2f3542]',
       textTone: 'text-white',
       iconTone: 'bg-white/12 text-white',
+      border: 'border-[#3f4759]',
     },
     {
       label: 'Pending',
       value: stats?.pending || 0,
       icon: Clock3,
-      tone: 'bg-[#34b05a]',
+      tone: 'bg-[#d6a317]',
       textTone: 'text-white',
       iconTone: 'bg-white/15 text-white',
+      border: 'border-[#e1b83b]',
     },
     {
       label: 'Resolved',
       value: stats?.resolved || 0,
       icon: CheckCircle2,
-      tone: 'bg-white border border-slate-200',
-      textTone: 'text-[#292929]',
-      iconTone: 'bg-[#34b05a]/10 text-[#34b05a]',
+      tone: 'bg-[#2fbf71]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/15 text-white',
+      border: 'border-[#58d88f]',
     },
   ];
 
-  const actionCards: { label: string; icon: LucideIcon; href: string; tone: string; textTone: string; iconTone: string }[] = [
+  const actionCards: { label: string; icon: LucideIcon; href: string; tone: string; textTone: string; iconTone: string; border: string }[] = [
     {
       label: 'Submit Complaint',
       icon: FilePlus2,
@@ -208,14 +211,16 @@ export default function StudentDashboard() {
       tone: 'bg-[#34b05a]',
       textTone: 'text-white',
       iconTone: 'bg-white/15',
+      border: 'border-[#51c474]',
     },
     {
       label: 'Track Complaints',
       icon: ListFilter,
       href: '/dashboard/student/complaints',
-      tone: 'bg-[#393836]',
+      tone: 'bg-[#286f83]',
       textTone: 'text-white',
       iconTone: 'bg-white/10',
+      border: 'border-[#43889a]',
     },
   ];
 
@@ -224,9 +229,10 @@ export default function StudentDashboard() {
       label: 'Appointments',
       icon: CalendarDays,
       href: '/dashboard/appointments',
-      tone: 'border border-slate-200 bg-white',
-      textTone: 'text-[#292929]',
-      iconTone: 'bg-[#34b05a]/10',
+      tone: 'bg-[#5d4bb3]',
+      textTone: 'text-white',
+      iconTone: 'bg-white/10',
+      border: 'border-[#7464c3]',
     });
   }
 
@@ -245,7 +251,20 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-5 pb-10">
+    <div className="space-y-6 pb-10">
+      <section className="overflow-hidden rounded-[18px] border border-[#dfe5eb] bg-white shadow-[0_18px_48px_-34px_rgba(31,41,55,0.28)]">
+        <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
+          <div className="h-12 w-1 rounded-full bg-[#34b05a]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6d7d88]">Student Workspace</p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 className="text-[22px] font-semibold text-[#1f2937]">Complaint Dashboard</h2>
+              <span className="text-sm font-medium text-[#34b05a]">Submit, track and follow complaint progress</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${appointmentsActive ? 'xl:grid-cols-6' : 'xl:grid-cols-5'}`}>
         {loading
           ? Array(appointmentsActive ? 6 : 5)
@@ -256,14 +275,16 @@ export default function StudentDashboard() {
                 {statCards.map((tile) => (
                   <div
                     key={tile.label}
-                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} border border-black/5 p-5 shadow-[0_24px_48px_-34px_rgba(41,41,41,0.42)]`}
+                    className={`rounded-[16px] ${tile.tone} ${tile.textTone} border p-5 shadow-[0_20px_36px_-30px_rgba(31,41,55,0.42)] ${tile.border}`}
                   >
-                    <div className="flex h-full min-h-[146px] flex-col items-center justify-center text-center">
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${tile.iconTone}`}>
+                    <div className="flex min-h-[150px] flex-col justify-between">
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${tile.iconTone}`}>
                         <tile.icon className="h-6 w-6" />
                       </div>
-                      <p className="mt-5 text-4xl font-bold leading-none">{tile.value}</p>
-                      <p className="mt-3 text-sm font-medium">{tile.label}</p>
+                      <div className="space-y-2">
+                        <p className="text-4xl font-bold leading-none">{tile.value}</p>
+                        <p className="text-[15px] font-semibold">{tile.label}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -271,13 +292,13 @@ export default function StudentDashboard() {
                   <Link
                     key={tile.label}
                     to={tile.href}
-                    className={`rounded-[22px] ${tile.tone} ${tile.textTone} border border-black/5 p-5 shadow-[0_24px_48px_-34px_rgba(41,41,41,0.34)] transition hover:-translate-y-0.5`}
+                    className={`rounded-[16px] ${tile.tone} ${tile.textTone} border p-5 shadow-[0_20px_36px_-30px_rgba(31,41,55,0.34)] transition hover:-translate-y-0.5 ${tile.border}`}
                   >
-                    <div className="flex h-full min-h-[146px] flex-col items-center justify-center text-center">
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${tile.iconTone}`}>
+                    <div className="flex min-h-[150px] flex-col justify-between">
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${tile.iconTone}`}>
                         <tile.icon className="h-6 w-6" />
                       </div>
-                      <p className="mt-5 text-[15px] font-semibold">{tile.label}</p>
+                      <p className="text-[15px] font-semibold">{tile.label}</p>
                     </div>
                   </Link>
                 ))}
@@ -285,11 +306,11 @@ export default function StudentDashboard() {
             )}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
-          <div className="border-b border-slate-200 px-5 py-4">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="overflow-hidden rounded-[18px] border border-[#dfe5eb] bg-white shadow-[0_24px_52px_-40px_rgba(31,41,55,0.28)]">
+          <div className="border-b border-[#e9edf2] px-5 py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Complaints</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[#6d7d88]">My Complaints</h2>
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <label className="relative block">
@@ -299,14 +320,14 @@ export default function StudentDashboard() {
                     onChange={(event) => setSearch(event.target.value)}
                     type="text"
                     placeholder="Search"
-                    className="w-full rounded-[16px] border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:ring-4 focus:ring-[#34b05a]/10 sm:w-56"
+                    className="w-full rounded-[16px] border border-[#dfe5eb] bg-[#f8fafb] py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10 sm:w-56"
                   />
                 </label>
 
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
-                  className="rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-[#34b05a] focus:ring-4 focus:ring-[#34b05a]/10"
+                  className="rounded-[16px] border border-[#dfe5eb] bg-[#f8fafb] px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10"
                 >
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
@@ -329,7 +350,7 @@ export default function StudentDashboard() {
               </div>
             ) : filteredComplaints.length > 0 ? (
               <table className="min-w-full text-left">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
+                <thead className="border-b border-[#e9edf2] bg-[#f8fafb] text-xs uppercase tracking-[0.14em] text-[#6d7d88]">
                   <tr>
                     <th className="px-5 py-3.5 font-semibold">Ref</th>
                     <th className="px-5 py-3.5 font-semibold">Subject</th>
@@ -339,10 +360,10 @@ export default function StudentDashboard() {
                     <th className="px-5 py-3.5 text-right font-semibold">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#eef2f5]">
                   {filteredComplaints.map((complaint) => (
-                    <tr key={complaint.id} className="transition hover:bg-slate-50">
-                      <td className="px-5 py-4 text-xs font-semibold text-slate-700">{complaint.reference_number}</td>
+                    <tr key={complaint.id} className="transition hover:bg-[#fbfcfd]">
+                      <td className="px-5 py-4 text-xs font-semibold text-[#44505c]">{complaint.reference_number}</td>
                       <td className="px-5 py-4 text-sm font-medium text-slate-900">{complaint.title}</td>
                       <td className="px-5 py-4 text-sm text-slate-600">{complaint.category_name}</td>
                       <td className="px-5 py-4">
@@ -352,7 +373,7 @@ export default function StudentDashboard() {
                       <td className="px-5 py-4 text-right">
                         <Link
                           to={`/dashboard/student/complaints/${complaint.id}`}
-                          className="text-sm font-semibold text-[#34b05a] transition hover:text-[#2b8f48]"
+                          className="text-sm font-semibold text-[#34b05a] transition hover:text-[#287f43]"
                         >
                           Open
                         </Link>
@@ -375,8 +396,8 @@ export default function StudentDashboard() {
           </div>
         </section>
 
-        <aside className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Alerts</h2>
+        <aside className="rounded-[18px] border border-[#dfe5eb] bg-white p-5 shadow-[0_24px_52px_-40px_rgba(31,41,55,0.28)]">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[#6d7d88]">Alerts</h2>
           <div className="mt-4 space-y-3">
             {loading ? (
               Array(4)
@@ -384,8 +405,9 @@ export default function StudentDashboard() {
                 .map((_, index) => <div key={index} className="h-20 animate-pulse rounded-xl bg-slate-100" />)
             ) : alerts.length > 0 ? (
               alerts.map((alert) => (
-                <div key={alert.id} className={`rounded-2xl border p-3.5 ${alert.tone}`}>
+                <div key={alert.id} className={`rounded-[16px] border p-3.5 ${alert.tone}`}>
                   <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                  <p className="mt-1 text-sm text-slate-600">{alert.message}</p>
                   <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{formatDate(alert.date)}</p>
                 </div>
               ))

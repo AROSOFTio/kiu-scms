@@ -134,17 +134,30 @@ export default function StaffDashboard() {
   }
 
   return (
-    <div className="space-y-5 pb-10">
-      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
+    <div className="space-y-6 pb-10">
+      <section className="overflow-hidden rounded-[18px] border border-[#dfe5eb] bg-white shadow-[0_18px_48px_-34px_rgba(31,41,55,0.28)]">
+        <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
+          <div className="h-12 w-1 rounded-full bg-[#2f2151]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6d7d88]">Staff Workspace</p>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 className="text-[22px] font-semibold text-[#1f2937]">Assigned Complaint Cases</h2>
+              <span className="text-sm font-medium text-[#34b05a]">Review, update and close routed complaints</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="rounded-[18px] border border-[#dfe5eb] bg-white p-5 shadow-[0_24px_52px_-40px_rgba(31,41,55,0.28)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Assigned', value: total, icon: MessageSquareMore, tone: 'bg-[#292929] text-white border-[#292929]', iconTone: 'text-white/80' },
-              { label: 'Pending', value: summary.pending, icon: Clock3, tone: 'bg-[#393836] text-white border-[#393836]', iconTone: 'text-white/80' },
-              { label: 'Awaiting Student', value: summary.awaitingStudent, icon: RefreshCw, tone: 'bg-white text-[#292929] border-slate-200', iconTone: 'text-[#34b05a]' },
-              { label: 'Resolved', value: summary.resolved, icon: CheckCircle2, tone: 'bg-[#34b05a] text-white border-[#34b05a]', iconTone: 'text-white/85' },
+              { label: 'Assigned', value: total, icon: MessageSquareMore, tone: 'bg-[#2f2151] text-white border-[#46326f]', iconTone: 'text-white/80' },
+              { label: 'Pending', value: summary.pending, icon: Clock3, tone: 'bg-[#d6a317] text-white border-[#e1b83b]', iconTone: 'text-white/80' },
+              { label: 'Awaiting Student', value: summary.awaitingStudent, icon: RefreshCw, tone: 'bg-[#2b7a8d] text-white border-[#4593a3]', iconTone: 'text-white/85' },
+              { label: 'Resolved', value: summary.resolved, icon: CheckCircle2, tone: 'bg-[#34b05a] text-white border-[#51c474]', iconTone: 'text-white/85' },
             ].map((item) => (
-              <div key={item.label} className={`min-w-[112px] rounded-[18px] border px-4 py-3 shadow-[0_18px_38px_-34px_rgba(41,41,41,0.4)] ${item.tone}`}>
+              <div key={item.label} className={`min-w-[112px] rounded-[16px] border px-4 py-4 shadow-[0_18px_38px_-34px_rgba(31,41,55,0.4)] ${item.tone}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{item.label}</span>
                   <item.icon className={`h-4 w-4 ${item.iconTone}`} />
@@ -161,7 +174,7 @@ export default function StaffDashboard() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search assigned complaints"
-                className="w-full rounded-[16px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+                className="w-full rounded-[16px] border border-[#dfe5eb] bg-[#f8fafb] py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
               />
             </div>
             <button
@@ -171,7 +184,7 @@ export default function StaffDashboard() {
                 setActiveFilter('all');
                 setPage(1);
               }}
-              className="inline-flex items-center justify-center rounded-[16px] border border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 transition hover:border-[#34b05a]/25 hover:text-[#34b05a]"
+              className="inline-flex items-center justify-center rounded-[16px] border border-[#dfe5eb] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 transition hover:border-[#34b05a]/25 hover:text-[#34b05a]"
             >
               Reset
             </button>
@@ -188,8 +201,8 @@ export default function StaffDashboard() {
                 onClick={() => setActiveFilter(filter)}
                 className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                   active
-                    ? 'bg-[#34b05a] text-white shadow-[0_16px_32px_-20px_rgba(52,176,90,0.6)]'
-                    : 'border border-slate-200 bg-white text-slate-500 hover:border-[#34b05a]/25 hover:text-[#34b05a]'
+                    ? 'bg-[#2f2151] text-white shadow-[0_16px_32px_-20px_rgba(47,33,81,0.45)]'
+                    : 'border border-[#dfe5eb] bg-white text-slate-500 hover:border-[#2f2151]/25 hover:text-[#2f2151]'
                 }`}
               >
                 {filter === 'all' ? 'All' : filter}
@@ -199,8 +212,8 @@ export default function StaffDashboard() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
-        <div className="hidden grid-cols-[150px_minmax(0,1fr)_180px_150px_120px] gap-4 border-b border-slate-200 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 lg:grid">
+      <div className="overflow-hidden rounded-[18px] border border-[#dfe5eb] bg-white shadow-[0_24px_52px_-40px_rgba(31,41,55,0.28)]">
+        <div className="hidden grid-cols-[150px_minmax(0,1fr)_180px_150px_120px] gap-4 border-b border-[#e9edf2] px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6d7d88] lg:grid">
           <span>Ref No</span>
           <span>Student</span>
           <span>Type</span>
@@ -208,7 +221,7 @@ export default function StaffDashboard() {
           <span className="text-right">Action</span>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-[#eef2f5]">
           {loading ? (
             <div className="flex min-h-[320px] items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-[#34b05a]" />
@@ -217,10 +230,10 @@ export default function StaffDashboard() {
             complaints.map((complaint) => (
               <div
                 key={complaint.id}
-                className="grid gap-4 px-6 py-5 transition hover:bg-slate-50 lg:grid-cols-[150px_minmax(0,1fr)_180px_150px_120px] lg:items-center"
+                className="grid gap-4 px-6 py-5 transition hover:bg-[#fbfcfd] lg:grid-cols-[150px_minmax(0,1fr)_180px_150px_120px] lg:items-center"
               >
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-900">{complaint.reference_number}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#44505c]">{complaint.reference_number}</p>
                   <p className="mt-1 text-xs text-slate-400 lg:hidden">{formatDate(complaint.created_at)}</p>
                 </div>
 
@@ -273,7 +286,7 @@ export default function StaffDashboard() {
               type="button"
               disabled={page === 1}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
-              className="rounded-[14px] border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-500 transition hover:border-[#34b05a]/25 hover:text-[#34b05a] disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-[14px] border border-[#dfe5eb] px-4 py-2 text-xs font-semibold text-slate-500 transition hover:border-[#34b05a]/25 hover:text-[#34b05a] disabled:cursor-not-allowed disabled:opacity-40"
             >
               Previous
             </button>
