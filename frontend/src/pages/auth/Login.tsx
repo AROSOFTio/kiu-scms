@@ -42,8 +42,7 @@ const accessOptions: Array<{
   },
 ];
 
-const campusBackground =
-  'https://smartie.kiu.ac.ug/public/assets/images/news/a90b6aa3853d0a6252e1e4a556c0ce077bee0506.jpg';
+const campusBackground = '/kiu-campus-login.jpg';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);

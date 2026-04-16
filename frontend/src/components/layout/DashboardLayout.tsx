@@ -120,19 +120,15 @@ export default function DashboardLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex ${isAdminRole ? 'w-[310px] bg-[#2f2151]' : 'w-72 bg-[#292929]'} flex-col text-white transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex ${isAdminRole ? 'w-[310px] bg-[#292929]' : 'w-72 bg-[#292929]'} flex-col text-white transition-transform duration-300 lg:translate-x-0 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className={`relative ${isAdminRole ? 'border-b border-white/10 px-5 py-6' : 'border-b border-white/8 px-6 py-5'}`}>
           {isAdminRole ? (
-            <div className="absolute inset-x-0 bottom-0 flex h-[6px] overflow-hidden">
-              <div className="h-full flex-1 bg-[#34b05a]" />
-              <div className="h-full w-16 bg-[#f0be00]" />
-              <div className="h-full w-12 bg-white/70" />
-            </div>
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-[#33b35a]" />
           ) : (
-            <div className="absolute inset-x-0 bottom-0 h-1 bg-[#34b05a]" />
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-[#33b35a]" />
           )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -171,7 +167,7 @@ export default function DashboardLayout() {
                     className={`flex items-center gap-3 rounded-[18px] px-4 py-3.5 text-sm transition ${
                       isAdminRole
                         ? active
-                          ? 'bg-white/12 text-white shadow-[inset_4px_0_0_0_#ffffff,0_16px_34px_-24px_rgba(0,0,0,0.8)]'
+                          ? 'bg-[#393836] text-white shadow-[inset_4px_0_0_0_#33b35a,0_16px_34px_-24px_rgba(0,0,0,0.8)]'
                           : 'text-white/80 hover:bg-white/8 hover:text-white'
                         : active
                           ? 'bg-[#393836] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
@@ -203,7 +199,7 @@ export default function DashboardLayout() {
       </aside>
 
       <div className={isAdminRole ? 'lg:pl-[310px]' : 'lg:pl-72'}>
-        <header className={`sticky top-0 z-30 text-white ${isAdminRole ? 'bg-[#2f2151] shadow-[0_18px_40px_-28px_rgba(25,14,46,0.85)]' : 'border-b border-[#393836] bg-[#292929]'}`}>
+        <header className={`sticky top-0 z-30 text-white ${isAdminRole ? 'bg-[#292929] shadow-[0_18px_40px_-28px_rgba(17,17,17,0.82)]' : 'border-b border-[#393836] bg-[#292929]'}`}>
           <div className={`mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 ${isAdminRole ? 'h-20 max-w-none' : 'h-20 max-w-7xl'}`}>
             <div className="flex min-w-0 items-center gap-4">
               <button
@@ -248,25 +244,27 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className={`${isAdminRole ? 'bg-[#eeedf4] px-4 py-5 sm:px-6 lg:px-8 lg:rounded-tl-[30px]' : 'bg-[#eef1f4] px-4 py-6 sm:px-6 lg:px-8 lg:rounded-tl-[30px]'}`}>
-          <div className={`mx-auto w-full space-y-6 ${isAdminRole ? 'max-w-none' : 'max-w-7xl'}`}>
-            {isAdminRole && (
-              <div className="overflow-hidden rounded-[18px] border border-[#ddd8ea] bg-white shadow-[0_18px_48px_-34px_rgba(47,33,81,0.28)]">
-                <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
-                  <div className="h-12 w-1 rounded-full bg-[#f0be00]" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#7969a3]">HOD Workspace</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <h3 className="text-[22px] font-semibold text-[#2f2151]">{pageTitle}</h3>
-                      <span className="text-sm font-medium text-[#34b05a]">Complaint review, routing and lecturer assignment</span>
+        <div className="overflow-hidden bg-[#eef1f4] lg:rounded-tl-[34px]">
+          <main className={`${isAdminRole ? 'bg-[#eef1f4] px-4 py-5 sm:px-6 lg:px-8' : 'bg-[#eef1f4] px-4 py-6 sm:px-6 lg:px-8'}`}>
+            <div className={`mx-auto w-full space-y-6 ${isAdminRole ? 'max-w-none' : 'max-w-7xl'}`}>
+              {isAdminRole && (
+                <div className="overflow-hidden rounded-[18px] border border-[#d9e2dc] bg-white shadow-[0_18px_48px_-34px_rgba(41,41,41,0.22)]">
+                  <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
+                    <div className="h-12 w-1 rounded-full bg-[#33b35a]" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6e7a72]">HOD Workspace</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h3 className="text-[22px] font-semibold text-[#292929]">{pageTitle}</h3>
+                        <span className="text-sm font-medium text-[#33b35a]">Complaint review, routing and lecturer assignment</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <Outlet />
-          </div>
-        </main>
+              )}
+              <Outlet />
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

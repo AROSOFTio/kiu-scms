@@ -235,7 +235,7 @@ export default function AdminDashboard() {
           : statCards.map((card) => (
               <div
                 key={card.label}
-                className={`rounded-[14px] border p-5 shadow-[0_20px_36px_-30px_rgba(47,33,81,0.6)] ${card.tone} ${card.textTone} ${card.accent}`}
+                className={`rounded-[14px] border p-5 shadow-[0_20px_36px_-30px_rgba(41,41,41,0.34)] ${card.tone} ${card.textTone} ${card.accent}`}
               >
                 <div className="flex min-h-[130px] flex-col justify-between">
                   <div className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${card.iconTone}`}>
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
           <Link
             key={action.label}
             to={action.href}
-            className={`rounded-[14px] border p-5 shadow-[0_18px_34px_-28px_rgba(47,33,81,0.52)] transition hover:-translate-y-0.5 ${action.tone} ${action.textTone} ${action.border}`}
+            className={`rounded-[14px] border p-5 shadow-[0_18px_34px_-28px_rgba(41,41,41,0.28)] transition hover:-translate-y-0.5 ${action.tone} ${action.textTone} ${action.border}`}
           >
             <div className="flex min-h-[108px] flex-col justify-between">
               <div className={`flex h-11 w-11 items-center justify-center rounded-[14px] ${action.iconTone}`}>
@@ -268,8 +268,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="rounded-[18px] border border-[#ddd8ea] bg-white p-5 shadow-[0_24px_52px_-40px_rgba(47,33,81,0.3)]">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[#7b7198]">Priority Alerts</h2>
+        <aside className="rounded-[18px] border border-[#d9e2dc] bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.18)]">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[#6e7a72]">Priority Alerts</h2>
           <div className="mt-5 space-y-3">
             {loading
               ? Array(3)
@@ -278,21 +278,21 @@ export default function AdminDashboard() {
               : priorityAlerts.map((item) => (
                   <div key={item.label} className={`rounded-[16px] border p-4 ${item.tone}`}>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                    <p className="mt-2 text-2xl font-semibold text-[#221934]">{item.value}</p>
+                    <p className="mt-2 text-2xl font-semibold text-[#292929]">{item.value}</p>
                   </div>
                 ))}
           </div>
 
-          <div className="mt-5 rounded-[16px] border border-[#dfe3ee] bg-[#f7f8fb] p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7b7198]">Resolved Cases</p>
-            <p className="mt-2 text-3xl font-bold text-[#2f2151]">{resolvedCount}</p>
+          <div className="mt-5 rounded-[16px] border border-[#dfe7e1] bg-[#f7fbf8] p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6e7a72]">Resolved Cases</p>
+            <p className="mt-2 text-3xl font-bold text-[#292929]">{resolvedCount}</p>
             <p className="mt-2 text-sm text-slate-500">Closed and completed complaints across the current case cycle.</p>
           </div>
         </aside>
 
-        <section className="overflow-hidden rounded-[18px] border border-[#ddd8ea] bg-white shadow-[0_24px_52px_-40px_rgba(47,33,81,0.3)]">
-          <div className="border-b border-[#ebe7f4] px-6 py-5">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[#7b7198]">Recent Complaints</h2>
+        <section className="overflow-hidden rounded-[18px] border border-[#d9e2dc] bg-white shadow-[0_24px_52px_-40px_rgba(41,41,41,0.18)]">
+          <div className="border-b border-[#e7eeea] px-6 py-5">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[#6e7a72]">Recent Complaints</h2>
           </div>
 
           <div className="overflow-x-auto">
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
               </div>
             ) : recentComplaints.length > 0 ? (
               <table className="min-w-full text-left">
-                <thead className="border-b border-[#ebe7f4] bg-[#f8f7fc] text-xs uppercase tracking-[0.18em] text-[#7b7198]">
+                <thead className="border-b border-[#e7eeea] bg-[#f7fbf8] text-xs uppercase tracking-[0.18em] text-[#6e7a72]">
                   <tr>
                     <th className="px-6 py-4 font-semibold">Ref No</th>
                     <th className="px-6 py-4 font-semibold">Student</th>
@@ -316,11 +316,11 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-right font-semibold">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f0edf7]">
+                <tbody className="divide-y divide-[#edf3ef]">
                   {recentComplaints.map((complaint) => (
-                    <tr key={complaint.id} className="transition hover:bg-[#faf9fd]">
+                    <tr key={complaint.id} className="transition hover:bg-[#f8fbf9]">
                       <td className="px-6 py-4">
-                        <span className="rounded-full bg-[#f3f1fa] px-3 py-1 text-xs font-medium text-[#5c4b89]">
+                        <span className="rounded-full bg-[#edf7f0] px-3 py-1 text-xs font-medium text-[#2f8f4a]">
                           {complaint.reference_number}
                         </span>
                       </td>
@@ -335,7 +335,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-right">
                         <Link
                           to={`/dashboard/admin/complaints/${complaint.id}`}
-                          className="text-sm font-semibold text-[#2f2151] transition hover:text-[#6a5af0]"
+                          className="text-sm font-semibold text-[#292929] transition hover:text-[#33b35a]"
                         >
                           Review
                         </Link>
