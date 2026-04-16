@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
-  ArrowRight,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -194,32 +193,47 @@ export default function StudentDashboard() {
 
   const statCards = [
     {
-      label: 'Total Complaints',
+      label: 'Total',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-indigo-600',
+      tone: 'bg-[#5b5ce6]',
     },
     {
       label: 'Pending',
       value: stats?.pending || 0,
       icon: Clock3,
-      tone: 'bg-slate-700',
+      tone: 'bg-[#7a8191]',
     },
     {
       label: 'Resolved',
       value: stats?.resolved || 0,
       icon: CheckCircle2,
-      tone: 'bg-emerald-600',
+      tone: 'bg-[#24c16b]',
     },
   ];
 
-  const actionCards: { label: string; icon: LucideIcon; href: string }[] = [
-    { label: 'Submit Complaint', icon: FilePlus2, href: '/dashboard/student/complaints/new' },
-    { label: 'Track Complaints', icon: ListFilter, href: '/dashboard/student/complaints' },
+  const actionCards: { label: string; icon: LucideIcon; href: string; tone: string }[] = [
+    {
+      label: 'Submit Complaint',
+      icon: FilePlus2,
+      href: '/dashboard/student/complaints/new',
+      tone: 'bg-[#1f5eff]',
+    },
+    {
+      label: 'Track Complaints',
+      icon: ListFilter,
+      href: '/dashboard/student/complaints',
+      tone: 'bg-[#0ea5c6]',
+    },
   ];
 
   if (appointmentsActive) {
-    actionCards.push({ label: 'Appointments', icon: CalendarDays, href: '/dashboard/appointments' });
+    actionCards.push({
+      label: 'Appointments',
+      icon: CalendarDays,
+      href: '/dashboard/appointments',
+      tone: 'bg-[#475569]',
+    });
   }
 
   if (error) {
@@ -237,56 +251,51 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-6 pb-16">
-      <div className="app-page-header">
-        <span className="app-page-kicker">Student</span>
-        <h1 className="app-page-title">Complaint dashboard</h1>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="space-y-5 pb-10">
+      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${appointmentsActive ? 'xl:grid-cols-6' : 'xl:grid-cols-5'}`}>
         {loading
-          ? Array(3)
+          ? Array(appointmentsActive ? 6 : 5)
               .fill(0)
               .map((_, index) => <StatSkeleton key={index} />)
-          : statCards.map((card) => (
-              <div key={card.label} className={`${card.tone} rounded-2xl p-5 text-white shadow-sm`}>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-white/85">{card.label}</p>
-                  <div className="rounded-xl bg-white/15 p-2.5">
-                    <card.icon className="h-4 w-4" />
+          : (
+              <>
+                {statCards.map((tile) => (
+                  <div
+                    key={tile.label}
+                    className={`rounded-[26px] ${tile.tone} p-5 text-white shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)]`}
+                  >
+                    <div className="flex h-full min-h-[154px] flex-col items-center justify-center text-center">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+                        <tile.icon className="h-6 w-6" />
+                      </div>
+                      <p className="mt-5 text-4xl font-bold leading-none">{tile.value}</p>
+                      <p className="mt-3 text-sm font-medium text-white/90">{tile.label}</p>
+                    </div>
                   </div>
-                </div>
-                <p className="mt-6 text-4xl font-semibold leading-none">{card.value}</p>
-              </div>
-            ))}
+                ))}
+                {actionCards.map((tile) => (
+                  <Link
+                    key={tile.label}
+                    to={tile.href}
+                    className={`rounded-[26px] ${tile.tone} p-5 text-white shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)] transition hover:-translate-y-0.5`}
+                  >
+                    <div className="flex h-full min-h-[154px] flex-col items-center justify-center text-center">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+                        <tile.icon className="h-6 w-6" />
+                      </div>
+                      <p className="mt-5 text-base font-semibold text-white">{tile.label}</p>
+                    </div>
+                  </Link>
+                ))}
+              </>
+            )}
       </div>
 
-      <div className={`grid grid-cols-1 gap-4 ${appointmentsActive ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-        {actionCards.map((action) => (
-          <Link
-            key={action.label}
-            to={action.href}
-            className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-200"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-base font-semibold text-slate-900">{action.label}</p>
-              <div className="rounded-xl bg-slate-100 p-2.5 text-slate-600">
-                <action.icon className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-end text-sm font-semibold text-emerald-700">
-              Open
-              <ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-0.5" />
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="app-card overflow-hidden">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
           <div className="border-b border-slate-200 px-5 py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Complaints</h2>
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <label className="relative block">
@@ -321,7 +330,7 @@ export default function StudentDashboard() {
                 {Array(5)
                   .fill(0)
                   .map((_, index) => (
-                    <div key={index} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+                    <div key={index} className="h-14 animate-pulse rounded-2xl bg-slate-100" />
                   ))}
               </div>
             ) : filteredComplaints.length > 0 ? (
@@ -364,8 +373,8 @@ export default function StudentDashboard() {
               <div className="p-6">
                 <EmptyState
                   icon={FileSearch}
-                  title="No records"
-                  description="No matching complaints."
+                  title="No complaints"
+                  description=""
                   actionLabel="Submit Complaint"
                   actionLink="/dashboard/student/complaints/new"
                 />
@@ -374,8 +383,8 @@ export default function StudentDashboard() {
           </div>
         </section>
 
-        <aside className="app-card p-5">
-          <h2 className="text-lg font-semibold text-slate-900">Alerts</h2>
+        <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Alerts</h2>
           <div className="mt-4 space-y-3">
             {loading ? (
               Array(4)
@@ -383,14 +392,13 @@ export default function StudentDashboard() {
                 .map((_, index) => <div key={index} className="h-20 animate-pulse rounded-xl bg-slate-100" />)
             ) : alerts.length > 0 ? (
               alerts.map((alert) => (
-                <div key={alert.id} className={`rounded-xl border p-3.5 ${alert.tone}`}>
+                <div key={alert.id} className={`rounded-2xl border p-3.5 ${alert.tone}`}>
                   <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">{alert.message}</p>
-                  <p className="mt-2 text-xs font-medium text-slate-500">{formatDate(alert.date)}</p>
+                  <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{formatDate(alert.date)}</p>
                 </div>
               ))
             ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
                 No alerts.
               </div>
             )}

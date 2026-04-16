@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
-  ArrowRight,
   CheckCircle2,
   Clock3,
   FileText,
@@ -112,7 +111,7 @@ export default function AdminDashboard() {
         } else {
           throw new Error('Dashboard requests failed');
         }
-      } catch (err) {
+      } catch {
         setError('Unable to load dashboard data.');
       } finally {
         setLoading(false);
@@ -153,40 +152,40 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
-      label: 'Total Complaints',
+      label: 'Total',
       value: stats?.total || 0,
       icon: FileText,
-      tone: 'bg-gradient-to-br from-slate-800 to-slate-700 text-white',
+      tone: 'bg-[#5b5ce6] text-white',
       iconTone: 'bg-white/20 text-white',
     },
     {
       label: 'Pending',
       value: pendingCount,
       icon: Clock3,
-      tone: 'bg-gradient-to-br from-amber-500 to-amber-400 text-white',
+      tone: 'bg-[#7a8191] text-white',
       iconTone: 'bg-white/20 text-white',
     },
     {
       label: 'Resolved',
       value: resolvedCount,
       icon: CheckCircle2,
-      tone: 'bg-gradient-to-br from-emerald-600 to-emerald-500 text-white',
+      tone: 'bg-[#24c16b] text-white',
       iconTone: 'bg-white/20 text-white',
     },
     {
       label: 'Escalated',
       value: escalatedCount,
       icon: TrendingUp,
-      tone: 'bg-gradient-to-br from-rose-600 to-rose-500 text-white',
+      tone: 'bg-[#10b5cc] text-white',
       iconTone: 'bg-white/20 text-white',
     },
   ];
 
   const quickActions = [
-    { label: 'Review Complaints', href: '/dashboard/admin/complaints', icon: FileText, tone: 'border-slate-200 bg-white text-slate-900' },
-    { label: 'Route Complaint', href: '/dashboard/admin/complaints', icon: Route, tone: 'border-blue-200 bg-blue-50 text-blue-900' },
-    { label: 'View Reports', href: '/dashboard/admin/reports', icon: TrendingUp, tone: 'border-emerald-200 bg-emerald-50 text-emerald-900' },
-    { label: 'View Appointments', href: '/dashboard/appointments', icon: Clock3, tone: 'border-violet-200 bg-violet-50 text-violet-900' },
+    { label: 'Review Complaints', href: '/dashboard/admin/complaints', icon: FileText, tone: 'bg-[#1f5eff] text-white' },
+    { label: 'Route Complaint', href: '/dashboard/admin/complaints', icon: Route, tone: 'bg-[#0f766e] text-white' },
+    { label: 'View Reports', href: '/dashboard/admin/reports', icon: TrendingUp, tone: 'bg-[#475569] text-white' },
+    { label: 'View Appointments', href: '/dashboard/appointments', icon: Clock3, tone: 'bg-[#7c3aed] text-white' },
   ];
 
   if (error) {
@@ -204,52 +203,48 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-7 pb-16">
-      <div className="app-page-header">
-        <span className="app-page-kicker">HOD / Admin</span>
-        <h1 className="app-page-title">Complaint control center</h1>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-5 pb-10">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading
           ? Array(4)
               .fill(0)
               .map((_, index) => <StatSkeleton key={index} />)
           : statCards.map((card) => (
-              <div key={card.label} className={`rounded-3xl border p-6 shadow-sm ${card.tone}`}>
-                <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${card.iconTone}`}>
-                  <card.icon className="h-5 w-5" />
+              <div
+                key={card.label}
+                className={`rounded-[26px] p-5 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)] ${card.tone}`}
+              >
+                <div className="flex min-h-[154px] flex-col items-center justify-center text-center">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconTone}`}>
+                    <card.icon className="h-6 w-6" />
+                  </div>
+                  <p className="mt-5 text-4xl font-bold leading-none text-white">{card.value}</p>
+                  <p className="mt-3 text-sm font-medium text-white/90">{card.label}</p>
                 </div>
-                <p className="text-sm font-medium text-white/85">{card.label}</p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{card.value}</p>
               </div>
             ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {quickActions.map((action) => (
           <Link
             key={action.label}
             to={action.href}
-            className={`group rounded-3xl border p-5 transition hover:-translate-y-0.5 ${action.tone}`}
+            className={`rounded-[26px] p-5 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.65)] transition hover:-translate-y-0.5 ${action.tone}`}
           >
-            <div className="flex items-center justify-between">
-              <p className="text-base font-semibold">{action.label}</p>
-              <div className="rounded-xl bg-white/80 p-2.5">
-                <action.icon className="h-4 w-4" />
+            <div className="flex min-h-[154px] flex-col items-center justify-center text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+                <action.icon className="h-6 w-6" />
               </div>
-            </div>
-            <div className="mt-4 flex items-center justify-end text-sm font-semibold">
-              Open
-              <ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-0.5" />
+              <p className="mt-5 text-base font-semibold">{action.label}</p>
             </div>
           </Link>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="app-card p-6">
-          <h2 className="text-lg font-semibold text-slate-900">Priority alerts</h2>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Alerts</h2>
           <div className="mt-5 space-y-3">
             {loading
               ? Array(3)
@@ -257,16 +252,16 @@ export default function AdminDashboard() {
                   .map((_, index) => <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />)
               : priorityAlerts.map((item) => (
                   <div key={item.label} className={`rounded-2xl border p-4 ${item.tone}`}>
-                    <p className="text-sm text-slate-600">{item.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
                     <p className="mt-2 text-2xl font-semibold text-slate-900">{item.value}</p>
                   </div>
                 ))}
           </div>
         </aside>
 
-        <section className="app-card overflow-hidden">
+        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_60px_-38px_rgba(15,23,42,0.35)]">
           <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-lg font-semibold text-slate-900">Recent complaints</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Complaint Queue</h2>
           </div>
 
           <div className="overflow-x-auto">
@@ -324,8 +319,8 @@ export default function AdminDashboard() {
               <div className="p-8">
                 <EmptyState
                   icon={FileText}
-                  title="No records"
-                  description="No complaints available."
+                  title="No complaints"
+                  description=""
                   actionLabel="Review Complaints"
                   actionLink="/dashboard/admin/complaints"
                 />
