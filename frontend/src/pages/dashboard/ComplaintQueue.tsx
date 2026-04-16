@@ -51,7 +51,7 @@ export default function ComplaintQueue() {
   const isDeptOfficer = user?.role === 'Department Officer';
   const canRoute = isAdmin || isDeptOfficer;
   const isAssignedQueue = location.pathname.includes('/staff');
-  const detailBasePath = isAdmin ? '/dashboard/admin/complaints' : '/dashboard/staff/complaints';
+  const detailBasePath = canRoute ? '/dashboard/admin/complaints' : '/dashboard/staff/complaints';
 
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
   const [staffList, setStaffList] = useState<StaffRecord[]>([]);

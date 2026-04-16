@@ -36,7 +36,7 @@ export const getAllComplaints = async (req: Request, res: Response) => {
     const userId = (req as any).user?.userId;
 
     if (roleName === 'Staff' || assignedToMe === 'true') {
-      where += ' AND c.assigned_staff_id = ?';
+      where += ' AND c.assigned_staff_id = (SELECT id FROM staff WHERE user_id = ? LIMIT 1)';
       params.push(userId);
     } else if (roleName === 'Department Officer') {
       where += ' AND c.department_id = (SELECT department_id FROM staff WHERE user_id = ?)';
@@ -80,7 +80,8 @@ export const getAllComplaints = async (req: Request, res: Response) => {
        JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
-       LEFT JOIN users su ON c.assigned_staff_id = su.id
+       LEFT JOIN staff ast ON c.assigned_staff_id = ast.id
+       LEFT JOIN users su ON ast.user_id = su.id
        LEFT JOIN feedback f ON c.id = f.complaint_id
        ${where}
        ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
@@ -120,7 +121,8 @@ export const getComplaintById = async (req: Request, res: Response) => {
        JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
-       LEFT JOIN users su ON c.assigned_staff_id = su.id
+       LEFT JOIN staff ast ON c.assigned_staff_id = ast.id
+       LEFT JOIN users su ON ast.user_id = su.id
        LEFT JOIN feedback f ON c.id = f.complaint_id
        ${where}`,
       params
@@ -189,36 +191,37 @@ export const assignStaff = async (req: Request, res: Response) => {
       return res.status(403).json({ status: 'error', message: 'Forbidden: You do not have permission to manage complaints outside your Faculty.' });
     }
 
-    // Verify staffId exists and has Staff or Admin role
+    // Verify lecturer exists
     const [staff]: any = await db.query(
-      `SELECT u.id, u.first_name, u.last_name, r.name as role_name 
-       FROM users u 
-       JOIN roles r ON u.role_id = r.id 
-       WHERE u.id = ? AND r.name IN ('Staff', 'Admin')`,
+      `SELECT st.id, u.id as user_id, u.first_name, u.last_name, r.name as role_name
+       FROM staff st
+       JOIN users u ON st.user_id = u.id
+       JOIN roles r ON u.role_id = r.id
+       WHERE st.id = ? AND r.name = 'Staff'`,
       [staffId]
     );
 
     if (staff.length === 0) {
-      return res.status(400).json({ status: 'error', message: 'Invalid staff member selected' });
+      return res.status(400).json({ status: 'error', message: 'Invalid lecturer selected' });
     }
 
     await db.query(
       'UPDATE complaints SET assigned_staff_id = ?, status = ? WHERE id = ?',
-      [staffId, 'Under Review', id]
+      [staff[0].id, 'Under Review', id]
     );
 
     // Add to timeline
     await db.query(
       `INSERT INTO complaint_status_history (complaint_id, status, changed_by_user_id, remarks)
        VALUES (?, 'Under Review', ?, ?)`,
-      [id, adminId, `Complaint assigned to ${staff[0].first_name} ${staff[0].last_name}`]
+      [id, adminId, `Complaint assigned to lecturer ${staff[0].first_name} ${staff[0].last_name}`]
     );
 
-    // Notify the assigned staff
-    await NotificationService.notifyAssignment(parseInt(id), staffId);
+    // Notify the assigned lecturer
+    await NotificationService.notifyAssignment(parseInt(id), staff[0].id);
 
     // Notify the student about assignment (implicitly through status change)
-    await NotificationService.notifyStatusChange(parseInt(id), 'Under Review', `Complaint has been assigned to ${staff[0].first_name} ${staff[0].last_name}`);
+    await NotificationService.notifyStatusChange(parseInt(id), 'Under Review', `Complaint has been assigned to lecturer ${staff[0].first_name} ${staff[0].last_name}`);
 
     res.json({ status: 'success', message: 'Staff assigned successfully' });
   } catch (err: any) {
@@ -245,15 +248,16 @@ export const routeComplaint = async (req: Request, res: Response) => {
     let assignedStaff: any = null;
     if (staffId) {
       const [staffRows]: any = await db.query(
-        `SELECT u.id, u.first_name, u.last_name, r.name as role_name
-         FROM users u
+        `SELECT st.id, u.id as user_id, u.first_name, u.last_name, r.name as role_name
+         FROM staff st
+         JOIN users u ON st.user_id = u.id
          JOIN roles r ON u.role_id = r.id
-         WHERE u.id = ? AND r.name IN ('Staff', 'Admin', 'Department Officer')`,
+         WHERE st.id = ? AND r.name = 'Staff'`,
         [staffId]
       );
 
       if (staffRows.length === 0) {
-        return res.status(400).json({ status: 'error', message: 'Invalid staff member selected' });
+        return res.status(400).json({ status: 'error', message: 'Invalid lecturer selected' });
       }
 
       assignedStaff = staffRows[0];
@@ -266,12 +270,12 @@ export const routeComplaint = async (req: Request, res: Response) => {
 
     await db.query(
       'UPDATE complaints SET assigned_staff_id = ?, status = ? WHERE id = ?',
-      [assignedStaff ? staffId : null, 'Under Review', id]
+      [assignedStaff ? assignedStaff.id : null, 'Under Review', id]
     );
 
     const routingMessage = [
       `Forwarded to ${targetUnit}`,
-      assignedStaff ? `Assigned to ${assignedStaff.first_name} ${assignedStaff.last_name}` : '',
+      assignedStaff ? `Assigned to lecturer ${assignedStaff.first_name} ${assignedStaff.last_name}` : '',
       remarks ? String(remarks).trim() : '',
     ]
       .filter(Boolean)
@@ -284,7 +288,7 @@ export const routeComplaint = async (req: Request, res: Response) => {
     );
 
     if (assignedStaff) {
-      await NotificationService.notifyAssignment(parseInt(id), Number(staffId));
+      await NotificationService.notifyAssignment(parseInt(id), assignedStaff.id);
     }
 
     await NotificationService.notifyStatusChange(parseInt(id), 'Forwarded', routingMessage);
@@ -301,11 +305,11 @@ export const getStaffMembers = async (req: Request, res: Response) => {
   const roleName = (req as any).user?.roleName;
 
   try {
-    let query = `SELECT u.id, u.first_name, u.last_name, u.email, r.name as role_name 
-                 FROM users u 
+    let query = `SELECT s.id, u.first_name, u.last_name, u.email, r.name as role_name
+                 FROM staff s
+                 JOIN users u ON u.id = s.user_id
                  JOIN roles r ON u.role_id = r.id 
-                 JOIN staff s ON u.id = s.user_id
-                 WHERE r.name IN ('Staff', 'Admin') AND u.is_active = 1`;
+                 WHERE r.name = 'Staff' AND u.is_active = 1`;
     const params: any[] = [];
 
     if (roleName === 'Admin') {
@@ -314,6 +318,9 @@ export const getStaffMembers = async (req: Request, res: Response) => {
         query += ' AND s.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
         params.push(facultyId);
       }
+    } else if (roleName === 'Department Officer') {
+      query += ' AND s.department_id = (SELECT department_id FROM staff WHERE user_id = ? LIMIT 1)';
+      params.push(userId);
     }
 
     query += ' ORDER BY u.first_name';
@@ -379,7 +386,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
     let filterParam: any = null;
 
     if (roleName === 'Staff') {
-      filterSQL = 'assigned_staff_id = ?';
+      filterSQL = 'assigned_staff_id = (SELECT id FROM staff WHERE user_id = ? LIMIT 1)';
       filterParam = userId;
     } else if (roleName === 'Department Officer') {
       filterSQL = 'department_id = (SELECT department_id FROM staff WHERE user_id = ?)';

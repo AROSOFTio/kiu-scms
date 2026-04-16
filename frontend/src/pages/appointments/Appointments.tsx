@@ -249,7 +249,7 @@ export default function Appointments() {
           title="Appointments unavailable"
           description={error}
           actionLabel="Open dashboard"
-          actionLink={user?.role === 'Admin' ? '/dashboard/admin' : isOfficeRole ? '/dashboard/staff' : '/dashboard/student'}
+          actionLink={user?.role === 'Admin' || user?.role === 'Department Officer' ? '/dashboard/admin' : isOfficeRole ? '/dashboard/staff' : '/dashboard/student'}
         />
       </div>
     );

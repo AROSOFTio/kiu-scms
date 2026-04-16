@@ -235,11 +235,11 @@ export default function AdminDashboard() {
           : statCards.map((card) => (
               <div
                 key={card.label}
-                className={`rounded-[16px] border p-5 shadow-[0_20px_36px_-30px_rgba(47,33,81,0.6)] ${card.tone} ${card.textTone} ${card.accent}`}
+                className={`rounded-[14px] border p-5 shadow-[0_20px_36px_-30px_rgba(47,33,81,0.6)] ${card.tone} ${card.textTone} ${card.accent}`}
               >
-                <div className="flex min-h-[150px] flex-col justify-between">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconTone}`}>
-                    <card.icon className="h-6 w-6" />
+                <div className="flex min-h-[130px] flex-col justify-between">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${card.iconTone}`}>
+                    <card.icon className="h-5 w-5" />
                   </div>
                   <div className="space-y-2">
                     <p className="text-4xl font-bold leading-none">{card.value}</p>
@@ -255,11 +255,11 @@ export default function AdminDashboard() {
           <Link
             key={action.label}
             to={action.href}
-            className={`rounded-[16px] border p-5 shadow-[0_18px_34px_-28px_rgba(47,33,81,0.52)] transition hover:-translate-y-0.5 ${action.tone} ${action.textTone} ${action.border}`}
+            className={`rounded-[14px] border p-5 shadow-[0_18px_34px_-28px_rgba(47,33,81,0.52)] transition hover:-translate-y-0.5 ${action.tone} ${action.textTone} ${action.border}`}
           >
-            <div className="flex min-h-[124px] flex-col justify-between">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${action.iconTone}`}>
-                <action.icon className="h-6 w-6" />
+            <div className="flex min-h-[108px] flex-col justify-between">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-[14px] ${action.iconTone}`}>
+                <action.icon className="h-5 w-5" />
               </div>
               <p className="text-[15px] font-semibold">{action.label}</p>
             </div>

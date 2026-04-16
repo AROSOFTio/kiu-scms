@@ -83,7 +83,8 @@ export class NotificationService {
          FROM complaints c
          JOIN students s ON c.student_id = s.id
          JOIN users u ON s.user_id = u.id
-         LEFT JOIN users su ON c.assigned_staff_id = su.id
+         LEFT JOIN staff ast ON c.assigned_staff_id = ast.id
+         LEFT JOIN users su ON ast.user_id = su.id
          WHERE c.id = ?`,
         [complaintId]
       );
@@ -106,21 +107,23 @@ export class NotificationService {
   /**
    * Notify staff when a complaint is assigned to them.
    */
-  static async notifyAssignment(complaintId: number, staffUserId: number) {
+  static async notifyAssignment(complaintId: number, staffRecordId: number) {
     try {
       const [rows]: any = await db.query(
-        `SELECT c.reference_number, c.title, u.email, u.first_name 
-         FROM complaints c, users u 
-         WHERE c.id = ? AND u.id = ?`,
-        [complaintId, staffUserId]
+        `SELECT c.reference_number, c.title, u.id as user_id, u.email, u.first_name
+         FROM complaints c
+         JOIN staff s ON s.id = ?
+         JOIN users u ON u.id = s.user_id
+         WHERE c.id = ?`,
+        [staffRecordId, complaintId]
       );
 
       if (rows.length === 0) return;
 
-      const { reference_number, title, email, first_name } = rows[0];
+      const { reference_number, title, email, first_name, user_id } = rows[0];
       const msg = `Greetings ${first_name}, a new complaint ${reference_number}: "${title}" has been assigned to you for resolution.`;
 
-      await this.sendInApp(staffUserId, 'New Assignment', msg);
+      await this.sendInApp(user_id, 'New Assignment', msg);
       await this.sendEmail(email, `Assigned Complaint: ${reference_number}`, msg);
     } catch (err) {
       console.error('Error in notifyAssignment:', err);

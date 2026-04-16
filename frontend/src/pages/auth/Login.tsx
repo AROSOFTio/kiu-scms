@@ -26,18 +26,24 @@ const accessOptions: Array<{
   value: LoginForm['accessMode'];
   label: string;
   icon: typeof GraduationCap;
+  hint: string;
 }> = [
   {
     value: 'Student',
     label: 'Student',
     icon: GraduationCap,
+    hint: 'Student account',
   },
   {
     value: 'Staff',
     label: 'Staff',
     icon: BriefcaseBusiness,
+    hint: 'Lecturer / HOD',
   },
 ];
+
+const campusBackground =
+  'https://smartie.kiu.ac.ug/public/assets/images/news/a90b6aa3853d0a6252e1e4a556c0ce077bee0506.jpg';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -78,8 +84,8 @@ export default function Login() {
         const { user, token } = res.data;
         login(token, user);
 
-        if (user.role === 'Admin') navigate('/dashboard/admin');
-        else if (user.role === 'Staff' || user.role === 'Department Officer') navigate('/dashboard/staff');
+        if (user.role === 'Admin' || user.role === 'Department Officer') navigate('/dashboard/admin');
+        else if (user.role === 'Staff') navigate('/dashboard/staff');
         else navigate('/dashboard/student');
       }
     } catch (err: any) {
@@ -88,20 +94,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f5f7] px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
-      <div className="animate-slide-up w-full max-w-[980px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_60px_-36px_rgba(41,41,41,0.18)] lg:grid lg:grid-cols-[0.96fr_1fr]">
-        <section className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-[#34b05a] p-7 text-white sm:p-8 lg:min-h-[540px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.20),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(41,41,41,0.10),_transparent_24%)]" />
-
-          <div className="relative z-10 self-start">
-            <div className="rounded-[18px] bg-white p-3 shadow-[0_16px_32px_rgba(0,0,0,0.16)]">
-              <img src="/kiu-logo.png" alt="Kampala International University" className="h-10 w-auto object-contain" />
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `linear-gradient(rgba(41,41,41,0.46), rgba(41,41,41,0.38)), url(${campusBackground})` }}
+    >
+      <div className="min-h-screen px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
+        <div className="animate-slide-up w-full max-w-[470px] overflow-hidden rounded-[26px] border border-white/20 bg-white shadow-[0_36px_80px_-42px_rgba(0,0,0,0.48)] backdrop-blur-[2px]">
+          <section className="border-b border-slate-200 bg-white px-8 pb-7 pt-8 text-center">
+            <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-[26px] border border-[#e4f1e7] bg-[#f5fbf7] p-4 shadow-[0_20px_40px_-32px_rgba(51,179,90,0.5)]">
+              <img src="/kiu-logo.png" alt="Kampala International University" className="h-full w-full object-contain" />
             </div>
-          </div>
-
-          <div className="relative z-10 max-w-sm">
-            <div className="mb-5 inline-flex rounded-full border border-white/15 bg-white/5 p-1">
-              {accessOptions.map(({ value, label, icon: Icon }) => {
+            <h1 className="text-[14px] font-semibold uppercase tracking-[0.22em] text-[#6b7280]">Student Complaint System</h1>
+            <div className="mt-5 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f3f5f6] p-1.5">
+              {accessOptions.map(({ value, label, icon: Icon, hint }) => {
                 const isActive = accessMode === value;
 
                 return (
@@ -109,33 +114,26 @@ export default function Login() {
                     key={value}
                     type="button"
                     onClick={() => setValue('accessMode', value, { shouldValidate: true })}
-                    className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-all duration-300 ${
-                      isActive ? 'bg-white text-[#34b05a] shadow-sm' : 'text-white/88 hover:bg-white/10'
+                    className={`rounded-[14px] px-3 py-3 text-left transition-all duration-300 ${
+                      isActive ? 'bg-[#33b35a] text-white shadow-[0_18px_30px_-24px_rgba(51,179,90,0.65)]' : 'text-[#393836] hover:bg-white'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    {label}
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      <span className="text-sm font-semibold">{label}</span>
+                    </div>
+                    <p className={`mt-1 text-xs ${isActive ? 'text-white/80' : 'text-[#6b7280]'}`}>{hint}</p>
                   </button>
                 );
               })}
             </div>
+          </section>
 
-            <h1 className="text-[2rem] font-semibold tracking-tight sm:text-[2.25rem]">KIU Complaint System</h1>
-            <p className="mt-3 text-sm leading-6 text-white/68">
-              {accessMode === 'Student' ? 'Student access' : 'Staff and lecturer access'}
-            </p>
-          </div>
-
-          <div className="relative z-10 flex gap-3">
-            <div className="rounded-[16px] border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm">KIU</div>
-            <div className="rounded-[16px] border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm">SCMS</div>
-          </div>
-        </section>
-
-        <section className="bg-white p-6 sm:p-8 lg:flex lg:items-center">
-          <div className="w-full">
-            <div className="mb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Sign in</p>
+          <section className="bg-white px-8 py-7">
+            <div className="mb-5 text-center">
+              <p className="text-[13px] font-medium text-[#393836]">
+                {accessMode === 'Student' ? 'Student login' : 'Staff login'}
+              </p>
             </div>
 
             {apiError && (
@@ -149,18 +147,15 @@ export default function Login() {
               <input type="hidden" {...register('accessMode')} />
 
               <div>
-                <label htmlFor="identifier" className="mb-2 block text-sm font-medium text-slate-700">
-                  {accessMode === 'Student' ? 'Registration Number / Email' : 'Staff ID / Email'}
-                </label>
                 <input
                   id="identifier"
                   type="text"
                   autoComplete="username"
                   {...register('identifier')}
-                  className={`w-full rounded-[18px] border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#34b05a] focus:ring-4 focus:ring-[#34b05a]/10 ${
+                  className={`w-full rounded-[16px] border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#33b35a] focus:ring-4 focus:ring-[#33b35a]/10 ${
                     errors.identifier ? 'border-red-500' : 'border-slate-200'
                   }`}
-                  placeholder={accessMode === 'Student' ? 'Student number or email' : 'Staff ID or email'}
+                  placeholder={accessMode === 'Student' ? 'Email or registration number' : 'Email or staff ID'}
                 />
                 {errors.identifier && (
                   <p className="mt-1.5 flex items-center text-xs text-red-500">
@@ -171,16 +166,13 @@ export default function Login() {
               </div>
 
               <div>
-                <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-700">
-                  Password
-                </label>
                 <div className="relative">
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     {...register('password')}
-                    className={`w-full rounded-[18px] border bg-white px-4 py-3 pr-11 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#34b05a] focus:ring-4 focus:ring-[#34b05a]/10 ${
+                    className={`w-full rounded-[16px] border bg-white px-4 py-3 pr-11 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#33b35a] focus:ring-4 focus:ring-[#33b35a]/10 ${
                       errors.password ? 'border-red-500' : 'border-slate-200'
                     }`}
                     placeholder="Password"
@@ -205,14 +197,14 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-[#34b05a] px-4 py-3 text-sm font-medium text-white transition-all duration-300 hover:bg-[#2d9a4e] hover:shadow-[0_16px_30px_rgba(52,176,90,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#33b35a] px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#2d9a4e] hover:shadow-[0_16px_30px_rgba(51,179,90,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isSubmitting ? 'Signing in...' : 'Sign in'}
                 {!isSubmitting && <ArrowRight className="h-4 w-4" />}
               </button>
             </form>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </div>
   );

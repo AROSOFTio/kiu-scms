@@ -32,13 +32,24 @@ export const submitComplaint = async (req: Request, res: Response) => {
     const studentId = students[0].id;
     const departmentId = students[0].department_id;
 
+    const [hods]: any = await db.query(
+      `SELECT s.id as staff_id, u.id as user_id, u.first_name, u.last_name, r.name as role_name
+       FROM staff s
+       JOIN users u ON s.user_id = u.id
+       JOIN roles r ON u.role_id = r.id
+       WHERE s.department_id = ? AND r.name IN ('Department Officer', 'Admin') AND u.is_active = 1
+       ORDER BY CASE WHEN r.name = 'Department Officer' THEN 0 ELSE 1 END, s.id`,
+      [departmentId]
+    );
+    const primaryHod = hods[0] || null;
+
     const reference = await generateReference();
 
     // Insert complaint
     const [result]: any = await db.query(
-      `INSERT INTO complaints (student_id, category_id, department_id, title, description, priority, status, reference_number)
-       VALUES (?, ?, ?, ?, ?, ?, 'Submitted', ?)`,
-      [studentId, categoryId, departmentId, title, description, 'Medium', reference]
+      `INSERT INTO complaints (student_id, category_id, department_id, title, description, priority, status, reference_number, assigned_staff_id)
+       VALUES (?, ?, ?, ?, ?, ?, 'Submitted', ?, ?)`,
+      [studentId, categoryId, departmentId, title, description, 'Medium', reference, primaryHod?.staff_id || null]
     );
     const complaintId = result.insertId;
 
@@ -67,21 +78,11 @@ export const submitComplaint = async (req: Request, res: Response) => {
       `Your complaint ${reference} has been successfully submitted and is awaiting review.`
     );
 
-    // 2. Notify HODs of the Faculty (College-wide oversight)
-    const [hods]: any = await db.query(
-      `SELECT DISTINCT u.id FROM users u
-       JOIN roles r ON u.role_id = r.id
-       JOIN staff s ON u.id = s.user_id
-       JOIN departments d ON s.department_id = d.id
-       WHERE r.name = 'Admin' AND d.faculty_id = (SELECT faculty_id FROM departments WHERE id = ?)`,
-      [departmentId]
-    );
-
     for (const hod of hods) {
       await NotificationService.sendInApp(
-        hod.id,
-        'Faculty Action: New Case',
-        `A new complaint ${reference} has been submitted in your Faculty and requires your oversight.`
+        hod.user_id,
+        'Department Action: New Complaint',
+        `A new complaint ${reference} has been submitted for your department and requires HOD review.`
       );
     }
 
@@ -354,7 +355,8 @@ export const getPublicComplaints = async (req: Request, res: Response) => {
        JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
-       LEFT JOIN users su ON c.assigned_staff_id = su.id
+       LEFT JOIN staff ast ON c.assigned_staff_id = ast.id
+       LEFT JOIN users su ON ast.user_id = su.id
        ${studentFilter}
        ORDER BY c.created_at DESC`,
        queryParams

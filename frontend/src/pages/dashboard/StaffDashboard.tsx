@@ -157,7 +157,7 @@ export default function StaffDashboard() {
               { label: 'Awaiting Student', value: summary.awaitingStudent, icon: RefreshCw, tone: 'bg-[#2b7a8d] text-white border-[#4593a3]', iconTone: 'text-white/85' },
               { label: 'Resolved', value: summary.resolved, icon: CheckCircle2, tone: 'bg-[#34b05a] text-white border-[#51c474]', iconTone: 'text-white/85' },
             ].map((item) => (
-              <div key={item.label} className={`min-w-[112px] rounded-[16px] border px-4 py-4 shadow-[0_18px_38px_-34px_rgba(31,41,55,0.4)] ${item.tone}`}>
+              <div key={item.label} className={`min-w-[112px] rounded-[14px] border px-4 py-4 shadow-[0_18px_38px_-34px_rgba(31,41,55,0.4)] ${item.tone}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">{item.label}</span>
                   <item.icon className={`h-4 w-4 ${item.iconTone}`} />

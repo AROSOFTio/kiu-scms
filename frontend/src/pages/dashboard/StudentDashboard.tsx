@@ -275,11 +275,11 @@ export default function StudentDashboard() {
                 {statCards.map((tile) => (
                   <div
                     key={tile.label}
-                    className={`rounded-[16px] ${tile.tone} ${tile.textTone} border p-5 shadow-[0_20px_36px_-30px_rgba(31,41,55,0.42)] ${tile.border}`}
+                    className={`rounded-[14px] ${tile.tone} ${tile.textTone} border p-5 shadow-[0_20px_36px_-30px_rgba(31,41,55,0.42)] ${tile.border}`}
                   >
-                    <div className="flex min-h-[150px] flex-col justify-between">
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${tile.iconTone}`}>
-                        <tile.icon className="h-6 w-6" />
+                    <div className="flex min-h-[130px] flex-col justify-between">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${tile.iconTone}`}>
+                        <tile.icon className="h-5 w-5" />
                       </div>
                       <div className="space-y-2">
                         <p className="text-4xl font-bold leading-none">{tile.value}</p>
@@ -292,11 +292,11 @@ export default function StudentDashboard() {
                   <Link
                     key={tile.label}
                     to={tile.href}
-                    className={`rounded-[16px] ${tile.tone} ${tile.textTone} border p-5 shadow-[0_20px_36px_-30px_rgba(31,41,55,0.34)] transition hover:-translate-y-0.5 ${tile.border}`}
+                    className={`rounded-[14px] ${tile.tone} ${tile.textTone} border p-5 shadow-[0_20px_36px_-30px_rgba(31,41,55,0.34)] transition hover:-translate-y-0.5 ${tile.border}`}
                   >
-                    <div className="flex min-h-[150px] flex-col justify-between">
-                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${tile.iconTone}`}>
-                        <tile.icon className="h-6 w-6" />
+                    <div className="flex min-h-[130px] flex-col justify-between">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${tile.iconTone}`}>
+                        <tile.icon className="h-5 w-5" />
                       </div>
                       <p className="text-[15px] font-semibold">{tile.label}</p>
                     </div>

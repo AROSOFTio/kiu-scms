@@ -70,7 +70,7 @@ export default function ComplaintWorkspace() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canRoute = user?.role === 'Admin' || user?.role === 'Department Officer';
-  const backPath = user?.role === 'Admin' ? '/dashboard/admin/complaints' : '/dashboard/staff/worklist';
+  const backPath = canRoute ? '/dashboard/admin/complaints' : '/dashboard/staff/worklist';
 
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
   const [notes, setNotes] = useState<InternalNote[]>([]);

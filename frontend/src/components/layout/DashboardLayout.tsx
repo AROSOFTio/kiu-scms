@@ -26,7 +26,7 @@ type NavigationItem = {
 };
 
 function getNavigation(role?: string): NavigationItem[] {
-  if (role === 'Admin') {
+  if (role === 'Admin' || role === 'Department Officer') {
     return [
       { label: 'Dashboard', href: '/dashboard/admin', icon: ShieldCheck },
       { label: 'Complaint Queue', href: '/dashboard/admin/complaints', icon: ClipboardList },
@@ -35,7 +35,7 @@ function getNavigation(role?: string): NavigationItem[] {
     ];
   }
 
-  if (role === 'Staff' || role === 'Department Officer') {
+  if (role === 'Staff') {
     return [
       { label: 'Workspace', href: '/dashboard/staff', icon: LayoutDashboard },
       { label: 'Assigned Complaints', href: '/dashboard/staff/worklist', icon: ClipboardList },
@@ -53,11 +53,15 @@ function getNavigation(role?: string): NavigationItem[] {
 
 function getRoleMeta(role?: string) {
   if (role === 'Admin') {
-    return { title: 'Admin', badge: 'Admin' };
+    return { title: 'HOD', badge: 'HOD' };
   }
 
-  if (role === 'Staff' || role === 'Department Officer') {
-    return { title: 'Staff / Lecturer', badge: 'Staff' };
+  if (role === 'Department Officer') {
+    return { title: 'HOD', badge: 'HOD' };
+  }
+
+  if (role === 'Staff') {
+    return { title: 'Lecturer', badge: 'Lecturer' };
   }
 
   return { title: 'Student', badge: 'Student' };
@@ -94,7 +98,7 @@ export default function DashboardLayout() {
   const navigation = getNavigation(user?.role);
   const roleMeta = getRoleMeta(user?.role);
   const pageTitle = getPageTitle(location.pathname);
-  const isAdminRole = user?.role === 'Admin';
+  const isAdminRole = user?.role === 'Admin' || user?.role === 'Department Officer';
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
@@ -140,7 +144,7 @@ export default function DashboardLayout() {
                 <h1 className={`${isAdminRole ? 'max-w-[150px] text-base leading-tight' : 'text-sm'} font-semibold text-white`}>
                   Student Complaint System
                 </h1>
-                {isAdminRole && <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/55">Administrative Control</p>}
+                {isAdminRole && <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/55">HOD Control</p>}
               </div>
             </div>
             <button
@@ -215,7 +219,7 @@ export default function DashboardLayout() {
                     <p className="truncate text-[13px] font-semibold uppercase tracking-[0.16em] text-white/72">
                       KIU Complaint Command Center
                     </p>
-                    <h2 className="truncate text-[24px] font-bold text-white">Administrative Complaint Oversight</h2>
+                    <h2 className="truncate text-[24px] font-bold text-white">HOD Complaint Oversight</h2>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
@@ -244,17 +248,17 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className={`${isAdminRole ? 'px-4 py-5 sm:px-6 lg:px-8' : 'px-4 py-6 sm:px-6 lg:px-8'}`}>
+        <main className={`${isAdminRole ? 'bg-[#eeedf4] px-4 py-5 sm:px-6 lg:px-8 lg:rounded-tl-[30px]' : 'bg-[#eef1f4] px-4 py-6 sm:px-6 lg:px-8 lg:rounded-tl-[30px]'}`}>
           <div className={`mx-auto w-full space-y-6 ${isAdminRole ? 'max-w-none' : 'max-w-7xl'}`}>
             {isAdminRole && (
               <div className="overflow-hidden rounded-[18px] border border-[#ddd8ea] bg-white shadow-[0_18px_48px_-34px_rgba(47,33,81,0.28)]">
                 <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
                   <div className="h-12 w-1 rounded-full bg-[#f0be00]" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#7969a3]">Administrative Workspace</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#7969a3]">HOD Workspace</p>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                       <h3 className="text-[22px] font-semibold text-[#2f2151]">{pageTitle}</h3>
-                      <span className="text-sm font-medium text-[#34b05a]">Complaint review, routing and case control</span>
+                      <span className="text-sm font-medium text-[#34b05a]">Complaint review, routing and lecturer assignment</span>
                     </div>
                   </div>
                 </div>

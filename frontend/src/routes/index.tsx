@@ -35,8 +35,8 @@ function RoleRedirect() {
     );
   }
 
-  if (user.role === 'Admin') return <Navigate to="/dashboard/admin" replace />;
-  if (user.role === 'Staff' || user.role === 'Department Officer') return <Navigate to="/dashboard/staff" replace />;
+  if (user.role === 'Admin' || user.role === 'Department Officer') return <Navigate to="/dashboard/admin" replace />;
+  if (user.role === 'Staff') return <Navigate to="/dashboard/staff" replace />;
   return <Navigate to="/dashboard/student" replace />;
 }
 
@@ -74,27 +74,27 @@ export default function AppRoutes() {
         
         {/* Administrative Management Routes */}
         <Route path="admin" element={
-          <ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><AdminDashboard /></ProtectedRoute>
         } />
         <Route path="admin/complaints" element={
-          <ProtectedRoute allowedRoles={['Admin']}><ComplaintQueue /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><ComplaintQueue /></ProtectedRoute>
         } />
         <Route path="admin/complaints/:id" element={
-          <ProtectedRoute allowedRoles={['Admin']}><ComplaintWorkspace /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><ComplaintWorkspace /></ProtectedRoute>
         } />
         <Route path="admin/reports" element={
-          <ProtectedRoute allowedRoles={['Admin']}><ReportsOverview /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><ReportsOverview /></ProtectedRoute>
         } />
 
         {/* Staff Specific Routes */}
         <Route path="staff" element={
-          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><StaffDashboard /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Staff']}><StaffDashboard /></ProtectedRoute>
         } />
         <Route path="staff/worklist" element={
-          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><ComplaintQueue /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Staff']}><ComplaintQueue /></ProtectedRoute>
         } />
         <Route path="staff/complaints/:id" element={
-          <ProtectedRoute allowedRoles={['Staff', 'Department Officer']}><ComplaintWorkspace /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Staff']}><ComplaintWorkspace /></ProtectedRoute>
         } />
 
       </Route>
