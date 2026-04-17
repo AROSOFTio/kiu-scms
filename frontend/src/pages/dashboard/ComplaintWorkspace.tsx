@@ -70,7 +70,6 @@ export default function ComplaintWorkspace() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canRoute = user?.role === 'HOD' || user?.role === 'SuperAdmin';
-  const isLecturer = user?.role === 'Lecturer';
   const backPath = canRoute ? '/dashboard/hod/complaints' : '/dashboard/lecturer';
 
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);

@@ -169,13 +169,13 @@ export default function Appointments() {
   }, [isHODRole, user?.id]);
 
   useEffect(() => {
-    if (!isOfficeRole && selectedDepartmentId) {
+    if (!isHODRole && selectedDepartmentId) {
       loadContacts(selectedDepartmentId);
     }
   }, [isHODRole, selectedDepartmentId]);
 
   useEffect(() => {
-    if (isOfficeRole && user) {
+    if (isHODRole && user) {
       loadAvailability(user.id).catch(() => setAvailability([]));
       return;
     }

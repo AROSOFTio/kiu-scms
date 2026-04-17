@@ -48,9 +48,7 @@ export default function ComplaintQueue() {
   const { user } = useAuth();
   const location = useLocation();
   const isHOD = user?.role === 'HOD' || user?.role === 'SuperAdmin';
-  const isLecturer = user?.role === 'Lecturer';
   const canRoute = isHOD;
-  const isAssignedQueue = location.pathname.includes('/lecturer');
   const detailBasePath = isHOD ? '/dashboard/hod/complaints' : '/dashboard/lecturer/complaints';
 
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
@@ -105,7 +103,7 @@ export default function ComplaintQueue() {
   useEffect(() => {
     const timer = window.setTimeout(loadQueue, 250);
     return () => window.clearTimeout(timer);
-  }, [search, status, category, page, isHOD, isLecturer]);
+  }, [search, status, category, page, isHOD]);
 
   useEffect(() => {
     setPage(1);
@@ -254,7 +252,7 @@ export default function ComplaintQueue() {
           ) : complaints.length ? (
             complaints.map((complaint) => {
               const currentStatus = complaint.display_status || complaint.status;
-              const assignedLabel = complaint.lecturer_first_name ? `${complaint.lecturer_first_name} ${complaint.lecturer_last_name}` : 'Unassigned';
+              const assignedLabel = complaint.staff_first_name ? `${complaint.staff_first_name} ${complaint.staff_last_name}` : 'Unassigned';
 
               return (
                 <div
