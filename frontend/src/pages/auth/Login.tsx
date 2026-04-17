@@ -54,127 +54,90 @@ export default function Login() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-[#1c1c1e] bg-cover bg-center bg-no-repeat px-4 py-16 sm:px-8 relative"
-      style={{ backgroundImage: `url('/kiu-campus-login.jpg')` }}
+      className="flex min-h-screen items-center justify-center bg-slate-100 bg-cover bg-center bg-no-repeat px-4 py-16 sm:px-8"
+      style={{ backgroundImage: `url('/bg-clean.png')` }}
     >
-      {/* Dark overlay for contrast */}
-      <div className="absolute inset-0 bg-[#002f12]/60 mix-blend-multiply" />
-      <div className="absolute inset-0 bg-black/40" />
-
-      <div className="relative z-10 w-full max-w-[440px]">
+      <div className="relative z-10 w-full max-w-[420px] bg-white p-10 shadow-2xl rounded-sm">
         {/* Branding header centered */}
-        <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-white p-3 shadow-2xl ring-4 ring-white/10">
+        <div className="mb-10 flex flex-col items-center text-center">
+          <div className="mb-4 h-16 w-32">
             <img src="/kiu-logo.png" alt="KIU" className="h-full w-full object-contain" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              KIU SCMS
-            </h1>
-            <p className="mt-1 text-sm font-medium text-white/80 drop-shadow-md">
-              Student Complaint Management System
-            </p>
-          </div>
+          <h1 className="text-[22px] font-bold text-slate-900">
+            Student Portal
+          </h1>
         </div>
 
-        {/* Form Card */}
-        <div className="rounded-[24px] border border-white/20 bg-white/95 p-8 shadow-[0_32px_64px_-24px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-extrabold text-slate-800">Welcome Back</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Sign in with your structural identity (Email, Student No., or Staff No.)
-            </p>
+        {apiError && (
+          <div className="mb-6 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {apiError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+          {/* Identifier */}
+          <div className="space-y-2">
+            <input
+              id="identifier"
+              type="text"
+              autoComplete="username"
+              placeholder="Email or Registration number"
+              {...register('identifier')}
+              className={`w-full rounded-sm border px-4 py-3.5 text-base text-slate-800 outline-none transition focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a] ${
+                errors.identifier ? 'border-rose-400 bg-rose-50' : 'border-slate-300 bg-white'
+              }`}
+            />
+            {errors.identifier && (
+              <p className="text-sm font-medium text-rose-600">{errors.identifier.message}</p>
+            )}
           </div>
 
-          {apiError && (
-            <div className="mb-5 rounded-[16px] border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {apiError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-            {/* Identifier */}
-            <div className="space-y-2">
-              <label htmlFor="identifier" className="block text-sm font-semibold tracking-wide text-slate-700">
-                Identifier ID
-              </label>
+          {/* Password */}
+          <div className="space-y-2">
+            <div className="relative">
               <input
-                id="identifier"
-                type="text"
-                autoComplete="username"
-                placeholder="Student No, Email, or Staff ID"
-                {...register('identifier')}
-                className={`w-full rounded-[16px] border bg-[#f8fafb] px-5 py-3.5 text-base font-medium text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10 ${
-                  errors.identifier ? 'border-rose-400 bg-rose-50' : 'border-slate-300'
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="Password"
+                {...register('password')}
+                className={`w-full rounded-sm border px-4 py-3.5 pr-12 text-base text-slate-800 outline-none transition focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a] ${
+                  errors.password ? 'border-rose-400 bg-rose-50' : 'border-slate-300 bg-white'
                 }`}
               />
-              {errors.identifier && (
-                <p className="text-sm font-medium text-rose-500">{errors.identifier.message}</p>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-slate-400 transition hover:text-slate-600 focus:outline-none"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
-
-            {/* Password */}
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-semibold tracking-wide text-slate-700">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="Enter your secure password"
-                  {...register('password')}
-                  className={`w-full rounded-[16px] border bg-[#f8fafb] px-5 py-3.5 pr-12 text-base font-medium text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10 ${
-                    errors.password ? 'border-rose-400 bg-rose-50' : 'border-slate-300'
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm font-medium text-rose-500">{errors.password.message}</p>
-              )}
-            </div>
-
-            <button
-              id="login-submit"
-              type="submit"
-              disabled={isSubmitting}
-              className="mt-4 flex w-full items-center justify-center gap-2.5 rounded-[16px] bg-[#34b05a] py-4 text-base font-bold tracking-wide text-white shadow-lg shadow-[#34b05a]/20 transition-all hover:-translate-y-0.5 hover:bg-[#2d9a4e] hover:shadow-xl hover:shadow-[#34b05a]/30 focus:outline-none focus:ring-4 focus:ring-[#34b05a]/30 disabled:pointer-events-none disabled:opacity-60"
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? 'Authenticating…' : 'Sign in securely'}
-            </button>
-          </form>
-
-          {/* Dummy Info */}
-          <div className="mt-8 rounded-[16px] border border-amber-200 bg-amber-50/70 p-5 shadow-sm">
-            <p className="mb-3 text-center text-xs font-bold uppercase tracking-widest text-amber-700">Demo Access</p>
-            <div className="flex justify-between text-sm font-medium text-amber-900/90 leading-relaxed">
-              <div className="space-y-1">
-                <p><span className="font-extrabold text-amber-900">HOD:</span> hod.cs@kiu.ac.ug</p>
-                <p><span className="font-extrabold text-amber-900">Lec:</span> lec.cs@kiu.ac.ug</p>
-              </div>
-              <div className="text-right space-y-1">
-                <p><span className="font-extrabold text-amber-900">Stu:</span> student.cs1@...ug</p>
-                <p className="text-amber-800 font-bold uppercase tracking-wide bg-amber-200/50 inline-block px-2 py-0.5 rounded">Admin@123</p>
-              </div>
-            </div>
+            {errors.password && (
+              <p className="text-sm font-medium text-rose-600">{errors.password.message}</p>
+            )}
           </div>
 
-        </div>
+          <button
+            id="login-submit"
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-2 flex w-full items-center justify-center rounded-sm bg-[#34b05a] py-3.5 text-base font-bold text-white transition-colors hover:bg-[#2d9a4e] focus:outline-none focus:ring-2 focus:ring-[#34b05a]/50 disabled:pointer-events-none disabled:opacity-70"
+          >
+            {isSubmitting && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
+            {isSubmitting ? 'Authenticating…' : 'Next'}
+          </button>
+        </form>
 
-        <p className="mt-8 text-center text-[11px] font-medium tracking-wide text-white/50">
-          © {new Date().getFullYear()} Kampala International University
-          <br />Student Complaint Management System
-        </p>
+        <div className="mt-8 text-[13px] leading-relaxed text-slate-500">
+          <p>
+            Please use your registration number or KIU student email address (e.g. xxxxxx@stdwc.kiu.ac.ug) to login.
+          </p>
+          <p className="mt-1">
+            For assistance please visit ICT office.
+          </p>
+        </div>
       </div>
     </div>
   );
