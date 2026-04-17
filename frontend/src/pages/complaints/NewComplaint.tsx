@@ -4,12 +4,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  ArrowRight,
   BookOpen,
   Check,
   ChevronDown,
   FileText,
-  Info,
   Loader2,
   Paperclip,
   Send,
@@ -92,7 +90,7 @@ export default function NewComplaint() {
   } = useForm<ComplaintFormData>({
     resolver: zodResolver(complaintSchema),
     defaultValues: {
-      studentName: user ? `${user.first_name} ${user.last_name}` : '',
+      studentName: user ? `${user.firstName} ${user.lastName}` : '',
       categories: [],
       complaintChannel: 'Portal Submission',
       title: '',
@@ -138,7 +136,7 @@ export default function NewComplaint() {
           setValue('college', depts[0].faculty_name || '');
         }
       } catch (err: any) {
-        toast.showError(err.response?.data?.message || 'Failed to initialize form');
+        toast.error(err.response?.data?.message || 'Failed to initialize form');
       }
     };
     fetchMeta();
@@ -149,18 +147,18 @@ export default function NewComplaint() {
     const selected = Array.from(e.target.files);
     
     if (files.length + selected.length > MAX_FILES) {
-      toast.showError(`You can only attach up to ${MAX_FILES} files.`);
+      toast.error(`You can only attach up to ${MAX_FILES} files.`);
       return;
     }
 
     const validFiles = selected.filter((file) => {
       if (file.size > MAX_FILE_SIZE_BYTES) {
-        toast.showError(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB.`);
+        toast.error(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB.`);
         return false;
       }
       const ext = getFileExtension(file.name) as any;
       if (!ALLOWED_FILE_EXTENSIONS.includes(ext)) {
-        toast.showError(`${file.name} has an unsupported format.`);
+        toast.error(`${file.name} has an unsupported format.`);
         return false;
       }
       return true;
@@ -226,9 +224,9 @@ export default function NewComplaint() {
 
       setSubmittedRef(response.data.data.reference_number);
       setSuccess(true);
-      toast.showSuccess('Complaint submitted successfully');
+      toast.success('Complaint submitted successfully');
     } catch (err: any) {
-      toast.showError(err.response?.data?.message || 'Failed to submit complaint');
+      toast.error(err.response?.data?.message || 'Failed to submit complaint');
     } finally {
       setIsSubmitting(false);
     }
