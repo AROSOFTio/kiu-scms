@@ -80,8 +80,8 @@ export default function Login() {
         {/* Form Card */}
         <div className="rounded-[24px] border border-white/20 bg-white/95 p-8 shadow-[0_32px_64px_-24px_rgba(0,0,0,0.5)] backdrop-blur-xl">
           <div className="mb-8 text-center">
-            <h2 className="text-xl font-bold text-[#1c1c1e]">Welcome Back</h2>
-            <p className="mt-1.5 text-[13px] text-slate-500">
+            <h2 className="text-2xl font-extrabold text-slate-800">Welcome Back</h2>
+            <p className="mt-2 text-sm text-slate-600">
               Sign in with your structural identity (Email, Student No., or Staff No.)
             </p>
           </div>
@@ -94,8 +94,8 @@ export default function Login() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             {/* Identifier */}
-            <div className="space-y-1.5">
-              <label htmlFor="identifier" className="block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            <div className="space-y-2">
+              <label htmlFor="identifier" className="block text-sm font-semibold tracking-wide text-slate-700">
                 Identifier ID
               </label>
               <input
@@ -104,18 +104,18 @@ export default function Login() {
                 autoComplete="username"
                 placeholder="Student No, Email, or Staff ID"
                 {...register('identifier')}
-                className={`w-full rounded-[16px] border bg-[#f8fafb] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10 ${
-                  errors.identifier ? 'border-rose-300 bg-rose-50' : 'border-[#dde3ea]'
+                className={`w-full rounded-[16px] border bg-[#f8fafb] px-5 py-3.5 text-base font-medium text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10 ${
+                  errors.identifier ? 'border-rose-400 bg-rose-50' : 'border-slate-300'
                 }`}
               />
               {errors.identifier && (
-                <p className="text-[11px] font-medium text-rose-500">{errors.identifier.message}</p>
+                <p className="text-sm font-medium text-rose-500">{errors.identifier.message}</p>
               )}
             </div>
 
             {/* Password */}
-            <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-semibold tracking-wide text-slate-700">
                 Password
               </label>
               <div className="relative">
@@ -125,8 +125,8 @@ export default function Login() {
                   autoComplete="current-password"
                   placeholder="Enter your secure password"
                   {...register('password')}
-                  className={`w-full rounded-[16px] border bg-[#f8fafb] px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10 ${
-                    errors.password ? 'border-rose-300 bg-rose-50' : 'border-[#dde3ea]'
+                  className={`w-full rounded-[16px] border bg-[#f8fafb] px-5 py-3.5 pr-12 text-base font-medium text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white focus:ring-4 focus:ring-[#34b05a]/10 ${
+                    errors.password ? 'border-rose-400 bg-rose-50' : 'border-slate-300'
                   }`}
                 />
                 <button
@@ -139,7 +139,7 @@ export default function Login() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-[11px] font-medium text-rose-500">{errors.password.message}</p>
+                <p className="text-sm font-medium text-rose-500">{errors.password.message}</p>
               )}
             </div>
 
@@ -147,7 +147,7 @@ export default function Login() {
               id="login-submit"
               type="submit"
               disabled={isSubmitting}
-              className="mt-2 flex w-full items-center justify-center gap-2.5 rounded-[16px] bg-[#34b05a] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#34b05a]/20 transition-all hover:-translate-y-0.5 hover:bg-[#2d9a4e] hover:shadow-xl hover:shadow-[#34b05a]/30 focus:outline-none focus:ring-4 focus:ring-[#34b05a]/30 disabled:pointer-events-none disabled:opacity-60"
+              className="mt-4 flex w-full items-center justify-center gap-2.5 rounded-[16px] bg-[#34b05a] py-4 text-base font-bold tracking-wide text-white shadow-lg shadow-[#34b05a]/20 transition-all hover:-translate-y-0.5 hover:bg-[#2d9a4e] hover:shadow-xl hover:shadow-[#34b05a]/30 focus:outline-none focus:ring-4 focus:ring-[#34b05a]/30 disabled:pointer-events-none disabled:opacity-60"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isSubmitting ? 'Authenticating…' : 'Sign in securely'}
@@ -155,16 +155,16 @@ export default function Login() {
           </form>
 
           {/* Dummy Info */}
-          <div className="mt-8 rounded-[16px] border border-amber-100 bg-amber-50/50 p-4">
-            <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-amber-600">Demo Access</p>
-            <div className="flex justify-between text-[11px] font-medium text-amber-800/80">
+          <div className="mt-8 rounded-[16px] border border-amber-200 bg-amber-50/70 p-5 shadow-sm">
+            <p className="mb-3 text-center text-xs font-bold uppercase tracking-widest text-amber-700">Demo Access</p>
+            <div className="flex justify-between text-sm font-medium text-amber-900/90 leading-relaxed">
               <div className="space-y-1">
-                <p><span className="font-bold text-amber-900">HOD:</span> hod.cs@kiu.ac.ug</p>
-                <p><span className="font-bold text-amber-900">Lec:</span> lec.cs@kiu.ac.ug</p>
+                <p><span className="font-extrabold text-amber-900">HOD:</span> hod.cs@kiu.ac.ug</p>
+                <p><span className="font-extrabold text-amber-900">Lec:</span> lec.cs@kiu.ac.ug</p>
               </div>
               <div className="text-right space-y-1">
-                <p><span className="font-bold text-amber-900">Stu:</span> student.cs1@...ug</p>
-                <p className="text-amber-700/60 font-bold uppercase tracking-wide">Admin@123</p>
+                <p><span className="font-extrabold text-amber-900">Stu:</span> student.cs1@...ug</p>
+                <p className="text-amber-800 font-bold uppercase tracking-wide bg-amber-200/50 inline-block px-2 py-0.5 rounded">Admin@123</p>
               </div>
             </div>
           </div>

@@ -257,9 +257,9 @@ export default function NewComplaint() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1c1c1e]">New Complaint</h1>
-        <p className="mt-2 text-sm text-slate-500">Submit an official complaint or query to your department.</p>
+      <div className="mb-10 block text-center">
+        <h1 className="text-4xl font-extrabold tracking-tight text-[#1c1c1e]">New Complaint</h1>
+        <p className="mt-3 text-base text-slate-600">Submit an official complaint or query to your department.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -268,34 +268,34 @@ export default function NewComplaint() {
         <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
             <User className="h-5 w-5 text-[#34b05a]" />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-800">Student Identity</h2>
+            <h2 className="text-base font-extrabold uppercase tracking-widest text-[#1c1c1e]">Student Identity</h2>
           </div>
           
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Name of Student</label>
-              <input type="text" {...register('studentName')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
-              {errors.studentName && <p className="text-xs text-rose-500">{errors.studentName.message}</p>}
+              <label className="text-sm font-bold tracking-wide text-slate-700">Name of Student</label>
+              <input type="text" {...register('studentName')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
+              {errors.studentName && <p className="text-sm font-medium text-rose-500">{errors.studentName.message}</p>}
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Reg. No.</label>
-              <input type="text" {...register('regNo')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
-              {errors.regNo && <p className="text-xs text-rose-500">{errors.regNo.message}</p>}
+              <label className="text-sm font-bold tracking-wide text-slate-700">Reg. No.</label>
+              <input type="text" {...register('regNo')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
+              {errors.regNo && <p className="text-sm font-medium text-rose-500">{errors.regNo.message}</p>}
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">College/School, Program</label>
-              <input type="text" {...register('college')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
-              {errors.college && <p className="text-xs text-rose-500">{errors.college.message}</p>}
+              <label className="text-sm font-bold tracking-wide text-slate-700">College/School, Program</label>
+              <input type="text" {...register('college')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
+              {errors.college && <p className="text-sm font-medium text-rose-500">{errors.college.message}</p>}
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Current Year, Semester</label>
-              <input type="text" placeholder="e.g. Year 2, Sem 1" {...register('yearSemester')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
-              {errors.yearSemester && <p className="text-xs text-rose-500">{errors.yearSemester.message}</p>}
+              <label className="text-sm font-bold tracking-wide text-slate-700">Current Year, Semester</label>
+              <input type="text" placeholder="e.g. Year 2, Sem 1" {...register('yearSemester')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
+              {errors.yearSemester && <p className="text-sm font-medium text-rose-500">{errors.yearSemester.message}</p>}
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tel. Contact</label>
-              <input type="text" {...register('contact')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
-              {errors.contact && <p className="text-xs text-rose-500">{errors.contact.message}</p>}
+              <label className="text-sm font-bold tracking-wide text-slate-700">Tel. Contact</label>
+              <input type="text" {...register('contact')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
+              {errors.contact && <p className="text-sm font-medium text-rose-500">{errors.contact.message}</p>}
             </div>
           </div>
         </div>
@@ -304,16 +304,16 @@ export default function NewComplaint() {
         <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
             <FileText className="h-5 w-5 text-[#34b05a]" />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-800">Complaint Details</h2>
+            <h2 className="text-base font-extrabold uppercase tracking-widest text-[#1c1c1e]">Complaint Details</h2>
           </div>
 
           <div className="space-y-5">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               {/* Custom Multi-select Dropdown */}
               <div className="space-y-1" ref={categoryRef}>
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Complaint Categories</label>
+                <label className="text-sm font-bold tracking-wide text-slate-700">Complaint Categories</label>
                 <div 
-                  className="relative w-full cursor-pointer rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus-within:border-[#34b05a] focus-within:ring-1 focus-within:ring-[#34b05a]"
+                  className="relative w-full cursor-pointer rounded-[14px] border border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium focus-within:border-[#34b05a] focus-within:ring-1 focus-within:ring-[#34b05a]"
                   onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                 >
                   <div className="flex items-center justify-between">
@@ -339,27 +339,27 @@ export default function NewComplaint() {
                     </div>
                   )}
                 </div>
-                {errors.categories && <p className="text-xs text-rose-500">{errors.categories.message}</p>}
+                {errors.categories && <p className="text-sm font-medium text-rose-500">{errors.categories.message}</p>}
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Complaint Channel</label>
-                <select {...register('complaintChannel')} className="w-full rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]">
+                <label className="text-sm font-bold tracking-wide text-slate-700">Complaint Channel</label>
+                <select {...register('complaintChannel')} className="w-full rounded-[14px] border border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]">
                   {COMPLAINT_CHANNELS.map(ch => <option key={ch} value={ch}>{ch}</option>)}
                 </select>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Subject / Title</label>
-              <input type="text" placeholder="Brief subject of the complaint" {...register('title')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
-              {errors.title && <p className="text-xs text-rose-500">{errors.title.message}</p>}
+              <label className="text-sm font-bold tracking-wide text-slate-700">Subject / Title</label>
+              <input type="text" placeholder="Brief subject of the complaint" {...register('title')} className="w-full rounded-[14px] border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
+              {errors.title && <p className="text-sm font-medium text-rose-500">{errors.title.message}</p>}
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Detailed Description</label>
-              <textarea rows={5} placeholder="Explain the issue clearly..." {...register('description')} className="w-full resize-y rounded-[14px] border-slate-200 bg-slate-50 p-4 text-sm outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
-              {errors.description && <p className="text-xs text-rose-500">{errors.description.message}</p>}
+              <label className="text-sm font-bold tracking-wide text-slate-700">Detailed Description</label>
+              <textarea rows={5} placeholder="Explain the issue clearly..." {...register('description')} className="w-full resize-y rounded-[14px] border-slate-200 bg-slate-50 p-5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]" />
+              {errors.description && <p className="text-sm font-medium text-rose-500">{errors.description.message}</p>}
             </div>
           </div>
         </div>
@@ -370,29 +370,29 @@ export default function NewComplaint() {
             <div className="absolute right-0 top-0 h-32 w-32 -translate-y-8 translate-x-8 rounded-full bg-blue-500/5 blur-3xl" />
             <div className="mb-6 flex items-center gap-2 border-b border-blue-100/50 pb-4 relative z-10">
               <BookOpen className="h-5 w-5 text-blue-600" />
-              <h2 className="text-sm font-bold uppercase tracking-widest text-blue-900">Incomplete Results Specifics</h2>
+              <h2 className="text-base font-extrabold uppercase tracking-widest text-blue-900">Incomplete Results Specifics</h2>
             </div>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 relative z-10">
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Course Code</label>
-                <input type="text" {...register('courseCode')} className="w-full rounded-[14px] border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <label className="text-sm font-bold tracking-wide text-slate-700">Course Code</label>
+                <input type="text" {...register('courseCode')} className="w-full rounded-[14px] border-slate-200 bg-white px-5 py-3.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Course Name</label>
-                <input type="text" {...register('courseName')} className="w-full rounded-[14px] border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <label className="text-sm font-bold tracking-wide text-slate-700">Course Name</label>
+                <input type="text" {...register('courseName')} className="w-full rounded-[14px] border-slate-200 bg-white px-5 py-3.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Year</label>
-                <input type="text" {...register('acadYear')} className="w-full rounded-[14px] border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <label className="text-sm font-bold tracking-wide text-slate-700">Year</label>
+                <input type="text" {...register('acadYear')} className="w-full rounded-[14px] border-slate-200 bg-white px-5 py-3.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Semester</label>
-                <input type="text" {...register('acadSemester')} className="w-full rounded-[14px] border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <label className="text-sm font-bold tracking-wide text-slate-700">Semester</label>
+                <input type="text" {...register('acadSemester')} className="w-full rounded-[14px] border-slate-200 bg-white px-5 py-3.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Mention CW / FE</label>
-                <select {...register('cwFeMention')} className="w-full rounded-[14px] border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <label className="text-sm font-bold tracking-wide text-slate-700">Mention CW / FE</label>
+                <select {...register('cwFeMention')} className="w-full rounded-[14px] border-slate-200 bg-white px-5 py-3.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                   <option value="">Select option...</option>
                   <option value="Coursework (CW)">Coursework (CW) Missing</option>
                   <option value="Final Exam (FE)">Final Exam (FE) Missing</option>
@@ -400,8 +400,8 @@ export default function NewComplaint() {
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Lecturer Name</label>
-                <input type="text" {...register('lecturerName')} className="w-full rounded-[14px] border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <label className="text-sm font-bold tracking-wide text-slate-700">Lecturer Name</label>
+                <input type="text" {...register('lecturerName')} className="w-full rounded-[14px] border-slate-200 bg-white px-5 py-3.5 text-base font-medium outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
               </div>
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function NewComplaint() {
         <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-4">
             <Paperclip className="h-5 w-5 text-[#34b05a]" />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-800">Attachments (Optional)</h2>
+            <h2 className="text-base font-extrabold uppercase tracking-widest text-[#1c1c1e]">Attachments (Optional)</h2>
           </div>
 
           <label className="group flex cursor-pointer flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-slate-200 bg-slate-50 py-10 transition hover:border-[#34b05a] hover:bg-emerald-50/30">
@@ -446,7 +446,7 @@ export default function NewComplaint() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center gap-2 rounded-[16px] bg-[#34b05a] px-8 py-4 text-sm font-bold text-white shadow-lg shadow-[#34b05a]/20 transition-all hover:-translate-y-0.5 hover:bg-[#2d9a4e] hover:shadow-xl hover:shadow-[#34b05a]/30 disabled:pointer-events-none disabled:opacity-60"
+            className="flex items-center gap-2 rounded-[16px] bg-[#34b05a] px-10 py-4 text-base font-bold text-white shadow-lg shadow-[#34b05a]/20 transition-all hover:-translate-y-0.5 hover:bg-[#2d9a4e] hover:shadow-xl hover:shadow-[#34b05a]/30 disabled:pointer-events-none disabled:opacity-60"
           >
             {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             {isSubmitting ? 'Submitting...' : 'Submit Complaint'}
