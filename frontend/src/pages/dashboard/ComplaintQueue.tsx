@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Loader2, RefreshCw, Route, Search } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
@@ -46,7 +46,6 @@ const formatDate = (value: string) =>
 
 export default function ComplaintQueue() {
   const { user } = useAuth();
-  const location = useLocation();
   const isHOD = user?.role === 'HOD' || user?.role === 'SuperAdmin';
   const canRoute = isHOD;
   const detailBasePath = isHOD ? '/dashboard/hod/complaints' : '/dashboard/lecturer/complaints';
