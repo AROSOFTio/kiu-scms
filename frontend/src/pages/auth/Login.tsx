@@ -58,14 +58,16 @@ export default function Login() {
       style={{ backgroundImage: `url('/bg-clean.png')` }}
     >
       <div className="relative z-10 w-full max-w-[420px] bg-white p-10 shadow-2xl rounded-sm">
-        {/* Branding header centered */}
         <div className="mb-10 flex flex-col items-center text-center">
           <div className="mb-4 h-16 w-32">
             <img src="/kiu-logo.png" alt="KIU" className="h-full w-full object-contain" />
           </div>
-          <h1 className="text-[22px] font-bold text-slate-900">
-            Student Portal
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
+            KIU SCMS
           </h1>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            Student Complaint Management System
+          </p>
         </div>
 
         {apiError && (
@@ -130,12 +132,11 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-8 text-[13px] leading-relaxed text-slate-500">
+        <div className="mt-8 text-center text-xs font-medium leading-relaxed text-slate-500">
           <p>
-            Please use your registration number or KIU student email address (e.g. xxxxxx@stdwc.kiu.ac.ug) to login.
-          </p>
-          <p className="mt-1">
-            For assistance please visit ICT office.
+            © {new Date().getFullYear()} Kampala International University
+            <br />
+            Student Complaint Management System
           </p>
         </div>
       </div>
