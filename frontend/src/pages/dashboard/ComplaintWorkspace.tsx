@@ -69,8 +69,9 @@ export default function ComplaintWorkspace() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canRoute = user?.role === 'Admin' || user?.role === 'Department Officer';
-  const backPath = canRoute ? '/dashboard/admin/complaints' : '/dashboard/staff/worklist';
+  const canRoute = user?.role === 'HOD' || user?.role === 'SuperAdmin';
+  const isLecturer = user?.role === 'Lecturer';
+  const backPath = canRoute ? '/dashboard/hod/complaints' : '/dashboard/lecturer';
 
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
   const [notes, setNotes] = useState<InternalNote[]>([]);
@@ -92,8 +93,8 @@ export default function ComplaintWorkspace() {
       setComplaint(data);
       setStatusForm((current) => ({
         ...current,
-        status: ['Submitted', 'Under Review', 'Forwarded'].includes(data.display_status || data.status)
-          ? 'Under Review'
+        status: ['Submitted', 'Received by HOD', 'Assigned to Lecturer'].includes(data.display_status || data.status)
+          ? 'Received by HOD'
           : (data.display_status || data.status),
       }));
     } finally {
@@ -207,7 +208,7 @@ export default function ComplaintWorkspace() {
 
   const currentStatus = complaint.display_status || complaint.status;
   const statusOptions = canRoute
-    ? ['Under Review', 'In Progress', 'Awaiting Student', 'Resolved', 'Closed', 'Rejected']
+    ? ['Received by HOD', 'Assigned to Lecturer', 'In Progress', 'Awaiting Student', 'Resolved', 'Closed', 'Rejected']
     : ['In Progress', 'Awaiting Student', 'Resolved'];
 
   return (
@@ -255,13 +256,17 @@ export default function ComplaintWorkspace() {
                 <p className="mt-2 text-sm font-semibold text-slate-900">{complaint.category_name}</p>
               </div>
               <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Created</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Complaint Channel</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">{(complaint as any).complaint_channel || 'Portal Submission'}</p>
+              </div>
+              <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Submitted</p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">{formatDate(complaint.created_at)}</p>
               </div>
               <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Assigned to</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Assigned Lecturer</p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">
-                  {complaint.staff_first_name ? `${complaint.staff_first_name} ${complaint.staff_last_name}` : 'Not assigned'}
+                  {complaint.staff_first_name ? `${complaint.staff_first_name} ${complaint.staff_last_name}` : 'Not yet assigned'}
                 </p>
               </div>
             </div>
@@ -308,8 +313,8 @@ export default function ComplaintWorkspace() {
                   <Route className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-slate-900">Routing</h2>
-                  <p className="text-sm text-slate-500">Forward to an office, lecturer, or unit.</p>
+                  <h2 className="text-sm font-semibold text-slate-900">Assignment</h2>
+                  <p className="text-sm text-slate-500">Assign this complaint to a Lecturer in your department.</p>
                 </div>
               </div>
 
@@ -331,7 +336,7 @@ export default function ComplaintWorkspace() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Assign staff or lecturer</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Assign Lecturer</label>
                   <select
                     value={routeForm.staffId}
                     onChange={(event) => setRouteForm((current) => ({ ...current, staffId: event.target.value }))}

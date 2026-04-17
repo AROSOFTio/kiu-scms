@@ -104,15 +104,15 @@ export default function AdminDashboard() {
   }, []);
 
   const byStatus = stats?.byStatus || [];
-  const underReviewCount = statusCount(byStatus, ['Submitted', 'Under Review']);
-  const routedCount = statusCount(byStatus, ['Forwarded', 'In Progress', 'Awaiting Student']);
+  const pendingHOD = statusCount(byStatus, ['Submitted', 'Received by HOD']);
+  const assignedCount = statusCount(byStatus, ['Assigned to Lecturer', 'In Progress', 'Awaiting Student']);
   const resolvedCount = statusCount(byStatus, ['Resolved', 'Closed']);
   const escalatedCount = stats?.urgentCases?.length || 0;
 
   const priorityAlerts = useMemo(() => {
     const overdue = Number(stats?.slaMetrics?.breached || 0);
-    const pendingApprovals = statusCount(byStatus, ['Submitted', 'Under Review']);
-    const unresolvedRouted = statusCount(byStatus, ['Forwarded', 'In Progress', 'Awaiting Student']);
+    const pendingReview = statusCount(byStatus, ['Submitted', 'Received by HOD']);
+    const unresolved = statusCount(byStatus, ['Assigned to Lecturer', 'In Progress', 'Awaiting Student']);
 
     return [
       {
@@ -121,14 +121,14 @@ export default function AdminDashboard() {
         tone: overdue > 0 ? 'border-rose-100 bg-rose-50' : 'border-slate-200 bg-white',
       },
       {
-        label: 'Pending approvals',
-        value: pendingApprovals,
-        tone: pendingApprovals > 0 ? 'border-amber-100 bg-amber-50' : 'border-slate-200 bg-white',
+        label: 'Pending HOD review',
+        value: pendingReview,
+        tone: pendingReview > 0 ? 'border-amber-100 bg-amber-50' : 'border-slate-200 bg-white',
       },
       {
-        label: 'Unresolved routed complaints',
-        value: unresolvedRouted,
-        tone: unresolvedRouted > 0 ? 'border-blue-100 bg-blue-50' : 'border-slate-200 bg-white',
+        label: 'Assigned & unresolved',
+        value: unresolved,
+        tone: unresolved > 0 ? 'border-blue-100 bg-blue-50' : 'border-slate-200 bg-white',
       },
     ];
   }, [byStatus, stats?.slaMetrics?.breached]);
@@ -144,8 +144,8 @@ export default function AdminDashboard() {
       accent: 'border-[#7f71ff]',
     },
     {
-      label: 'Under Review',
-      value: underReviewCount,
+      label: 'Pending HOD Review',
+      value: pendingHOD,
       icon: FileSearch,
       tone: 'bg-[#8d92a0]',
       textTone: 'text-white',
@@ -153,8 +153,8 @@ export default function AdminDashboard() {
       accent: 'border-[#a2a8b5]',
     },
     {
-      label: 'Routed Cases',
-      value: routedCount,
+      label: 'Assigned to Lecturers',
+      value: assignedCount,
       icon: Route,
       tone: 'bg-[#2dc66d]',
       textTone: 'text-white',
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
   const quickActions = [
     {
       label: 'Complaint Queue',
-      href: '/dashboard/admin/complaints',
+      href: '/dashboard/hod/complaints',
       icon: FileText,
       tone: 'bg-[#2f2151]',
       textTone: 'text-white',
@@ -183,8 +183,8 @@ export default function AdminDashboard() {
       border: 'border-[#44306f]',
     },
     {
-      label: 'Route Complaints',
-      href: '/dashboard/admin/complaints',
+      label: 'Assign to Lecturer',
+      href: '/dashboard/hod/complaints',
       icon: Route,
       tone: 'bg-[#d19f11]',
       textTone: 'text-white',
@@ -192,8 +192,8 @@ export default function AdminDashboard() {
       border: 'border-[#e1b62d]',
     },
     {
-      label: 'Case Reports',
-      href: '/dashboard/admin/reports',
+      label: 'Department Reports',
+      href: '/dashboard/hod/reports',
       icon: TrendingUp,
       tone: 'bg-[#3f915d]',
       textTone: 'text-white',
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
           title="Dashboard unavailable"
           description={error}
           actionLabel="Reload"
-          actionLink="/dashboard/admin"
+          actionLink="/dashboard/hod"
         />
       </div>
     );
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-sm text-slate-500">{formatDate(complaint.created_at)}</td>
                       <td className="px-6 py-4 text-right">
                         <Link
-                          to={`/dashboard/admin/complaints/${complaint.id}`}
+                          to={`/dashboard/hod/complaints/${complaint.id}`}
                           className="text-sm font-semibold text-[#292929] transition hover:text-[#33b35a]"
                         >
                           Review
@@ -351,7 +351,7 @@ export default function AdminDashboard() {
                   title="No complaints"
                   description=""
                   actionLabel="Review Complaints"
-                  actionLink="/dashboard/admin/complaints"
+                  actionLink="/dashboard/hod/complaints"
                 />
               </div>
             )}

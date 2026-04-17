@@ -30,7 +30,11 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
   }
 };
 
-// Middleware factory: requireRole(['Admin', 'Staff'])
+/**
+ * Role-based access middleware factory.
+ * Usage: requireRole(['HOD', 'Lecturer']) or requireRole(['HOD'])
+ * Valid academic roles: HOD | Lecturer | Student | SuperAdmin
+ */
 export const requireRole = (allowedRoles: string[]) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
@@ -51,7 +55,10 @@ export const requireRole = (allowedRoles: string[]) => {
       req.user.roleName = roleName;
 
       if (!allowedRoles.includes(roleName)) {
-        return res.status(403).json({ status: 'error', message: `Access denied. Requires: ${allowedRoles.join(', ')}` });
+        return res.status(403).json({
+          status: 'error',
+          message: `Access denied. Requires: ${allowedRoles.join(', ')}`,
+        });
       }
 
       next();

@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../../middlewares/auth.middleware';
-import { 
-  getAllComplaints, 
-  getAdminStats, 
-  getStaffMembers, 
-  assignStaff, 
+import {
+  getAllComplaints,
+  getAdminStats,
+  getStaffMembers,
+  assignStaff,
   routeComplaint,
   updateStatus,
   addInternalNote,
@@ -12,6 +12,7 @@ import {
   getAllUsers,
   createUser,
   updateUser,
+  toggleUserStatus,
   getSettings,
   updateSettings,
   getAuditLogs,
@@ -20,85 +21,198 @@ import {
   getFeedbackStats,
   getDetailedReports,
   exportComplaintsCsv,
-  getComplaintById
+  getComplaintById,
 } from '../../controllers/admin.controller';
 
 const router = Router();
 
+// ---------------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------------
 // @route   GET /api/v1/admin/dashboard
-// @desc    Get dashboard metrics for administrative overview
-router.get('/dashboard', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getAdminStats);
+router.get('/dashboard',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getAdminStats
+);
 
+// ---------------------------------------------------------------
+// Complaints
+// ---------------------------------------------------------------
 // @route   GET /api/v1/admin/complaints
-// @desc    Get all complaints with pagination/filters (Admin/Staff only)
-router.get('/complaints', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getAllComplaints);
+router.get('/complaints',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getAllComplaints
+);
 
 // @route   GET /api/v1/admin/complaints/:id
-// @desc    Get single complaint details
-router.get('/complaints/:id', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getComplaintById);
+router.get('/complaints/:id',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getComplaintById
+);
 
+// @route   PATCH /api/v1/admin/complaints/:id/assign   — HOD only
+router.patch('/complaints/:id/assign',
+  requireAuth, requireRole(['HOD']),
+  assignStaff
+);
+
+// @route   PATCH /api/v1/admin/complaints/:id/route    — HOD only
+router.patch('/complaints/:id/route',
+  requireAuth, requireRole(['HOD']),
+  routeComplaint
+);
+
+// @route   PATCH /api/v1/admin/complaints/:id/status   — HOD or Lecturer
+router.patch('/complaints/:id/status',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  updateStatus
+);
+
+// @route   POST /api/v1/admin/complaints/:id/notes
+router.post('/complaints/:id/notes',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  addInternalNote
+);
+
+// @route   GET /api/v1/admin/complaints/:id/notes
+router.get('/complaints/:id/notes',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getInternalNotes
+);
+
+// ---------------------------------------------------------------
+// Lecturer list for assignment
+// ---------------------------------------------------------------
 // @route   GET /api/v1/admin/staff
-// @desc    Get all active staff members for assignment
-router.get('/staff', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getStaffMembers);
+router.get('/staff',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getStaffMembers
+);
 
-// @route   PATCH /api/v1/admin/complaints/:id/assign
-// @desc    Assign a complaint to a specific staff member
-router.patch('/complaints/:id/assign', requireAuth, requireRole(['Admin', 'Department Officer']), assignStaff);
-
-// @route   PATCH /api/v1/admin/complaints/:id/route
-// @desc    Route a complaint to a unit and optionally assign a staff member
-router.patch('/complaints/:id/route', requireAuth, requireRole(['Admin', 'Department Officer']), routeComplaint);
-
-// @route   PATCH /api/v1/admin/complaints/:id/status
-// @desc    Update complaint status with remarks (Timeline)
-router.patch('/complaints/:id/status', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), updateStatus);
-
+// ---------------------------------------------------------------
+// User Management — HOD only
+// ---------------------------------------------------------------
 // @route   GET /api/v1/admin/users
-// @desc    Get all users (Admin only)
-router.get('/users', requireAuth, requireRole(['Admin']), getAllUsers);
+router.get('/users',
+  requireAuth, requireRole(['HOD']),
+  getAllUsers
+);
 
 // @route   POST /api/v1/admin/users
-// @desc    Create a new user (Staff/Admin/Student)
-router.post('/users', requireAuth, requireRole(['Admin']), createUser);
+router.post('/users',
+  requireAuth, requireRole(['HOD']),
+  createUser
+);
 
 // @route   PUT /api/v1/admin/users/:id
-// @desc    Update an existing user
-router.put('/users/:id', requireAuth, requireRole(['Admin']), updateUser);
+router.put('/users/:id',
+  requireAuth, requireRole(['HOD']),
+  updateUser
+);
 
-// @route   GET /api/v1/admin/settings
-// @desc    Get system settings
-router.get('/settings', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getSettings);
+// @route   PATCH /api/v1/admin/users/:id/status
+router.patch('/users/:id/status',
+  requireAuth, requireRole(['HOD']),
+  toggleUserStatus
+);
 
-// @route   PUT /api/v1/admin/settings
-// @desc    Update system settings
-router.put('/settings', requireAuth, requireRole(['Admin']), updateSettings);
+// ---------------------------------------------------------------
+// Settings — HOD only
+// ---------------------------------------------------------------
+router.get('/settings',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getSettings
+);
 
-// @route   GET /api/v1/admin/audit-logs
-// @desc    Get administrative audit logs
-router.get('/audit-logs', requireAuth, requireRole(['Admin']), getAuditLogs);
+router.put('/settings',
+  requireAuth, requireRole(['HOD']),
+  updateSettings
+);
 
+// ---------------------------------------------------------------
+// Audit Logs — HOD only
+// ---------------------------------------------------------------
+router.get('/audit-logs',
+  requireAuth, requireRole(['HOD']),
+  getAuditLogs
+);
+
+// ---------------------------------------------------------------
 // Organizational Structure
-router.get('/faculties', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), manageOrg.getFaculties);
-router.post('/faculties', requireAuth, requireRole(['Admin']), manageOrg.createFaculty);
-router.put('/faculties/:id', requireAuth, requireRole(['Admin']), manageOrg.updateFaculty);
-router.delete('/faculties/:id', requireAuth, requireRole(['Admin']), manageOrg.deleteFaculty);
+// ---------------------------------------------------------------
+router.get('/faculties',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  manageOrg.getFaculties
+);
+router.post('/faculties',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.createFaculty
+);
+router.put('/faculties/:id',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.updateFaculty
+);
+router.delete('/faculties/:id',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.deleteFaculty
+);
 
-router.get('/departments', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), manageOrg.getDepartments);
-router.post('/departments', requireAuth, requireRole(['Admin']), manageOrg.createDepartment);
-router.put('/departments/:id', requireAuth, requireRole(['Admin']), manageOrg.updateDepartment);
-router.delete('/departments/:id', requireAuth, requireRole(['Admin']), manageOrg.deleteDepartment);
+router.get('/departments',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  manageOrg.getDepartments
+);
+router.post('/departments',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.createDepartment
+);
+router.put('/departments/:id',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.updateDepartment
+);
+router.delete('/departments/:id',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.deleteDepartment
+);
 
-router.get('/categories', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), manageOrg.getCategories);
-router.post('/categories', requireAuth, requireRole(['Admin']), manageOrg.createCategory);
-router.put('/categories/:id', requireAuth, requireRole(['Admin']), manageOrg.updateCategory);
-router.delete('/categories/:id', requireAuth, requireRole(['Admin']), manageOrg.deleteCategory);
+router.get('/categories',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  manageOrg.getCategories
+);
+router.post('/categories',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.createCategory
+);
+router.put('/categories/:id',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.updateCategory
+);
+router.delete('/categories/:id',
+  requireAuth, requireRole(['HOD']),
+  manageOrg.deleteCategory
+);
 
-// Feedback retrieval
-router.get('/feedback', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getFeedback);
-router.get('/feedback/stats', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getFeedbackStats);
+// ---------------------------------------------------------------
+// Feedback
+// ---------------------------------------------------------------
+router.get('/feedback',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getFeedback
+);
+router.get('/feedback/stats',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getFeedbackStats
+);
 
-// Analytical Reports & Exports
-router.get('/reports/analytics', requireAuth, requireRole(['Admin', 'Staff', 'Department Officer']), getDetailedReports);
-router.get('/reports/export', requireAuth, requireRole(['Admin']), exportComplaintsCsv);
+// ---------------------------------------------------------------
+// Reports & Exports
+// ---------------------------------------------------------------
+router.get('/reports/analytics',
+  requireAuth, requireRole(['HOD', 'Lecturer']),
+  getDetailedReports
+);
+router.get('/reports/export',
+  requireAuth, requireRole(['HOD']),
+  exportComplaintsCsv
+);
 
 export default router;

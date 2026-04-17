@@ -26,13 +26,13 @@ interface Complaint {
   student_last_name: string;
 }
 
-type QueueFilter = 'all' | 'Submitted' | 'Under Review' | 'Forwarded' | 'In Progress' | 'Awaiting Student' | 'Resolved';
+type QueueFilter = 'all' | 'Submitted' | 'Received by HOD' | 'Assigned to Lecturer' | 'In Progress' | 'Awaiting Student' | 'Resolved';
 
-const FILTERS: QueueFilter[] = ['all', 'Submitted', 'Under Review', 'Forwarded', 'In Progress', 'Awaiting Student', 'Resolved'];
+const FILTERS: QueueFilter[] = ['all', 'Submitted', 'Received by HOD', 'Assigned to Lecturer', 'In Progress', 'Awaiting Student', 'Resolved'];
 const FILTER_STATUS_MAP: Record<Exclude<QueueFilter, 'all'>, string[]> = {
   Submitted: ['Submitted'],
-  'Under Review': ['Under Review'],
-  Forwarded: ['Forwarded'],
+  'Received by HOD': ['Received by HOD'],
+  'Assigned to Lecturer': ['Assigned to Lecturer'],
   'In Progress': ['In Progress'],
   'Awaiting Student': ['Awaiting Student'],
   Resolved: ['Resolved', 'Closed'],
@@ -109,7 +109,7 @@ export default function StaffDashboard() {
       (acc, complaint) => {
         const label = getStatusLabel(complaint.display_status || complaint.status);
         acc.total += 1;
-        if (label === 'Submitted' || label === 'Under Review') acc.pending += 1;
+        if (['Submitted', 'Received by HOD', 'Assigned to Lecturer'].includes(label)) acc.pending += 1;
         if (label === 'In Progress') acc.inProgress += 1;
         if (label === 'Awaiting Student') acc.awaitingStudent += 1;
         if (label === 'Resolved') acc.resolved += 1;
@@ -139,10 +139,10 @@ export default function StaffDashboard() {
         <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
           <div className="h-12 w-1 rounded-full bg-[#2f2151]" />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6d7d88]">Staff Workspace</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6d7d88]">Lecturer Workspace</p>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
               <h2 className="text-[22px] font-semibold text-[#1f2937]">Assigned Complaint Cases</h2>
-              <span className="text-sm font-medium text-[#34b05a]">Review, update and close routed complaints</span>
+              <span className="text-sm font-medium text-[#34b05a]">Review, update and resolve complaints assigned to you by the HOD</span>
             </div>
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function StaffDashboard() {
 
                 <div className="flex items-center justify-end">
                   <Link
-                    to={`/dashboard/staff/complaints/${complaint.id}`}
+                    to={`/dashboard/lecturer/complaints/${complaint.id}`}
                     className="inline-flex items-center gap-2 rounded-[14px] bg-[#34b05a] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#2d9a4e]"
                   >
                     Open

@@ -7,6 +7,7 @@ import {
   ArrowRight,
   CheckCircle2,
   ChevronLeft,
+  Info,
   Loader2,
   Paperclip,
   Send,
@@ -25,49 +26,50 @@ const issueTypes = [
   'Marks / Results',
   'Tuition / Finance',
   'Exams',
-  'Lecturer / Staff conduct',
+  'Lecturer / Staff Conduct',
   'Registration',
   'ICT / Portal',
   'Welfare / Hostel',
   'Other',
 ] as const;
 
-const officeOptions = [
-  'Exams Office',
-  'Lecturer',
-  'Department',
-  'Finance',
-  'Registry',
-  'ICT',
-  'Welfare',
-  'Other Unit',
+const COMPLAINT_CHANNELS = [
+  'Portal Submission',
+  'In Person',
+  'Email',
+  'Phone Call',
+  'Referral from Lecturer',
+  'Referral from HOD',
 ] as const;
 
 const complaintSchema = z.object({
   issueTypes: z.array(z.enum(issueTypes)).min(1, 'Select at least one complaint type'),
-  facultyId: z.string().min(1, 'Select a school or faculty'),
-  departmentId: z.string().min(1, 'Select a department'),
-  relatedStaff: z.string().trim().max(120, 'Keep this field under 120 characters').optional(),
-  targetOffice: z.string().trim().max(80, 'Keep this field under 80 characters').optional(),
-  title: z.string().trim().min(8, 'Subject must be at least 8 characters').max(200, 'Subject must be under 200 characters'),
-  description: z.string().trim().min(60, 'Provide a detailed description with at least 60 characters').max(5000, 'Description is too long'),
+  complaintChannel: z.enum(COMPLAINT_CHANNELS),
+  relatedStaff: z.string().trim().max(120, 'Keep under 120 characters').optional(),
+  title: z.string().trim().min(8, 'Subject must be at least 8 characters').max(200, 'Under 200 characters'),
+  description: z
+    .string()
+    .trim()
+    .min(60, 'Provide a detailed description with at least 60 characters')
+    .max(5000, 'Description is too long'),
   incidentDate: z.string().min(1, 'Select the date of incident'),
-  desiredResolution: z.string().trim().min(20, 'Describe the desired resolution with at least 20 characters').max(800, 'Resolution details are too long'),
-  declaration: z.boolean().refine((value) => value === true, 'You must confirm the declaration'),
+  desiredResolution: z
+    .string()
+    .trim()
+    .min(20, 'Describe the desired resolution with at least 20 characters')
+    .max(800, 'Too long'),
+  declaration: z.boolean().refine((v) => v === true, 'You must confirm the declaration'),
 }).superRefine((data, ctx) => {
-  if (data.issueTypes.includes('Lecturer / Staff conduct') && !data.relatedStaff?.trim()) {
+  if (data.issueTypes.includes('Lecturer / Staff Conduct') && !data.relatedStaff?.trim()) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['relatedStaff'],
-      message: 'Provide the related lecturer or staff name for this complaint type',
+      message: 'Provide the name of the lecturer or staff member involved',
     });
   }
-
   if (data.incidentDate) {
     const incident = new Date(`${data.incidentDate}T00:00:00`);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     if (incident > today) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -79,15 +81,11 @@ const complaintSchema = z.object({
 });
 
 type ComplaintFormData = z.infer<typeof complaintSchema>;
-
-type Category = { id: number; name: string; description?: string };
-type Faculty = { id: number; name: string };
-type Department = { id: number; name: string; faculty_name: string };
+type Category = { id: number; name: string };
 
 function getFileExtension(filename: string) {
   const parts = filename.split('.');
-  if (parts.length < 2) return '';
-  return parts[parts.length - 1].toLowerCase();
+  return parts.length < 2 ? '' : parts[parts.length - 1].toLowerCase();
 }
 
 function getCategoryNameFromIssueType(issueType: (typeof issueTypes)[number]) {
@@ -95,19 +93,21 @@ function getCategoryNameFromIssueType(issueType: (typeof issueTypes)[number]) {
   if (issueType === 'Tuition / Finance') return 'financial';
   if (issueType === 'ICT / Portal') return 'technical';
   if (issueType === 'Welfare / Hostel') return 'hostel';
-  if (issueType === 'Lecturer / Staff conduct' || issueType === 'Registration') return 'administration';
+  if (issueType === 'Lecturer / Staff Conduct' || issueType === 'Registration') return 'administration';
   return 'other';
 }
 
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
+function mapIssueTypesToCategoryId(selected: ComplaintFormData['issueTypes'], categories: Category[]) {
+  const normalized = categories.reduce<Record<string, number>>((acc, c) => {
+    acc[c.name.toLowerCase()] = c.id;
+    return acc;
+  }, {});
+  const names = Array.from(new Set(selected.map(getCategoryNameFromIssueType)));
+  const name = names.length === 1 ? names[0] : 'other';
+  return normalized[name] || normalized.other || null;
+}
+
+function Section({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <section className="space-y-4 border-b border-slate-200 pb-8 last:border-b-0 last:pb-0">
       <div>
@@ -119,27 +119,51 @@ function Section({
   );
 }
 
-function mapIssueTypesToCategoryId(selectedIssueTypes: ComplaintFormData['issueTypes'], categories: Category[]) {
-  const normalized = categories.reduce<Record<string, number>>((acc, category) => {
-    acc[category.name.toLowerCase()] = category.id;
-    return acc;
-  }, {});
-
-  const categoryNames = Array.from(new Set(selectedIssueTypes.map(getCategoryNameFromIssueType)));
-  const categoryName = categoryNames.length === 1 ? categoryNames[0] : 'other';
-
-  return normalized[categoryName] || normalized.other || null;
+// Complaint Channeling Procedure info card
+function ChannelingProcedureCard() {
+  return (
+    <div className="overflow-hidden rounded-[20px] border border-[#c8e6d4] bg-gradient-to-br from-[#f0faf4] to-[#e8f8ee]">
+      <div className="flex gap-4 px-5 py-5">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-[#34b05a]/15 text-[#34b05a]">
+          <Info className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-[#1c3a25]">KIU Complaint Channeling Procedure</h3>
+          <p className="mt-1 text-sm leading-relaxed text-[#2f5e3c]">
+            Your complaint will be automatically forwarded to the Head of Department (HOD) of your registered department.
+            The HOD will review your complaint, assign it to the appropriate lecturer or staff member, and ensure it is
+            acted upon within the stipulated timeframe.
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {[
+              { step: '1', label: 'You submit', desc: 'Complaint is registered and sent to your HOD' },
+              { step: '2', label: 'HOD reviews', desc: 'HOD assigns the complaint to the right lecturer' },
+              { step: '3', label: 'Resolution', desc: 'Lecturer addresses and closes the complaint' },
+            ].map((item) => (
+              <div key={item.step} className="rounded-[14px] border border-[#bfe0cc] bg-white/60 px-3 py-3">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#34b05a] text-[11px] font-bold text-white">
+                  {item.step}
+                </span>
+                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1c3a25]">{item.label}</p>
+                <p className="mt-0.5 text-xs text-[#3a7a4e]">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function NewComplaint() {
   const navigate = useNavigate();
   const toast = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [studentDept, setStudentDept] = useState<{ departmentId: number; departmentName: string; facultyName: string } | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [submittedRef, setSubmittedRef] = useState('');
 
   const {
     register,
@@ -151,10 +175,8 @@ export default function NewComplaint() {
     resolver: zodResolver(complaintSchema),
     defaultValues: {
       issueTypes: [],
-      facultyId: '',
-      departmentId: '',
+      complaintChannel: 'Portal Submission',
       relatedStaff: '',
-      targetOffice: '',
       title: '',
       description: '',
       incidentDate: '',
@@ -164,22 +186,27 @@ export default function NewComplaint() {
   });
 
   const selectedIssueTypes = watch('issueTypes') || [];
-  const facultyId = watch('facultyId');
   const descriptionValue = watch('description') || '';
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     const fetchMeta = async () => {
       try {
-        const [categoriesRes, facultiesRes, departmentsRes] = await Promise.all([
-          api.get('/complaints/categories'),
-          api.get('/auth/faculties'),
-          api.get('/auth/departments'),
-        ]);
+        // Load categories
+        const catRes = await api.get('/complaints/categories');
+        setCategories(catRes.data.data || []);
 
-        setCategories(categoriesRes.data.data || []);
-        setFaculties(facultiesRes.data.data || []);
-        setDepartments(departmentsRes.data.data || []);
+        // Load student's own department from their profile
+        const deptRes = await api.get('/appointments/departments');
+        const payload = deptRes.data.data || {};
+        if (payload.profileLinked && payload.defaultDepartmentId && payload.departments?.length) {
+          const dept = payload.departments[0];
+          setStudentDept({
+            departmentId: dept.id,
+            departmentName: dept.name,
+            facultyName: dept.faculty_name,
+          });
+        }
       } catch {
         toast.error('Failed to load form options');
       }
@@ -187,71 +214,30 @@ export default function NewComplaint() {
     fetchMeta();
   }, [toast]);
 
-  const selectedFacultyName = faculties.find((faculty) => String(faculty.id) === facultyId)?.name;
-
-  const filteredDepartments = useMemo(() => {
-    if (!selectedFacultyName) return [];
-    return departments.filter((department) => department.faculty_name === selectedFacultyName);
-  }, [departments, selectedFacultyName]);
-
-  useEffect(() => {
-    setValue('departmentId', '');
-  }, [facultyId, setValue]);
-
   const toggleIssueType = (issueType: (typeof issueTypes)[number]) => {
-    const nextSelection = selectedIssueTypes.includes(issueType)
-      ? selectedIssueTypes.filter((item) => item !== issueType)
+    const next = selectedIssueTypes.includes(issueType)
+      ? selectedIssueTypes.filter((i) => i !== issueType)
       : [...selectedIssueTypes, issueType];
-
-    setValue('issueTypes', nextSelection, {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true,
-    });
+    setValue('issueTypes', next, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-
-    const incomingFiles = Array.from(e.target.files);
+    const incoming = Array.from(e.target.files);
     const rejected: string[] = [];
-
     setFiles((current) => {
       const next = [...current];
-
-      for (const file of incomingFiles) {
-        if (next.length >= MAX_FILES) {
-          rejected.push(`Maximum ${MAX_FILES} files allowed`);
-          break;
-        }
-
-        if (file.size > MAX_FILE_SIZE_BYTES) {
-          rejected.push(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB`);
-          continue;
-        }
-
+      for (const file of incoming) {
+        if (next.length >= MAX_FILES) { rejected.push(`Maximum ${MAX_FILES} files allowed`); break; }
+        if (file.size > MAX_FILE_SIZE_BYTES) { rejected.push(`${file.name} exceeds ${MAX_FILE_SIZE_MB}MB`); continue; }
         const ext = getFileExtension(file.name);
-        if (!ALLOWED_FILE_EXTENSIONS.includes(ext as (typeof ALLOWED_FILE_EXTENSIONS)[number])) {
-          rejected.push(`${file.name} has an unsupported file type`);
-          continue;
-        }
-
-        const duplicate = next.some((existing) => existing.name === file.name && existing.size === file.size);
-        if (duplicate) {
-          rejected.push(`${file.name} is already attached`);
-          continue;
-        }
-
+        if (!ALLOWED_FILE_EXTENSIONS.includes(ext as never)) { rejected.push(`${file.name} has an unsupported type`); continue; }
+        if (next.some((f) => f.name === file.name && f.size === file.size)) { rejected.push(`${file.name} already attached`); continue; }
         next.push(file);
       }
-
       return next;
     });
-
-    if (rejected.length > 0) {
-      toast.error(rejected[0]);
-    }
-
+    if (rejected.length > 0) toast.error(rejected[0]);
     e.target.value = '';
   };
 
@@ -261,49 +247,45 @@ export default function NewComplaint() {
 
   const onSubmit = async (data: ComplaintFormData) => {
     const categoryId = mapIssueTypesToCategoryId(data.issueTypes, categories);
-
     if (!categoryId) {
-      toast.error('Complaint categories are not configured correctly');
+      toast.error('Complaint categories are not configured. Please contact your administrator.');
+      return;
+    }
+    if (!studentDept) {
+      toast.error('Your student profile is not linked to a department. Please contact your administrator.');
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const facultyName = faculties.find((faculty) => String(faculty.id) === data.facultyId)?.name || '';
-      const departmentName = departments.find((department) => String(department.id) === data.departmentId)?.name || '';
       const composedDescription = [
         `Issue Types: ${data.issueTypes.join(', ')}`,
-        `School / Faculty: ${facultyName}`,
-        `Department: ${departmentName}`,
-        `Related Lecturer / Staff: ${data.relatedStaff?.trim() || 'Not specified'}`,
-        `Target Office: ${data.targetOffice?.trim() || 'Not specified'}`,
+        `Department: ${studentDept.departmentName}`,
+        `Faculty: ${studentDept.facultyName}`,
+        data.relatedStaff?.trim() ? `Related Lecturer/Staff: ${data.relatedStaff.trim()}` : '',
         `Date of Incident: ${data.incidentDate}`,
-        `Desired Resolution: ${data.desiredResolution.trim()}`,
         '',
-        'Complaint Details:',
+        '--- Complaint Details ---',
         data.description.trim(),
-      ].join('\n');
+        '',
+        '--- Desired Resolution ---',
+        data.desiredResolution.trim(),
+      ].filter((line, idx, arr) => !(line === '' && (idx === 0 || arr[idx - 1] === ''))).join('\n');
 
       const formData = new FormData();
       formData.append('title', data.title.trim());
       formData.append('categoryId', String(categoryId));
-      formData.append('departmentId', data.departmentId);
       formData.append('description', composedDescription);
+      formData.append('departmentId', String(studentDept.departmentId));
+      formData.append('complaintChannel', data.complaintChannel);
+      files.forEach((file) => formData.append('attachments', file));
 
-      files.forEach((file) => {
-        formData.append('attachments', file);
+      const response = await api.post('/complaints', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      await api.post('/complaints', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      toast.success('Complaint submitted successfully');
+      setSubmittedRef(response.data.data?.reference || '');
       setSuccess(true);
-      setTimeout(() => navigate('/dashboard/student/complaints'), 2200);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to submit complaint');
     } finally {
@@ -311,274 +293,318 @@ export default function NewComplaint() {
     }
   };
 
+  // Success screen
   if (success) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="mb-6 flex h-18 w-18 items-center justify-center rounded-full bg-[#34b05a]/10 text-[#34b05a]">
-          <CheckCircle2 className="h-10 w-10" />
+      <div className="flex min-h-[420px] flex-col items-center justify-center gap-6 rounded-[24px] border border-[#c8e6d4] bg-gradient-to-br from-[#f0faf4] to-[#e8f8ee] px-6 py-16 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#34b05a]/15">
+          <CheckCircle2 className="h-10 w-10 text-[#34b05a]" />
         </div>
-        <h2 className="text-3xl font-semibold text-slate-900">Complaint submitted</h2>
-        <button
-          onClick={() => navigate('/dashboard/student/complaints')}
-          className="mt-8 inline-flex items-center gap-2 rounded-[18px] bg-[#34b05a] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#2d9a4e]"
-        >
-          Open complaints
-          <ArrowRight className="h-4 w-4" />
-        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-[#1c3a25]">Complaint Submitted</h2>
+          <p className="mt-2 text-sm text-[#3a7a4e]">
+            Your complaint has been received and forwarded to your departmental HOD for review.
+          </p>
+          {submittedRef && (
+            <div className="mt-4 inline-block rounded-full bg-white/70 px-5 py-2.5 text-sm font-semibold text-[#2f5e3c] shadow-sm">
+              Reference: <span className="font-mono">{submittedRef}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/student/complaints')}
+            className="inline-flex items-center gap-2 rounded-[16px] bg-[#34b05a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#2d9a4e]"
+          >
+            View My Complaints <ArrowRight className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => { setSuccess(false); setFiles([]); }}
+            className="inline-flex items-center gap-2 rounded-[16px] border border-[#bfe0cc] bg-white px-6 py-3 text-sm font-semibold text-[#2f5e3c] transition hover:bg-white/70"
+          >
+            Submit Another
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-12">
-      <div className="flex flex-col gap-2">
+    <div className="space-y-6 pb-10">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-[#34b05a]"
+            className="mb-3 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-slate-700"
           >
-            <ChevronLeft className="h-4 w-4" />
-            Back
+            <ChevronLeft className="h-3.5 w-3.5" /> Back
           </button>
-          <h1 className="text-[30px] font-semibold text-slate-900">Submit Complaint</h1>
+          <h1 className="text-[22px] font-semibold text-[#1f2937]">Submit a Complaint</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Complete all sections below. Your complaint will be routed directly to your departmental HOD.
+          </p>
         </div>
+        {studentDept && (
+          <div className="rounded-[16px] border border-[#dfe5eb] bg-white px-4 py-3 text-right shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Your Department</p>
+            <p className="mt-0.5 text-sm font-semibold text-[#1f2937]">{studentDept.departmentName}</p>
+            <p className="text-xs text-slate-400">{studentDept.facultyName}</p>
+          </div>
+        )}
       </div>
 
-      <div className="app-card overflow-hidden">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 p-6 sm:p-7 lg:p-8">
-          <Section title="Complaint Type" subtitle="Select all that apply.">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {issueTypes.map((option) => {
-                const active = selectedIssueTypes.includes(option);
+      {/* Channeling procedure card */}
+      <ChannelingProcedureCard />
 
-                return (
-                  <label
-                    key={option}
-                    className={`flex cursor-pointer items-center justify-between rounded-[18px] border px-4 py-4 text-left transition ${
-                      active ? 'border-[#34b05a] bg-[#34b05a]/8 text-slate-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{option}</span>
-                    <input
-                      type="checkbox"
-                      checked={active}
-                      onChange={() => toggleIssueType(option)}
-                      className="h-4 w-4 rounded border-slate-300 text-[#34b05a] focus:ring-[#34b05a]"
-                    />
-                  </label>
-                );
-              })}
-            </div>
-            {errors.issueTypes && <p className="text-sm text-rose-600">{errors.issueTypes.message}</p>}
-          </Section>
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 rounded-[24px] border border-[#dfe5eb] bg-white p-6 shadow-[0_24px_52px_-40px_rgba(31,41,55,0.22)] sm:p-8">
 
-          <Section title="Complaint Context" subtitle="Add the relevant context.">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">School / Faculty</label>
-                <select
-                  {...register('facultyId')}
-                  className={`app-input ${errors.facultyId ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
+        {/* Section 1 — Complaint Channel */}
+        <Section
+          title="1. Complaint Channel"
+          subtitle="How is this complaint being submitted? Select the method that applies."
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {COMPLAINT_CHANNELS.map((channel) => {
+              const selected = watch('complaintChannel') === channel;
+              return (
+                <button
+                  key={channel}
+                  type="button"
+                  onClick={() => setValue('complaintChannel', channel, { shouldValidate: true })}
+                  className={`rounded-[16px] border px-4 py-3 text-left text-xs font-semibold transition ${
+                    selected
+                      ? 'border-[#34b05a] bg-[#34b05a]/8 text-[#34b05a] shadow-sm'
+                      : 'border-[#dfe5eb] bg-[#f8fafb] text-slate-500 hover:border-[#34b05a]/40 hover:text-[#34b05a]'
+                  }`}
                 >
-                  <option value="">Select school / faculty</option>
-                  {faculties.map((faculty) => (
-                    <option key={faculty.id} value={faculty.id}>
-                      {faculty.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.facultyId && <p className="text-sm text-rose-600">{errors.facultyId.message}</p>}
-              </div>
+                  {selected && <CheckCircle2 className="mb-1 h-3.5 w-3.5 text-[#34b05a]" />}
+                  {channel}
+                </button>
+              );
+            })}
+          </div>
+        </Section>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Department</label>
-                <select
-                  {...register('departmentId')}
-                  disabled={!selectedFacultyName}
-                  className={`app-input ${errors.departmentId ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''} ${!selectedFacultyName ? 'cursor-not-allowed bg-slate-50 text-slate-400' : ''}`}
+        {/* Section 2 — Nature of complaint */}
+        <Section
+          title="2. Nature of Complaint"
+          subtitle="Select all issue types that apply to your complaint."
+        >
+          <div className="flex flex-wrap gap-2.5">
+            {issueTypes.map((type) => {
+              const selected = selectedIssueTypes.includes(type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => toggleIssueType(type)}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                    selected
+                      ? 'border-[#2f2151] bg-[#2f2151] text-white'
+                      : 'border-[#dfe5eb] bg-white text-slate-600 hover:border-[#2f2151]/30 hover:text-[#2f2151]'
+                  }`}
                 >
-                  <option value="">Select department</option>
-                  {filteredDepartments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.departmentId && <p className="text-sm text-rose-600">{errors.departmentId.message}</p>}
-              </div>
+                  {selected && <CheckCircle2 className="h-3.5 w-3.5" />}
+                  {type}
+                </button>
+              );
+            })}
+          </div>
+          {errors.issueTypes && <p className="text-xs text-rose-500">{errors.issueTypes.message}</p>}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Related lecturer / staff</label>
-                <input
-                  type="text"
-                  {...register('relatedStaff')}
-                  placeholder="Name if relevant"
-                  className={`app-input ${errors.relatedStaff ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
-                />
-                {errors.relatedStaff && <p className="text-sm text-rose-600">{errors.relatedStaff.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Complaint target office</label>
-                <select {...register('targetOffice')} className="app-input">
-                  <option value="">Select target office if relevant</option>
-                  {officeOptions.map((office) => (
-                    <option key={office} value={office}>
-                      {office}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </Section>
-
-          <Section title="Complaint Details" subtitle="Provide the details.">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium text-slate-700">Subject / title</label>
-                <input
-                  type="text"
-                  {...register('title')}
-                  placeholder="Brief subject of the complaint"
-                  className={`app-input ${errors.title ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
-                />
-                {errors.title && <p className="text-sm text-rose-600">{errors.title.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Date of incident</label>
-                <input
-                  type="date"
-                  {...register('incidentDate')}
-                  max={today}
-                  className={`app-input ${errors.incidentDate ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
-                />
-                {errors.incidentDate && <p className="text-sm text-rose-600">{errors.incidentDate.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Desired resolution</label>
-                <input
-                  type="text"
-                  {...register('desiredResolution')}
-                  placeholder="What outcome are you requesting?"
-                  className={`app-input ${errors.desiredResolution ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
-                />
-                {errors.desiredResolution && <p className="text-sm text-rose-600">{errors.desiredResolution.message}</p>}
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-slate-700">Detailed description</label>
-                  <span className={`text-xs ${descriptionValue.length < 60 ? 'text-rose-500' : 'text-[#34b05a]'}`}>
-                    {descriptionValue.length}/60 minimum
-                  </span>
-                </div>
-                <textarea
-                  {...register('description')}
-                  rows={8}
-                  placeholder="Describe what happened, when it happened, and any relevant facts."
-                  className={`app-input min-h-[220px] resize-y py-4 ${errors.description ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : ''}`}
-                />
-                {errors.description && <p className="text-sm text-rose-600">{errors.description.message}</p>}
-              </div>
-            </div>
-          </Section>
-
-          <Section title="Attachments" subtitle="Upload supporting evidence if available.">
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <label className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center transition hover:border-[#34b05a]/50 hover:bg-white">
-                <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white text-slate-700 shadow-sm">
-                  <UploadCloud className="h-6 w-6" />
-                </div>
-                <p className="mt-4 text-base font-medium text-slate-900">Upload evidence</p>
-                <p className="mt-2 text-sm text-slate-500">PDF, JPG, PNG, DOC, DOCX</p>
-                <p className="mt-1 text-xs text-slate-400">{MAX_FILES} files max, {MAX_FILE_SIZE_MB}MB each</p>
-                <input
-                  type="file"
-                  className="hidden"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={handleFileChange}
-                />
+          {/* Related staff field — shown conditionally */}
+          {selectedIssueTypes.includes('Lecturer / Staff Conduct') && (
+            <div className="mt-4 space-y-1.5 animate-in fade-in duration-200">
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Name of Lecturer / Staff Involved <span className="text-rose-500">*</span>
               </label>
-
-              <div className="rounded-[20px] border border-slate-200 bg-white p-4">
-                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <Paperclip className="h-4 w-4 text-slate-500" />
-                  Attached files ({files.length}/{MAX_FILES})
-                </div>
-
-                {files.length > 0 ? (
-                  <div className="space-y-3">
-                    {files.map((file, index) => (
-                      <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          className="rounded-[14px] p-2 text-slate-400 transition hover:bg-white hover:text-rose-600"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex min-h-[150px] items-center justify-center rounded-[16px] border border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-500">
-                    No files attached
-                  </div>
-                )}
-              </div>
+              <input
+                type="text"
+                placeholder="Full name of the lecturer or staff member"
+                {...register('relatedStaff')}
+                className={`w-full rounded-[16px] border bg-[#f8fafb] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white ${
+                  errors.relatedStaff ? 'border-rose-300 bg-rose-50' : 'border-[#dfe5eb]'
+                }`}
+              />
+              {errors.relatedStaff && <p className="text-xs text-rose-500">{errors.relatedStaff.message}</p>}
             </div>
-          </Section>
+          )}
+        </Section>
 
-          <Section title="Declaration" subtitle="Confirm the information is accurate.">
-            <label className="flex items-start gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
+        {/* Section 3 — Complaint details */}
+        <Section
+          title="3. Complaint Details"
+          subtitle="Provide a clear subject and a full account of the issue, including relevant dates and context."
+        >
+          <div className="grid gap-5">
+            {/* Subject */}
+            <div className="space-y-1.5">
+              <label htmlFor="title" className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Subject / Title <span className="text-rose-500">*</span>
+              </label>
+              <input
+                id="title"
+                type="text"
+                placeholder="Brief description of the issue"
+                {...register('title')}
+                className={`w-full rounded-[16px] border bg-[#f8fafb] px-4 py-3 text-sm outline-none transition focus:border-[#34b05a] focus:bg-white ${
+                  errors.title ? 'border-rose-300 bg-rose-50' : 'border-[#dfe5eb]'
+                }`}
+              />
+              {errors.title && <p className="text-xs text-rose-500">{errors.title.message}</p>}
+            </div>
+
+            {/* Date of incident */}
+            <div className="space-y-1.5">
+              <label htmlFor="incidentDate" className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Date of Incident <span className="text-rose-500">*</span>
+              </label>
+              <input
+                id="incidentDate"
+                type="date"
+                max={today}
+                {...register('incidentDate')}
+                className={`w-full rounded-[16px] border bg-[#f8fafb] px-4 py-3 text-sm outline-none transition focus:border-[#34b05a] focus:bg-white ${
+                  errors.incidentDate ? 'border-rose-300 bg-rose-50' : 'border-[#dfe5eb]'
+                }`}
+              />
+              {errors.incidentDate && <p className="text-xs text-rose-500">{errors.incidentDate.message}</p>}
+            </div>
+
+            {/* Full description */}
+            <div className="space-y-1.5">
+              <div className="flex items-end justify-between">
+                <label htmlFor="description" className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Full Description <span className="text-rose-500">*</span>
+                </label>
+                <span className={`text-[11px] font-medium ${descriptionValue.trim().length < 60 ? 'text-amber-500' : 'text-slate-400'}`}>
+                  {descriptionValue.trim().length} / 5000
+                </span>
+              </div>
+              <textarea
+                id="description"
+                rows={7}
+                placeholder="Describe the issue in full detail — include all events, dates, people involved, and any steps you have already taken."
+                {...register('description')}
+                className={`w-full resize-y rounded-[16px] border bg-[#f8fafb] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white ${
+                  errors.description ? 'border-rose-300 bg-rose-50' : 'border-[#dfe5eb]'
+                }`}
+              />
+              {errors.description && <p className="text-xs text-rose-500">{errors.description.message}</p>}
+            </div>
+
+            {/* Desired resolution */}
+            <div className="space-y-1.5">
+              <label htmlFor="desiredResolution" className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Desired Resolution <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                id="desiredResolution"
+                rows={3}
+                placeholder="What outcome are you hoping for? Be specific."
+                {...register('desiredResolution')}
+                className={`w-full resize-y rounded-[16px] border bg-[#f8fafb] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white ${
+                  errors.desiredResolution ? 'border-rose-300 bg-rose-50' : 'border-[#dfe5eb]'
+                }`}
+              />
+              {errors.desiredResolution && <p className="text-xs text-rose-500">{errors.desiredResolution.message}</p>}
+            </div>
+          </div>
+        </Section>
+
+        {/* Section 4 — Attachments */}
+        <Section
+          title="4. Supporting Evidence"
+          subtitle={`Attach any relevant documents or screenshots (max ${MAX_FILES} files, ${MAX_FILE_SIZE_MB}MB each).`}
+        >
+          <div className="space-y-4">
+            <label
+              htmlFor="file-upload"
+              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-[18px] border-2 border-dashed border-[#dfe5eb] bg-[#f8fafb] px-6 py-8 transition hover:border-[#34b05a]/40 hover:bg-[#f4fcf6]"
+            >
+              <UploadCloud className="h-8 w-8 text-slate-300" />
+              <div className="text-center">
+                <p className="text-sm font-medium text-slate-600">Click to upload or drag and drop</p>
+                <p className="mt-1 text-xs text-slate-400">PDF, Word, JPG, PNG — up to {MAX_FILE_SIZE_MB}MB each</p>
+              </div>
+              <input
+                id="file-upload"
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={files.length >= MAX_FILES}
+              />
+            </label>
+
+            {files.length > 0 && (
+              <ul className="space-y-2">
+                {files.map((file, index) => (
+                  <li key={index} className="flex items-center justify-between rounded-[14px] border border-[#dfe5eb] bg-[#f8fafb] px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Paperclip className="h-4 w-4 shrink-0 text-slate-400" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-700">{file.name}</p>
+                        <p className="text-xs text-slate-400">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => removeFile(index)} className="ml-3 text-slate-400 transition hover:text-rose-500">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Section>
+
+        {/* Section 5 — Declaration */}
+        <Section
+          title="5. Declaration"
+          subtitle="Please read and confirm the declaration below before submitting."
+        >
+          <div className="rounded-[18px] border border-[#dfe5eb] bg-[#f8fafb] p-5">
+            <p className="text-sm leading-relaxed text-slate-600">
+              I, the undersigned, declare that the information provided in this complaint is true, complete, and accurate
+              to the best of my knowledge. I understand that providing false information may result in disciplinary action.
+              I also acknowledge that this complaint will be reviewed by the Head of Department of my registered department.
+            </p>
+            <label className="mt-4 flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
                 {...register('declaration')}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-[#34b05a] focus:ring-[#34b05a]"
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-[#34b05a]"
               />
-              <span className="text-sm leading-6 text-slate-600">
-                I confirm the information submitted is accurate to the best of my knowledge.
+              <span className="text-sm font-medium text-slate-700">
+                I confirm that all information provided is accurate and I agree to the KIU complaint policy.
               </span>
             </label>
-            {errors.declaration && <p className="text-sm text-rose-600">{errors.declaration.message}</p>}
-          </Section>
-
-          <div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="rounded-[18px] px-4 py-3 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-[#34b05a] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#2d9a4e] disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Submitting
-                </>
-              ) : (
-                <>
-                  Submit complaint
-                  <Send className="h-4 w-4" />
-                </>
-              )}
-            </button>
+            {errors.declaration && <p className="mt-2 text-xs text-rose-500">{errors.declaration.message}</p>}
           </div>
-        </form>
-      </div>
+        </Section>
+
+        {/* Submit */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-slate-400">
+            Fields marked <span className="text-rose-500">*</span> are required.
+          </p>
+          <button
+            id="submit-complaint"
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-2.5 rounded-[18px] bg-[#34b05a] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_16px_32px_-16px_rgba(52,176,90,0.55)] transition hover:bg-[#2d9a4e] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isSubmitting ? 'Submitting…' : 'Submit Complaint'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

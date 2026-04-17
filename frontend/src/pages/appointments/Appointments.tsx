@@ -84,7 +84,8 @@ export default function Appointments() {
   const [timeSlot, setTimeSlot] = useState(TIME_SLOTS[1]);
   const [isBooking, setIsBooking] = useState(false);
 
-  const isOfficeRole = user?.role === 'Admin' || user?.role === 'Staff' || user?.role === 'Department Officer';
+  // HOD manages availability; Lecturer and Student book appointments
+  const isHODRole = user?.role === 'HOD' || user?.role === 'SuperAdmin';
 
   const selectedContact = useMemo(
     () => contacts.find((contact) => String(contact.id) === selectedContactId) || null,
@@ -152,7 +153,7 @@ export default function Appointments() {
       setError('');
 
       try {
-        if (isOfficeRole && user) {
+        if (isHODRole && user) {
           await Promise.all([loadAvailability(user.id), loadAppointments()]);
         } else {
           await Promise.all([loadStudentDepartments(), loadAppointments()]);
@@ -165,13 +166,13 @@ export default function Appointments() {
     };
 
     initialise();
-  }, [isOfficeRole, user?.id]);
+  }, [isHODRole, user?.id]);
 
   useEffect(() => {
     if (!isOfficeRole && selectedDepartmentId) {
       loadContacts(selectedDepartmentId);
     }
-  }, [isOfficeRole, selectedDepartmentId]);
+  }, [isHODRole, selectedDepartmentId]);
 
   useEffect(() => {
     if (isOfficeRole && user) {
@@ -185,21 +186,20 @@ export default function Appointments() {
       setAvailability([]);
       setSelectedDate(null);
     }
-  }, [isOfficeRole, selectedContactId, user?.id]);
+  }, [isHODRole, selectedContactId, user?.id]);
 
   const handleBook = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!selectedDate || !selectedContactId || !selectedDepartmentId) {
-      toast.error('Select a department, contact, and date');
+    if (!selectedDate || !selectedContactId) {
+      toast.error('Select a date and HOD to book with');
       return;
     }
 
     setIsBooking(true);
     try {
       await api.post('/appointments', {
-        contactId: Number(selectedContactId),
-        departmentId: Number(selectedDepartmentId),
+        hodId: Number(selectedContactId),
         date: selectedDate.toISOString().split('T')[0],
         timeSlot,
         reason: reason.trim(),
@@ -209,7 +209,7 @@ export default function Appointments() {
       setSelectedDate(null);
       await Promise.all([
         loadAppointments(),
-        loadStudentDepartments(),
+        isHODRole ? loadAvailability(user!.id) : loadStudentDepartments(),
       ]);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to book appointment');
@@ -231,9 +231,7 @@ export default function Appointments() {
   const handleToggleAvailability = async (date: string, isAvailable: boolean) => {
     try {
       await api.put('/appointments/availability', { date, isAvailable });
-      if (user) {
-        await loadAvailability(user.id);
-      }
+      if (user) { await loadAvailability(user.id); }
       toast.success('Availability updated');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to update availability');
@@ -260,7 +258,7 @@ export default function Appointments() {
           title="Appointments unavailable"
           description={error}
           actionLabel="Open dashboard"
-          actionLink={user?.role === 'Admin' || user?.role === 'Department Officer' ? '/dashboard/admin' : isOfficeRole ? '/dashboard/staff' : '/dashboard/student'}
+          actionLink={isHODRole ? '/dashboard/hod' : '/dashboard/student'}
         />
       </div>
     );
@@ -271,18 +269,18 @@ export default function Appointments() {
       <section className="app-card px-5 py-5">
         <div className="app-page-header">
           <p className="app-page-kicker">Appointments</p>
-          <h1 className="app-page-title">{isOfficeRole ? 'Office Appointments' : 'Book Appointment'}</h1>
+          <h1 className="app-page-title">{isHODRole ? 'HOD Appointments' : 'Book Appointment'}</h1>
           <p className="app-page-subtitle">
-            {isOfficeRole
-              ? 'Manage your availability and respond to appointment requests.'
-              : 'Select your department, choose the office contact, and request a meeting.'}
+            {isHODRole
+              ? 'Manage your availability and respond to student appointment requests.'
+              : 'Select your HOD and request an appointment in your department.'}
           </p>
         </div>
       </section>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="space-y-5">
-          {!isOfficeRole && (
+          {!isHODRole && (
             <div className="app-card p-5">
               {!profileLinked && profileMessage ? (
                 <div className="mb-4 rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -357,11 +355,11 @@ export default function Appointments() {
             availableDates={availableDateStrings}
             onDateSelect={setSelectedDate}
             selectedDate={selectedDate}
-            mode={isOfficeRole ? 'office' : 'student'}
-            onToggleAvailability={isOfficeRole ? handleToggleAvailability : undefined}
+            mode={isHODRole ? 'office' : 'student'}
+            onToggleAvailability={isHODRole ? handleToggleAvailability : undefined}
           />
 
-          {!isOfficeRole && selectedContact && selectedDate && (
+          {!isHODRole && selectedContact && selectedDate && (
             <div className="app-card p-5 animate-in fade-in duration-300">
               <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
@@ -424,7 +422,7 @@ export default function Appointments() {
         </section>
 
         <aside className="space-y-5">
-          {!isOfficeRole && selectedContact && (
+          {!isHODRole && selectedContact && (
             <section className="app-card p-5">
               <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Selected office</h2>
               <div className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50 p-4">
@@ -441,9 +439,7 @@ export default function Appointments() {
 
           <section className="app-card overflow-hidden">
             <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                {isOfficeRole ? 'Requests' : 'My appointments'}
-              </h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">{isHODRole ? 'Appointment Requests' : 'My appointments'}</h2>
             </div>
 
             <div className="divide-y divide-slate-100">
@@ -463,7 +459,7 @@ export default function Appointments() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-slate-900">
-                            {isOfficeRole
+                            {isHODRole
                               ? `${appointment.student_first_name} ${appointment.student_last_name}`
                               : `${appointment.hod_first_name} ${appointment.hod_last_name}`}
                           </p>
@@ -483,7 +479,7 @@ export default function Appointments() {
 
                       <p className="mt-3 text-sm leading-6 text-slate-600">{appointment.reason}</p>
 
-                      {isOfficeRole && appointment.status === 'Pending' && (
+                      {isHODRole && appointment.status === 'Pending' && (
                         <div className="mt-4 flex gap-2">
                           <button
                             type="button"
@@ -508,8 +504,8 @@ export default function Appointments() {
                 <div className="p-4">
                   <EmptyState
                     icon={CalendarDays}
-                    title={isOfficeRole ? 'No assigned appointments' : 'No appointments'}
-                    description={isOfficeRole ? 'New student requests will appear here.' : 'Your upcoming and past appointments will appear here.'}
+                    title={isHODRole ? 'No appointment requests' : 'No appointments'}
+                    description={isHODRole ? 'Student appointment requests will appear here.' : 'Your upcoming and past appointments will appear here.'}
                   />
                 </div>
               )}

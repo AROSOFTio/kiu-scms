@@ -15,44 +15,49 @@ const generateReference = async (): Promise<string> => {
 };
 
 // @desc    Submit a new complaint
+// @route   POST /api/v1/complaints
 export const submitComplaint = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
-  const { title, categoryId, description, departmentId } = req.body;
+  const { title, categoryId, description, departmentId, complaintChannel } = req.body;
 
   try {
+    // 1. Resolve student profile — department is enforced from student record
     const studentProfile = await ensureStudentProfile(userId, departmentId);
     if (!studentProfile.profile) {
       const statusCode = studentProfile.status === 'invalid_department' ? 400 : 403;
-      return res.status(statusCode).json({
-        status: 'error',
-        message: studentProfile.message,
-      });
+      return res.status(statusCode).json({ status: 'error', message: studentProfile.message });
     }
     const studentId = studentProfile.profile.studentId;
     const resolvedDepartmentId = studentProfile.profile.departmentId;
 
+    // 2. Find the HOD of the student's department (role = 'HOD')
     const [hods]: any = await db.query(
-      `SELECT s.id as staff_id, u.id as user_id, u.first_name, u.last_name, r.name as role_name
+      `SELECT s.id AS staff_id, u.id AS user_id, u.first_name, u.last_name
        FROM staff s
        JOIN users u ON s.user_id = u.id
        JOIN roles r ON u.role_id = r.id
-       WHERE s.department_id = ? AND r.name IN ('Department Officer', 'Admin') AND u.is_active = 1
-       ORDER BY CASE WHEN r.name = 'Department Officer' THEN 0 ELSE 1 END, s.id`,
+       WHERE s.department_id = ? AND r.name = 'HOD' AND u.is_active = 1
+       LIMIT 1`,
       [resolvedDepartmentId]
     );
     const primaryHod = hods[0] || null;
 
     const reference = await generateReference();
 
-    // Insert complaint
+    // 3. Determine channel (default: Portal Submission)
+    const channel = complaintChannel || 'Portal Submission';
+
+    // 4. Insert complaint — routed directly to HOD, no staff assignment yet
     const [result]: any = await db.query(
-      `INSERT INTO complaints (student_id, category_id, department_id, title, description, priority, status, reference_number, assigned_staff_id)
-       VALUES (?, ?, ?, ?, ?, ?, 'Submitted', ?, ?)`,
-      [studentId, categoryId, resolvedDepartmentId, title, description, 'Medium', reference, primaryHod?.staff_id || null]
+      `INSERT INTO complaints
+         (student_id, category_id, department_id, title, description, complaint_channel,
+          priority, status, reference_number, received_by_hod_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'Medium', 'Submitted', ?, NOW())`,
+      [studentId, categoryId, resolvedDepartmentId, title, description, channel, reference]
     );
     const complaintId = result.insertId;
 
-    // Handle file attachments
+    // 5. Handle file attachments
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files as Express.Multer.File[]) {
         const relPath = `/uploads/${file.filename}`;
@@ -63,32 +68,47 @@ export const submitComplaint = async (req: Request, res: Response) => {
       }
     }
 
-    // Insert initial status history
+    // 6. Insert history: Submitted
     await db.query(
       `INSERT INTO complaint_status_history (complaint_id, status, changed_by_user_id, remarks)
-       VALUES (?, 'Submitted', ?, 'Complaint submitted by student')`,
+       VALUES (?, 'Submitted', ?, 'Complaint submitted by student via ${channel}')`,
       [complaintId, userId]
     );
 
-    // 1. Send in-app notification to student
+    // 7. Insert history: Received by HOD
+    if (primaryHod) {
+      await db.query(
+        `INSERT INTO complaint_status_history (complaint_id, status, changed_by_user_id, remarks)
+         VALUES (?, 'Received by HOD', ?, 'Complaint automatically routed to departmental HOD')`,
+        [complaintId, primaryHod.user_id]
+      );
+
+      // Update complaint status to Received by HOD
+      await db.query(
+        `UPDATE complaints SET status = 'Received by HOD' WHERE id = ?`,
+        [complaintId]
+      );
+    }
+
+    // 8. In-app notifications
     await NotificationService.sendInApp(
-      userId, 
-      'Complaint Received', 
-      `Your complaint ${reference} has been successfully submitted and is awaiting review.`
+      userId,
+      'Complaint Received',
+      `Your complaint ${reference} has been submitted and forwarded to your departmental HOD.`
     );
 
-    for (const hod of hods) {
+    if (primaryHod) {
       await NotificationService.sendInApp(
-        hod.user_id,
-        'Department Action: New Complaint',
-        `A new complaint ${reference} has been submitted for your department and requires HOD review.`
+        primaryHod.user_id,
+        'New Department Complaint',
+        `A new complaint (${reference}) has been submitted by a student in your department and requires your review.`
       );
     }
 
     res.status(201).json({
       status: 'success',
       message: 'Complaint submitted successfully',
-      data: { id: complaintId, reference }
+      data: { id: complaintId, reference },
     });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
@@ -96,6 +116,7 @@ export const submitComplaint = async (req: Request, res: Response) => {
 };
 
 // @desc    Get complaints for current student
+// @route   GET /api/v1/complaints
 export const getMyComplaints = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
   const { status, category, search, page = '1', limit = '10' } = req.query as any;
@@ -112,7 +133,10 @@ export const getMyComplaints = async (req: Request, res: Response) => {
 
     if (status) { where += ` AND ${displayStatusSql} = ?`; params.push(status); }
     if (category) { where += ' AND c.category_id = ?'; params.push(category); }
-    if (search) { where += ' AND (c.title LIKE ? OR c.reference_number LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
+    if (search) {
+      where += ' AND (c.title LIKE ? OR c.reference_number LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
 
     const [countRows]: any = await db.query(
       `SELECT COUNT(*) as total FROM complaints c ${where}`, params
@@ -120,11 +144,14 @@ export const getMyComplaints = async (req: Request, res: Response) => {
     const total = countRows[0].total;
 
     const [rows]: any = await db.query(
-      `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at, c.updated_at,
-              ${displayStatusSql} as display_status,
-              cc.name as category_name
+      `SELECT c.id, c.reference_number, c.title, c.status, c.priority,
+              c.complaint_channel, c.created_at, c.updated_at,
+              ${displayStatusSql} AS display_status,
+              cc.name AS category_name,
+              d.name AS department_name
        FROM complaints c
        JOIN complaint_categories cc ON c.category_id = cc.id
+       LEFT JOIN departments d ON c.department_id = d.id
        ${where}
        ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
       [...params, parseInt(limit), offset]
@@ -136,19 +163,25 @@ export const getMyComplaints = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get single complaint details with timeline
+// @desc    Get single complaint details with timeline (student view)
+// @route   GET /api/v1/complaints/:id
 export const getComplaintById = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
   const { id } = req.params;
 
   try {
     const [rows]: any = await db.query(
-      `SELECT c.*, cc.name as category_name,
-              u.first_name, u.last_name, u.email
+      `SELECT c.*, cc.name AS category_name,
+              d.name AS department_name,
+              u.first_name, u.last_name, u.email,
+              lu.first_name AS lecturer_first_name, lu.last_name AS lecturer_last_name
        FROM complaints c
        JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
+       LEFT JOIN departments d ON c.department_id = d.id
+       LEFT JOIN staff ast ON c.assigned_staff_id = ast.id
+       LEFT JOIN users lu ON ast.user_id = lu.id
        WHERE c.id = ? AND s.user_id = ?`,
       [id, userId]
     );
@@ -162,7 +195,7 @@ export const getComplaintById = async (req: Request, res: Response) => {
     );
 
     const [timeline]: any = await db.query(
-      `SELECT csh.*, u.first_name, u.last_name, r.name as role_name
+      `SELECT csh.*, u.first_name, u.last_name, r.name AS role_name
        FROM complaint_status_history csh
        JOIN users u ON csh.changed_by_user_id = u.id
        JOIN roles r ON u.role_id = r.id
@@ -177,15 +210,16 @@ export const getComplaintById = async (req: Request, res: Response) => {
         ...rows[0],
         display_status: timeline.length > 0 ? timeline[timeline.length - 1].status : rows[0].status,
         attachments,
-        timeline
-      }
+        timeline,
+      },
     });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
-// @desc    Get student dashboard stats
+// @desc    Get student dashboard statistics
+// @route   GET /api/v1/complaints/stats
 export const getStudentStats = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
   const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
@@ -195,25 +229,30 @@ export const getStudentStats = async (req: Request, res: Response) => {
     if (students.length === 0) return res.json({ status: 'success', data: {} });
     const studentId = students[0].id;
 
-    const [total]: any = await db.query('SELECT COUNT(*) as count FROM complaints WHERE student_id = ?', [studentId]);
+    const [total]: any = await db.query(
+      'SELECT COUNT(*) as count FROM complaints WHERE student_id = ?', [studentId]
+    );
     const [open]: any = await db.query(
-      `SELECT COUNT(*) as count
-       FROM complaints c
+      `SELECT COUNT(*) as count FROM complaints c
        WHERE c.student_id = ? AND ${displayStatusSql} NOT IN ('Resolved','Closed','Rejected')`,
-      [studentId],
+      [studentId]
     );
     const [resolved]: any = await db.query(
-      `SELECT COUNT(*) as count
-       FROM complaints c
+      `SELECT COUNT(*) as count FROM complaints c
        WHERE c.student_id = ? AND ${displayStatusSql} IN ('Resolved','Closed')`,
-      [studentId],
+      [studentId]
     );
     const [recent]: any = await db.query(
-      `SELECT c.id, c.reference_number, c.title, c.status, c.priority, c.created_at,
-              COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status) as display_status,
-              cc.name as category_name
-       FROM complaints c JOIN complaint_categories cc ON c.category_id = cc.id
-       WHERE c.student_id = ? ORDER BY c.created_at DESC LIMIT 5`,
+      `SELECT c.id, c.reference_number, c.title, c.status, c.priority,
+              c.complaint_channel, c.created_at,
+              COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status) AS display_status,
+              cc.name AS category_name,
+              d.name AS department_name
+       FROM complaints c
+       JOIN complaint_categories cc ON c.category_id = cc.id
+       LEFT JOIN departments d ON c.department_id = d.id
+       WHERE c.student_id = ?
+       ORDER BY c.created_at DESC LIMIT 5`,
       [studentId]
     );
 
@@ -223,8 +262,8 @@ export const getStudentStats = async (req: Request, res: Response) => {
         total: total[0].count,
         open: open[0].count,
         resolved: resolved[0].count,
-        recent
-      }
+        recent,
+      },
     });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
@@ -232,6 +271,7 @@ export const getStudentStats = async (req: Request, res: Response) => {
 };
 
 // @desc    Get complaint categories (public)
+// @route   GET /api/v1/complaints/categories
 export const getCategories = async (req: Request, res: Response) => {
   try {
     const [rows]: any = await db.query('SELECT id, name, description FROM complaint_categories ORDER BY name');
@@ -241,7 +281,8 @@ export const getCategories = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Submit feedback for a resolved complaint
+// @desc    Submit feedback for a resolved/closed complaint
+// @route   POST /api/v1/complaints/:id/feedback
 export const submitFeedback = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
   const { id } = req.params;
@@ -252,9 +293,8 @@ export const submitFeedback = async (req: Request, res: Response) => {
   }
 
   try {
-    // 1. Verify complaint belongs to student and is resolved/closed
     const [complaints]: any = await db.query(
-      `SELECT c.id, c.student_id 
+      `SELECT c.id, c.student_id
        FROM complaints c
        JOIN students s ON c.student_id = s.id
        WHERE c.id = ? AND s.user_id = ? AND c.status IN ('Resolved', 'Closed')`,
@@ -262,15 +302,14 @@ export const submitFeedback = async (req: Request, res: Response) => {
     );
 
     if (complaints.length === 0) {
-      return res.status(404).json({ 
-        status: 'error', 
-        message: 'Complaint not found or not in a state allowing feedback' 
+      return res.status(404).json({
+        status: 'error',
+        message: 'Complaint not found or not eligible for feedback',
       });
     }
 
     const studentId = complaints[0].student_id;
 
-    // 2. Insert feedback (using ON DUPLICATE KEY UPDATE since complaint_id is unique)
     await db.query(
       `INSERT INTO feedback (complaint_id, student_id, rating, comments)
        VALUES (?, ?, ?, ?)
@@ -284,7 +323,8 @@ export const submitFeedback = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get user notifications
+// @desc    Get in-app notifications for current user
+// @route   GET /api/v1/complaints/notifications
 export const getNotifications = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
 
@@ -299,7 +339,8 @@ export const getNotifications = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Mark notification as read
+// @desc    Mark a notification as read
+// @route   PATCH /api/v1/complaints/notifications/:id/read
 export const markNotificationAsRead = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
   const { id } = req.params;
@@ -315,7 +356,8 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get all public complaints for transparency board
+// @desc    Transparency board — scoped by role
+// @route   GET /api/v1/complaints/public
 export const getPublicComplaints = async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
   const roleId = (req as any).user.roleId;
@@ -324,61 +366,71 @@ export const getPublicComplaints = async (req: Request, res: Response) => {
     const [roles]: any = await db.query('SELECT name FROM roles WHERE id = ?', [roleId]);
     const roleName = roles.length > 0 ? roles[0].name : '';
 
-    let studentFilter = '';
+    let filter = '';
     const queryParams: any[] = [];
 
     if (roleName === 'Student') {
       const [students]: any = await db.query('SELECT id FROM students WHERE user_id = ?', [userId]);
       if (students.length > 0) {
-        studentFilter = 'WHERE c.student_id = ?';
+        filter = 'WHERE c.student_id = ?';
         queryParams.push(students[0].id);
       }
-    } else if (roleName === 'Admin') {
-      // HOD Faculty Filter: Restrict transparency board to their own faculty
-      const [staff]: any = await db.query(
-        'SELECT d.faculty_id FROM staff s JOIN departments d ON s.department_id = d.id WHERE s.user_id = ?',
-        [userId]
+    } else if (roleName === 'HOD') {
+      // HOD sees only their own department
+      const [staffRow]: any = await db.query(
+        'SELECT department_id FROM staff WHERE user_id = ?', [userId]
       );
-      if (staff.length > 0) {
-        studentFilter = 'WHERE c.department_id IN (SELECT id FROM departments WHERE faculty_id = ?)';
-        queryParams.push(staff[0].faculty_id);
+      if (staffRow.length > 0) {
+        filter = 'WHERE c.department_id = ?';
+        queryParams.push(staffRow[0].department_id);
+      } else {
+        filter = 'WHERE 1=0';
+      }
+    } else if (roleName === 'Lecturer') {
+      // Lecturer sees only assigned complaints
+      const [staffRow]: any = await db.query(
+        'SELECT id FROM staff WHERE user_id = ?', [userId]
+      );
+      if (staffRow.length > 0) {
+        filter = 'WHERE c.assigned_staff_id = ?';
+        queryParams.push(staffRow[0].id);
+      } else {
+        filter = 'WHERE 1=0';
       }
     }
+
     const [rows]: any = await db.query(
-      `SELECT c.id, c.reference_number, c.title, c.status, c.created_at, 
-              cc.name as category_name,
-              u.first_name as student_first_name, u.last_name as student_last_name,
-              (SELECT changed_at FROM complaint_status_history WHERE complaint_id = c.id AND status != 'Submitted' ORDER BY changed_at ASC LIMIT 1) as reviewed_at,
-              su.first_name as staff_first_name, su.last_name as staff_last_name
+      `SELECT c.id, c.reference_number, c.title, c.status, c.complaint_channel,
+              c.created_at, cc.name AS category_name,
+              d.name AS department_name,
+              u.first_name AS student_first_name, u.last_name AS student_last_name,
+              lu.first_name AS lecturer_first_name, lu.last_name AS lecturer_last_name
        FROM complaints c
        JOIN complaint_categories cc ON c.category_id = cc.id
        JOIN students s ON c.student_id = s.id
        JOIN users u ON s.user_id = u.id
+       LEFT JOIN departments d ON c.department_id = d.id
        LEFT JOIN staff ast ON c.assigned_staff_id = ast.id
-       LEFT JOIN users su ON ast.user_id = su.id
-       ${studentFilter}
+       LEFT JOIN users lu ON ast.user_id = lu.id
+       ${filter}
        ORDER BY c.created_at DESC`,
-       queryParams
+      queryParams
     );
 
     const [stats]: any = await db.query(
-      `SELECT cc.name as category, COUNT(c.id) as count 
-       FROM complaint_categories cc 
-       JOIN complaints c ON cc.id = c.category_id 
-       ${studentFilter}
+      `SELECT cc.name AS category, COUNT(c.id) AS count
+       FROM complaint_categories cc
+       JOIN complaints c ON cc.id = c.category_id
+       ${filter}
        GROUP BY cc.name`,
-       queryParams
+      queryParams
     );
 
-    res.json({ 
-      status: 'success', 
-      data: {
-        complaints: rows,
-        categoryStats: stats
-      } 
+    res.json({
+      status: 'success',
+      data: { complaints: rows, categoryStats: stats },
     });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }
 };
-

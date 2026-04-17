@@ -3,19 +3,22 @@ import Login from '../pages/auth/Login';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 
-// Foundational SCMS Pages
-// Foundational SCMS Pages
+// Student pages
 import StudentDashboard from '../pages/dashboard/StudentDashboard';
 import ComplaintList from '../pages/complaints/ComplaintList';
 import NewComplaint from '../pages/complaints/NewComplaint';
 import StudentComplaintDetail from '../pages/complaints/StudentComplaintDetail';
-import ComplaintQueue from '../pages/dashboard/ComplaintQueue';
-import StaffDashboard from '../pages/dashboard/StaffDashboard';
-import ComplaintWorkspace from '../pages/dashboard/ComplaintWorkspace';
 
-// Phase 5: Administrative Control Panel
+// HOD pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import ComplaintQueue from '../pages/dashboard/ComplaintQueue';
+import ComplaintWorkspace from '../pages/dashboard/ComplaintWorkspace';
 import ReportsOverview from '../pages/admin/ReportsOverview';
+
+// Lecturer pages
+import StaffDashboard from '../pages/dashboard/StaffDashboard';
+
+// Shared
 import Appointments from '../pages/appointments/Appointments';
 
 import { useAuth } from '../context/AuthContext';
@@ -25,18 +28,18 @@ function RoleRedirect() {
   const token = localStorage.getItem('token');
 
   if (!user && !token) return <Navigate to="/login" replace />;
-  
+
   if (!user) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
         <div className="h-10 w-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Resolving Identity...</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Resolving Identity…</p>
       </div>
     );
   }
 
-  if (user.role === 'Admin' || user.role === 'Department Officer') return <Navigate to="/dashboard/admin" replace />;
-  if (user.role === 'Staff') return <Navigate to="/dashboard/staff" replace />;
+  if (user.role === 'HOD' || user.role === 'SuperAdmin') return <Navigate to="/dashboard/hod" replace />;
+  if (user.role === 'Lecturer') return <Navigate to="/dashboard/lecturer" replace />;
   return <Navigate to="/dashboard/student" replace />;
 }
 
@@ -44,59 +47,79 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
-
       <Route path="/login" element={<Login />} />
 
-      {/* Protected Dashboard Routes */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <DashboardLayout />
-        </ProtectedRoute>
-      }>
+      {/* All dashboard routes share the layout */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Role dispatcher */}
         <Route index element={<RoleRedirect />} />
-        
-        {/* Common Routes */}
+
+        {/* ─────────────────────────────────────── STUDENT ── */}
+        <Route
+          path="student"
+          element={<ProtectedRoute allowedRoles={['Student']}><StudentDashboard /></ProtectedRoute>}
+        />
+        <Route
+          path="student/complaints"
+          element={<ProtectedRoute allowedRoles={['Student']}><ComplaintList /></ProtectedRoute>}
+        />
+        <Route
+          path="student/complaints/new"
+          element={<ProtectedRoute allowedRoles={['Student']}><NewComplaint /></ProtectedRoute>}
+        />
+        <Route
+          path="student/complaints/:id"
+          element={<ProtectedRoute allowedRoles={['Student']}><StudentComplaintDetail /></ProtectedRoute>}
+        />
+
+        {/* ─────────────────────────────────────── HOD ── */}
+        <Route
+          path="hod"
+          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><AdminDashboard /></ProtectedRoute>}
+        />
+        <Route
+          path="hod/complaints"
+          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><ComplaintQueue /></ProtectedRoute>}
+        />
+        <Route
+          path="hod/complaints/:id"
+          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><ComplaintWorkspace /></ProtectedRoute>}
+        />
+        <Route
+          path="hod/reports"
+          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><ReportsOverview /></ProtectedRoute>}
+        />
+
+        {/* Legacy /dashboard/admin/* → redirect to /dashboard/hod/* */}
+        <Route path="admin" element={<Navigate to="/dashboard/hod" replace />} />
+        <Route path="admin/complaints" element={<Navigate to="/dashboard/hod/complaints" replace />} />
+        <Route path="admin/complaints/:id" element={<Navigate to="/dashboard/hod" replace />} />
+        <Route path="admin/reports" element={<Navigate to="/dashboard/hod/reports" replace />} />
+
+        {/* ─────────────────────────────────────── LECTURER ── */}
+        <Route
+          path="lecturer"
+          element={<ProtectedRoute allowedRoles={['Lecturer']}><StaffDashboard /></ProtectedRoute>}
+        />
+        <Route
+          path="lecturer/complaints/:id"
+          element={<ProtectedRoute allowedRoles={['Lecturer']}><ComplaintWorkspace /></ProtectedRoute>}
+        />
+
+        {/* Legacy /dashboard/staff/* → redirect to /dashboard/lecturer/* */}
+        <Route path="staff" element={<Navigate to="/dashboard/lecturer" replace />} />
+        <Route path="staff/worklist" element={<Navigate to="/dashboard/lecturer" replace />} />
+        <Route path="staff/complaints/:id" element={<Navigate to="/dashboard/lecturer" replace />} />
+
+        {/* ─────────────────────────────────────── SHARED ── */}
         <Route path="appointments" element={<Appointments />} />
-        
-        {/* Student Routes */}
-        <Route path="student" element={
-          <ProtectedRoute allowedRoles={['Student']}><StudentDashboard /></ProtectedRoute>
-        } />
-        <Route path="student/complaints" element={
-          <ProtectedRoute allowedRoles={['Student']}><ComplaintList /></ProtectedRoute>
-        } />
-        <Route path="student/complaints/new" element={
-          <ProtectedRoute allowedRoles={['Student']}><NewComplaint /></ProtectedRoute>
-        } />
-        <Route path="student/complaints/:id" element={
-          <ProtectedRoute allowedRoles={['Student']}><StudentComplaintDetail /></ProtectedRoute>
-        } />
-        
-        {/* Administrative Management Routes */}
-        <Route path="admin" element={
-          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><AdminDashboard /></ProtectedRoute>
-        } />
-        <Route path="admin/complaints" element={
-          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><ComplaintQueue /></ProtectedRoute>
-        } />
-        <Route path="admin/complaints/:id" element={
-          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><ComplaintWorkspace /></ProtectedRoute>
-        } />
-        <Route path="admin/reports" element={
-          <ProtectedRoute allowedRoles={['Admin', 'Department Officer']}><ReportsOverview /></ProtectedRoute>
-        } />
-
-        {/* Staff Specific Routes */}
-        <Route path="staff" element={
-          <ProtectedRoute allowedRoles={['Staff']}><StaffDashboard /></ProtectedRoute>
-        } />
-        <Route path="staff/worklist" element={
-          <ProtectedRoute allowedRoles={['Staff']}><ComplaintQueue /></ProtectedRoute>
-        } />
-        <Route path="staff/complaints/:id" element={
-          <ProtectedRoute allowedRoles={['Staff']}><ComplaintWorkspace /></ProtectedRoute>
-        } />
-
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

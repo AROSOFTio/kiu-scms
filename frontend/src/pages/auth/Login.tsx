@@ -1,213 +1,200 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  AlertCircle,
-  ArrowRight,
-  BriefcaseBusiness,
-  Eye,
-  EyeOff,
-  GraduationCap,
-} from 'lucide-react';
+import { z } from 'zod';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
 const loginSchema = z.object({
-  identifier: z.string().min(1, 'Enter your KIU email, staff ID, or student number'),
+  identifier: z.string().min(1, 'Please enter your email or ID number'),
   password: z.string().min(1, 'Password is required'),
-  accessMode: z.enum(['Student', 'Staff']),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-const accessOptions: Array<{
-  value: LoginForm['accessMode'];
-  label: string;
-  icon: typeof GraduationCap;
-  hint: string;
-}> = [
-  {
-    value: 'Student',
-    label: 'Student',
-    icon: GraduationCap,
-    hint: 'Student account',
-  },
-  {
-    value: 'Staff',
-    label: 'Staff',
-    icon: BriefcaseBusiness,
-    hint: 'Lecturer / HOD',
-  },
-];
-
-const campusBackground = '/kiu-campus-login.jpg';
+function getRoleDashboard(role: string): string {
+  if (role === 'HOD') return '/dashboard/hod';
+  if (role === 'Lecturer') return '/dashboard/lecturer';
+  if (role === 'SuperAdmin') return '/dashboard/hod';
+  return '/dashboard/student';
+}
 
 export default function Login() {
+  const { login, user } = useAuth();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      accessMode: 'Student',
-      identifier: '',
-      password: '',
-    },
-  });
+  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
-  const accessMode = watch('accessMode');
+  // If already authenticated, redirect immediately
+  useEffect(() => {
+    if (user) navigate(getRoleDashboard(user.role), { replace: true });
+  }, [user, navigate]);
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (values: LoginForm) => {
     setApiError('');
-
     try {
-      const payload = {
-        identifier: data.identifier.trim(),
-        password: data.password,
-        role: data.accessMode === 'Student' ? 'Student' : undefined,
-      };
-
-      const res = await api.post('/auth/login', payload);
-
-      if (res.data.status === 'success') {
-        const { user, token } = res.data;
-        login(token, user);
-
-        if (user.role === 'Admin' || user.role === 'Department Officer') navigate('/dashboard/admin');
-        else if (user.role === 'Staff') navigate('/dashboard/staff');
-        else navigate('/dashboard/student');
-      }
+      const { data } = await api.post('/auth/login', {
+        identifier: values.identifier.trim(),
+        password: values.password,
+      });
+      login(data.token, data.user);
+      navigate(getRoleDashboard(data.user.role), { replace: true });
     } catch (err: any) {
-      setApiError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setApiError(err.response?.data?.message || 'Login failed. Please try again.');
     }
   };
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `linear-gradient(rgba(41,41,41,0.4), rgba(41,41,41,0.32)), url(${campusBackground})` }}
-    >
-      <div className="min-h-screen px-4 py-6 sm:px-6 lg:flex lg:items-center lg:justify-center lg:p-8">
-        <div className="animate-slide-up w-full max-w-[470px] overflow-hidden rounded-[24px] border border-white/25 bg-white shadow-[0_36px_80px_-42px_rgba(0,0,0,0.48)] backdrop-blur-[2px]">
-          <section className="border-b border-[#e4e8e5] bg-white px-8 pb-7 pt-7 text-center">
-            <div className="mx-auto mb-3 flex w-fit items-center justify-center bg-white px-4 py-2">
-              <img
-                src="/kiu-logo.png"
-                alt="Kampala International University"
-                className="h-[112px] w-auto max-w-[320px] object-contain"
-              />
-            </div>
-            <h1 className="text-[15px] font-semibold uppercase tracking-[0.18em] text-[#292929]">Student Complaint System</h1>
-            <p className="mt-1 text-sm text-[#5d655f]">Sign in to continue</p>
-            <div className="mt-4 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f1f4f2] p-1.5">
-              {accessOptions.map(({ value, label, icon: Icon, hint }) => {
-                const isActive = accessMode === value;
+    <div className="flex min-h-screen">
+      {/* Branding panel */}
+      <div className="hidden flex-col justify-between bg-[#1c1c1e] p-10 lg:flex lg:w-[44%]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-white p-2.5 shadow-sm">
+            <img src="/kiu-logo.png" alt="Kampala International University" className="h-full w-full object-contain" />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">KIU</p>
+            <p className="text-sm font-semibold text-white">Student Complaint System</p>
+          </div>
+        </div>
 
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setValue('accessMode', value, { shouldValidate: true })}
-                    className={`rounded-[14px] px-3 py-3 text-left transition-all duration-300 ${
-                      isActive ? 'bg-[#33b35a] text-white shadow-[0_18px_30px_-24px_rgba(51,179,90,0.65)]' : 'text-[#292929] hover:bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4" />
-                      <span className="text-sm font-semibold">{label}</span>
-                    </div>
-                    <p className={`mt-1 text-xs ${isActive ? 'text-white/90' : 'text-[#5d655f]'}`}>{hint}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+        <div>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2">
+            <ShieldCheck className="h-4 w-4 text-[#34b05a]" />
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">Secure Portal Access</span>
+          </div>
+          <h1 className="text-4xl font-bold leading-tight text-white">
+            KIU Complaint<br />Management
+          </h1>
+          <p className="mt-4 text-base leading-relaxed text-white/55">
+            A structured platform for students to formally lodge complaints and for departmental
+            HODs and Lecturers to review, assign, and resolve them efficiently.
+          </p>
 
-          <section className="bg-white px-8 py-7">
-            <div className="mb-5 text-center">
-              <p className="text-[14px] font-semibold text-[#292929]">
-                {accessMode === 'Student' ? 'Student login' : 'Staff login'}
+          <div className="mt-10 grid grid-cols-3 gap-4">
+            {[
+              { label: 'Faculties', value: '3' },
+              { label: 'Departments', value: '9' },
+              { label: 'Complaint Channel', value: '6' },
+            ].map((item) => (
+              <div key={item.label} className="rounded-[16px] border border-white/10 bg-white/6 p-4">
+                <p className="text-2xl font-bold text-white">{item.value}</p>
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="text-xs text-white/30">
+          © {new Date().getFullYear()} Kampala International University. All rights reserved.
+        </p>
+      </div>
+
+      {/* Login form */}
+      <div className="flex flex-1 items-center justify-center bg-[#f0f2f5] px-4 py-16 sm:px-8">
+        <div className="w-full max-w-[420px]">
+          {/* Mobile logo */}
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#1c1c1e] p-2">
+              <img src="/kiu-logo.png" alt="KIU" className="h-full w-full object-contain" />
+            </div>
+            <p className="text-base font-bold text-[#1c1c1e]">KIU SCMS</p>
+          </div>
+
+          <div className="rounded-[24px] border border-[#dde3ea] bg-white p-8 shadow-[0_28px_64px_-40px_rgba(17,17,17,0.22)]">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-[#1c1c1e]">Sign in</h2>
+              <p className="mt-1.5 text-sm text-slate-500">
+                Use your KIU email, student number, or staff number
               </p>
             </div>
 
             {apiError && (
-              <div className="mb-5 flex items-start gap-2 rounded-[18px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                <span>{apiError}</span>
+              <div className="mb-5 rounded-[16px] border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {apiError}
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-              <input type="hidden" {...register('accessMode')} />
-
-              <div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+              {/* Identifier */}
+              <div className="space-y-1.5">
+                <label htmlFor="identifier" className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Email / Student No. / Staff No.
+                </label>
                 <input
                   id="identifier"
                   type="text"
                   autoComplete="username"
+                  placeholder="e.g. student.cs1@student.kiu.ac.ug"
                   {...register('identifier')}
-                  className={`w-full rounded-[16px] border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#33b35a] focus:ring-4 focus:ring-[#33b35a]/10 ${
-                    errors.identifier ? 'border-red-500' : 'border-[#d6ddd8]'
-                  }`}
-                  placeholder={accessMode === 'Student' ? 'Email or registration number' : 'Email or staff ID'}
+                  className={`w-full rounded-[16px] border bg-[#f8fafb] px-4 py-3 text-sm text-slate-900 outline-none transition
+                    focus:border-[#34b05a] focus:bg-white
+                    ${errors.identifier ? 'border-rose-300 bg-rose-50' : 'border-[#dde3ea]'}`}
                 />
                 {errors.identifier && (
-                  <p className="mt-1.5 flex items-center text-xs text-red-500">
-                    <AlertCircle className="mr-1 h-3 w-3" />
-                    {errors.identifier.message}
-                  </p>
+                  <p className="text-xs text-rose-500">{errors.identifier.message}</p>
                 )}
               </div>
 
-              <div>
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Password
+                </label>
                 <div className="relative">
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
+                    placeholder="Enter your password"
                     {...register('password')}
-                    className={`w-full rounded-[16px] border bg-white px-4 py-3 pr-11 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#33b35a] focus:ring-4 focus:ring-[#33b35a]/10 ${
-                    errors.password ? 'border-red-500' : 'border-[#d6ddd8]'
-                  }`}
-                  placeholder="Password"
-                />
+                    className={`w-full rounded-[16px] border bg-[#f8fafb] px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition
+                      focus:border-[#34b05a] focus:bg-white
+                      ${errors.password ? 'border-rose-300 bg-rose-50' : 'border-[#dde3ea]'}`}
+                  />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280] transition hover:text-[#393836]"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:text-slate-700"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1.5 flex items-center text-xs text-red-500">
-                    <AlertCircle className="mr-1 h-3 w-3" />
-                    {errors.password.message}
-                  </p>
+                  <p className="text-xs text-rose-500">{errors.password.message}</p>
                 )}
               </div>
 
               <button
+                id="login-submit"
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#33b35a] px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#2d9a4e] hover:shadow-[0_16px_30px_rgba(51,179,90,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex w-full items-center justify-center gap-2.5 rounded-[16px] bg-[#34b05a] py-3.5 text-sm font-semibold text-white transition hover:bg-[#2d9a4e] focus:outline-none focus:ring-2 focus:ring-[#34b05a]/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? 'Signing in...' : 'Sign in'}
-                {!isSubmitting && <ArrowRight className="h-4 w-4" />}
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isSubmitting ? 'Signing in…' : 'Sign in'}
               </button>
             </form>
-          </section>
+
+            <div className="mt-6 rounded-[16px] border border-[#e8edf2] bg-[#f7f9fb] px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Demo accounts</p>
+              <div className="mt-2 space-y-1 text-xs text-slate-500">
+                <p><span className="font-medium text-slate-700">HOD:</span> hod.cs@kiu.ac.ug</p>
+                <p><span className="font-medium text-slate-700">Lecturer:</span> lec.cs@kiu.ac.ug</p>
+                <p><span className="font-medium text-slate-700">Student:</span> student.cs1@student.kiu.ac.ug</p>
+                <p className="pt-1 text-slate-400">Password: <span className="font-medium text-slate-500">Admin@123</span></p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

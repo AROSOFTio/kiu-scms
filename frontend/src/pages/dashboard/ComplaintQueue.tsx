@@ -47,11 +47,11 @@ const formatDate = (value: string) =>
 export default function ComplaintQueue() {
   const { user } = useAuth();
   const location = useLocation();
-  const isAdmin = user?.role === 'Admin';
-  const isDeptOfficer = user?.role === 'Department Officer';
-  const canRoute = isAdmin || isDeptOfficer;
-  const isAssignedQueue = location.pathname.includes('/staff');
-  const detailBasePath = canRoute ? '/dashboard/admin/complaints' : '/dashboard/staff/complaints';
+  const isHOD = user?.role === 'HOD' || user?.role === 'SuperAdmin';
+  const isLecturer = user?.role === 'Lecturer';
+  const canRoute = isHOD;
+  const isAssignedQueue = location.pathname.includes('/lecturer');
+  const detailBasePath = isHOD ? '/dashboard/hod/complaints' : '/dashboard/lecturer/complaints';
 
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
   const [staffList, setStaffList] = useState<StaffRecord[]>([]);
@@ -89,7 +89,7 @@ export default function ComplaintQueue() {
       if (search.trim()) params.search = search.trim();
       if (status) params.status = status;
       if (category) params.category = category;
-      if (!isAdmin && !isDeptOfficer) params.assignedToMe = 'true';
+      // Lecturers automatically get only their assigned complaints (backend scope)
 
       const response = await api.get('/admin/complaints', { params });
       setComplaints(response.data.data || []);
@@ -105,7 +105,7 @@ export default function ComplaintQueue() {
   useEffect(() => {
     const timer = window.setTimeout(loadQueue, 250);
     return () => window.clearTimeout(timer);
-  }, [search, status, category, page, isAdmin, isDeptOfficer]);
+  }, [search, status, category, page, isHOD, isLecturer]);
 
   useEffect(() => {
     setPage(1);
@@ -163,21 +163,21 @@ export default function ComplaintQueue() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#34b05a]">
-              {isAssignedQueue && !canRoute ? 'Assigned queue' : 'Complaint queue'}
+              {isHOD ? 'HOD Complaint Queue' : 'Assigned Queue'}
             </p>
             <h1 className="mt-2 text-3xl font-semibold text-slate-900">
-              {isAssignedQueue && !canRoute ? 'Assigned Complaints' : 'Complaint Queue'}
+              {isHOD ? 'Department Complaint Queue' : 'My Assigned Complaints'}
             </h1>
             <p className="mt-2 text-sm text-slate-500">
-              {canRoute ? 'Review, route, and monitor complaint progress.' : 'Work through complaints assigned to you.'}
+              {isHOD ? 'Review, assign to lecturers, and monitor department complaint progress.' : 'Work through complaints assigned to you by the HOD.'}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Visible', value: complaints.length },
-              { label: 'Submitted', value: currentStatuses.Submitted || 0 },
-              { label: 'Forwarded', value: currentStatuses.Forwarded || 0 },
+              { label: 'Total', value: complaints.length },
+              { label: 'Pending HOD', value: (currentStatuses['Received by HOD'] || 0) + (currentStatuses.Submitted || 0) },
+              { label: 'Assigned', value: currentStatuses['Assigned to Lecturer'] || 0 },
               { label: 'Resolved', value: (currentStatuses.Resolved || 0) + (currentStatuses.Closed || 0) },
             ].map((card) => (
               <div key={card.label} className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
@@ -241,7 +241,7 @@ export default function ComplaintQueue() {
           <span>Ref No</span>
           <span>Student</span>
           <span>Complaint</span>
-          <span>Routed To</span>
+          <span>Assigned Lecturer</span>
           <span>Status</span>
           <span className="text-right">Action</span>
         </div>
@@ -254,7 +254,7 @@ export default function ComplaintQueue() {
           ) : complaints.length ? (
             complaints.map((complaint) => {
               const currentStatus = complaint.display_status || complaint.status;
-              const assignedLabel = complaint.staff_first_name ? `${complaint.staff_first_name} ${complaint.staff_last_name}` : 'Not routed';
+              const assignedLabel = complaint.lecturer_first_name ? `${complaint.lecturer_first_name} ${complaint.lecturer_last_name}` : 'Unassigned';
 
               return (
                 <div
@@ -287,14 +287,14 @@ export default function ComplaintQueue() {
                   </div>
 
                   <div className="flex items-center justify-end gap-2">
-                    {canRoute && (
+                    {isHOD && (
                       <button
                         type="button"
                         onClick={() => openRouteModal(complaint)}
                         className="inline-flex items-center gap-2 rounded-[14px] border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-[#34b05a]/25 hover:text-[#34b05a]"
                       >
                         <Route className="h-3.5 w-3.5" />
-                        Route
+                        Assign
                       </button>
                     )}
                     <Link
@@ -349,7 +349,7 @@ export default function ComplaintQueue() {
       <Modal
         isOpen={isRouteModalOpen}
         onClose={() => setRouteModalOpen(false)}
-        title="Route Complaint"
+        title="Assign Complaint to Lecturer"
         footer={
           <>
             <button onClick={() => setRouteModalOpen(false)} className="px-6 py-3 text-slate-400 font-bold text-xs uppercase tracking-widest">
@@ -373,7 +373,7 @@ export default function ComplaintQueue() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Forward to</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Assign destination</label>
             <select
               value={targetUnit}
               onChange={(event) => setTargetUnit(event.target.value)}
@@ -401,7 +401,7 @@ export default function ComplaintQueue() {
           )}
 
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Assign staff or lecturer</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Select Lecturer</label>
             <select
               value={targetStaffId}
               onChange={(event) => setTargetStaffId(event.target.value)}

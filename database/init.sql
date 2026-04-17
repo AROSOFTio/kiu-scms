@@ -1,20 +1,33 @@
--- SCMS initial database schema
+-- ============================================================
+-- KIU Student Complaint Management System — Database Schema
+-- Roles: SuperAdmin | HOD | Lecturer | Student
+-- Faculties: SONAS | SOMAC | Education
+-- ============================================================
 
 CREATE DATABASE IF NOT EXISTS scms_db;
 USE scms_db;
 
+-- ---------------------------------------------------------------
+-- 1. Roles
+-- ---------------------------------------------------------------
 CREATE TABLE roles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ---------------------------------------------------------------
+-- 2. Faculties
+-- ---------------------------------------------------------------
 CREATE TABLE faculties (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ---------------------------------------------------------------
+-- 3. Departments
+-- ---------------------------------------------------------------
 CREATE TABLE departments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     faculty_id INT NOT NULL,
@@ -23,6 +36,9 @@ CREATE TABLE departments (
     FOREIGN KEY (faculty_id) REFERENCES faculties(id) ON DELETE CASCADE
 );
 
+-- ---------------------------------------------------------------
+-- 4. Users
+-- ---------------------------------------------------------------
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     role_id INT NOT NULL,
@@ -36,6 +52,9 @@ CREATE TABLE users (
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
+-- ---------------------------------------------------------------
+-- 5. Students (one department per student)
+-- ---------------------------------------------------------------
 CREATE TABLE students (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
@@ -46,6 +65,10 @@ CREATE TABLE students (
     FOREIGN KEY (department_id) REFERENCES departments(id)
 );
 
+-- ---------------------------------------------------------------
+-- 6. Staff (HODs and Lecturers — one department per person)
+-- role_id mirrors users.role_id for quick querying
+-- ---------------------------------------------------------------
 CREATE TABLE staff (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
@@ -57,6 +80,9 @@ CREATE TABLE staff (
     FOREIGN KEY (department_id) REFERENCES departments(id)
 );
 
+-- ---------------------------------------------------------------
+-- 7. Complaint Categories
+-- ---------------------------------------------------------------
 CREATE TABLE complaint_categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -64,6 +90,9 @@ CREATE TABLE complaint_categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ---------------------------------------------------------------
+-- 8. Complaints (Extended for proper lifecycle tracking)
+-- ---------------------------------------------------------------
 CREATE TABLE complaints (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
@@ -72,17 +101,45 @@ CREATE TABLE complaints (
     reference_number VARCHAR(20) NOT NULL UNIQUE,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
+    -- Complaint Channel: how the complaint was submitted
+    complaint_channel ENUM(
+        'Portal Submission',
+        'In Person',
+        'Email',
+        'Phone Call',
+        'Referral from Lecturer',
+        'Referral from HOD'
+    ) DEFAULT 'Portal Submission',
     priority ENUM('Low', 'Medium', 'High', 'Critical') DEFAULT 'Medium',
-    status ENUM('Draft', 'Submitted', 'Received', 'Under Review', 'Assigned', 'In Progress', 'Awaiting Student', 'Resolved', 'Closed', 'Rejected') DEFAULT 'Draft',
-    assigned_staff_id INT DEFAULT NULL,
+    status ENUM(
+        'Draft',
+        'Submitted',
+        'Received by HOD',
+        'Assigned to Lecturer',
+        'In Progress',
+        'Awaiting Student',
+        'Resolved',
+        'Closed',
+        'Rejected'
+    ) DEFAULT 'Draft',
+    -- Routing metadata
+    assigned_staff_id INT DEFAULT NULL,           -- staff.id of assigned Lecturer
+    assigned_by_user_id INT DEFAULT NULL,         -- users.id of HOD who assigned
+    resolved_by_user_id INT DEFAULT NULL,         -- users.id who marked resolved
+    received_by_hod_at TIMESTAMP NULL,            -- when HOD first received it
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES complaint_categories(id),
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
-    FOREIGN KEY (assigned_staff_id) REFERENCES staff(id) ON DELETE SET NULL
+    FOREIGN KEY (assigned_staff_id) REFERENCES staff(id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (resolved_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- ---------------------------------------------------------------
+-- 9. Complaint Attachments
+-- ---------------------------------------------------------------
 CREATE TABLE complaint_attachments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     complaint_id INT NOT NULL,
@@ -92,6 +149,9 @@ CREATE TABLE complaint_attachments (
     FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
 );
 
+-- ---------------------------------------------------------------
+-- 10. Complaint Status History (full lifecycle trail)
+-- ---------------------------------------------------------------
 CREATE TABLE complaint_status_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     complaint_id INT NOT NULL,
@@ -103,6 +163,9 @@ CREATE TABLE complaint_status_history (
     FOREIGN KEY (changed_by_user_id) REFERENCES users(id)
 );
 
+-- ---------------------------------------------------------------
+-- 11. Complaint Internal Notes
+-- ---------------------------------------------------------------
 CREATE TABLE complaint_internal_notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     complaint_id INT NOT NULL,
@@ -113,6 +176,9 @@ CREATE TABLE complaint_internal_notes (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- ---------------------------------------------------------------
+-- 12. Notifications
+-- ---------------------------------------------------------------
 CREATE TABLE notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -123,6 +189,9 @@ CREATE TABLE notifications (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- ---------------------------------------------------------------
+-- 13. Feedback
+-- ---------------------------------------------------------------
 CREATE TABLE feedback (
     id INT AUTO_INCREMENT PRIMARY KEY,
     complaint_id INT NOT NULL UNIQUE,
@@ -134,6 +203,9 @@ CREATE TABLE feedback (
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
+-- ---------------------------------------------------------------
+-- 14. Audit Logs
+-- ---------------------------------------------------------------
 CREATE TABLE audit_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -144,92 +216,91 @@ CREATE TABLE audit_logs (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- ---------------------------------------------------------------
+-- 15. System Settings
+-- ---------------------------------------------------------------
 CREATE TABLE system_settings (
     key_name VARCHAR(100) PRIMARY KEY,
     value TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Roles Seed Data
-INSERT INTO roles (name) VALUES ('Admin'), ('Staff'), ('Student'), ('Department Officer');
+-- ---------------------------------------------------------------
+-- 16. HOD Availability (appointment calendar)
+-- ---------------------------------------------------------------
+CREATE TABLE hod_availability (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hod_id INT NOT NULL,
+    available_date DATE NOT NULL,
+    start_time TIME DEFAULT '09:00:00',
+    end_time TIME DEFAULT '17:00:00',
+    is_available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_hod_date (hod_id, available_date),
+    FOREIGN KEY (hod_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
--- Faculties Seed Data
-INSERT INTO faculties (name) VALUES 
-  ('Faculty of Computing & Informatics'),
-  ('Faculty of Business & Management'),
-  ('Faculty of Science'),
-  ('Faculty of Education'),
-  ('Faculty of Health Sciences');
+-- ---------------------------------------------------------------
+-- 17. Appointments
+-- ---------------------------------------------------------------
+CREATE TABLE appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    hod_id INT NOT NULL,
+    appointment_date DATE NOT NULL,
+    time_slot VARCHAR(50) NOT NULL,
+    reason TEXT NOT NULL,
+    status ENUM('Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected') DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (hod_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
--- Departments Seed Data
-INSERT INTO departments (faculty_id, name) VALUES 
-  (1, 'Computer Science'),
-  (1, 'Information Technology'),
-  (1, 'Software Engineering'),
-  (2, 'Business Administration'),
-  (2, 'Accounting & Finance'),
-  (2, 'Marketing'),
-  (3, 'Mathematics'),
-  (3, 'Physics'),
-  (4, 'Education'),
-  (5, 'Nursing');
+-- ===============================================================
+-- SEED DATA
+-- ===============================================================
 
--- Complaint Categories Seed Data
-INSERT INTO complaint_categories (name, description) VALUES 
-  ('Academic', 'Issues related to lectures, exams, marks, and academic performance'),
-  ('Technical', 'Portal issues, WiFi, lab equipment, software problems'),
-  ('Hostel', 'Accommodation, utilities, room allocation complaints'),
-  ('Financial', 'Fee payments, bursaries, scholarships, refunds'),
-  ('Library', 'Books, resources, library access problems'),
-  ('Administration', 'Registration, documents, certificates, staff conduct'),
-  ('Other', 'General complaints not covered by other categories');
+-- Roles (id=1 SuperAdmin, id=2 HOD, id=3 Lecturer, id=4 Student)
+INSERT INTO roles (name) VALUES
+    ('SuperAdmin'),
+    ('HOD'),
+    ('Lecturer'),
+    ('Student');
 
--- Super Admin User Seed (password: Admin@1234)
--- bcrypt hash generated for "Admin@1234" with saltRounds=10
-INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES 
-  (1, 'HOD', '', 'admin@kiu.ac.ug', '$2b$10$rOzJqhiXH8vB5Y1L2K3M4ePQzXwA7bVnCgDsEfGhIjKlMnOpQrSt2', TRUE);
+-- Faculties (id=1 SONAS, id=2 SOMAC, id=3 Education)
+INSERT INTO faculties (name) VALUES
+    ('SONAS'),
+    ('SOMAC'),
+    ('Education');
 
--- Staff User Seed (password: Staff@1234)
-INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES 
-  (2, 'Michael', 'Staff', 'staff@kiu.ac.ug', '$2b$10$o.YV4lCq9/D6eI.e68vKzeW68XFqO3o9B7tW2Z1l8Vp7N.e9S4e5S', TRUE);
+-- Departments
+-- SONAS: id 1-3
+-- SOMAC: id 4-6
+-- Education: id 7-9
+INSERT INTO departments (faculty_id, name) VALUES
+    (1, 'Department of Environmental Management'),            -- id=1
+    (1, 'Department of Wildlife Management & Conservation'), -- id=2
+    (1, 'Department of Chemistry'),                          -- id=3
+    (2, 'Department of Computer Science'),                   -- id=4
+    (2, 'Department of Data Science and Analytics'),         -- id=5
+    (2, 'Department of Information Technology'),             -- id=6
+    (3, 'Department of Primary Education'),                  -- id=7
+    (3, 'Department of Secondary Education'),                -- id=8
+    (3, 'Department of Early Childhood Education');          -- id=9
 
--- Student User Seed (password: Student@1234)
-INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES 
-  (3, 'Sarah', 'Student', 'student@student.kiu.ac.ug', '$2b$10$C8.c.P9u9m4Xz6/D6vKzeO9/XFqO3o9B7tW2Z1l8Vp7N.e9S4e5S', TRUE);
-
--- Link users to Student/Staff tables
--- Get latest IDs (Admin=1, Staff=2, Student=3 in this sequence)
-INSERT INTO staff (user_id, staff_number, department_id) VALUES (2, 'STAFF/001/2026', 1);
-INSERT INTO students (user_id, student_number, department_id) VALUES (3, 'STUD/001/2026', 1);
+-- Complaint Categories
+INSERT INTO complaint_categories (name, description) VALUES
+    ('Academic',        'Issues related to lectures, exams, marks, and academic performance'),
+    ('Technical',       'Portal issues, WiFi, lab equipment, software problems'),
+    ('Hostel',          'Accommodation, utilities, room allocation complaints'),
+    ('Financial',       'Fee payments, bursaries, scholarships, refunds'),
+    ('Library',         'Books, resources, library access problems'),
+    ('Administration',  'Registration, documents, certificates, staff conduct'),
+    ('Other',           'General complaints not covered by other categories');
 
 -- System Settings
-INSERT INTO system_settings (key_name, value) VALUES 
-  ('system_name', 'KIU Student Complaint Management System'),
-  ('system_email', 'scms@kiu.ac.ug'),
-  ('max_file_size_mb', '10'),
-  ('allowed_file_types', 'pdf,jpg,jpeg,png,doc,docx');
--- 11. Seed Initial Roles
-INSERT IGNORE INTO roles (name) VALUES ('Admin'), ('Staff'), ('Student'), ('Department Officer');
-
--- 12. Seed Demo Data (Password: Admin@123)
-INSERT IGNORE INTO faculties (id, name) VALUES (1, 'Faculty of Computing and Informatics');
-INSERT IGNORE INTO departments (id, faculty_id, name) VALUES (1, 1, 'Computer Science');
-
--- Admin Account
-INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
-VALUES (1, 'HOD', '', 'admin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
-
--- Dept Officer
-INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
-VALUES (4, 'John', 'Officer', 'officer@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
-INSERT IGNORE INTO staff (user_id, staff_number, department_id, role_id) VALUES (2, 'OFF-001', 1, 4);
-
--- Regular Staff
-INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
-VALUES (2, 'Sarah', 'Staff', 'staff@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
-INSERT IGNORE INTO staff (user_id, staff_number, department_id, role_id) VALUES (3, 'STF-001', 1, 2);
-
--- Test Student
-INSERT IGNORE INTO users (role_id, first_name, last_name, email, password_hash) 
-VALUES (3, 'Enoch', 'Student', 'student@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW');
-INSERT IGNORE INTO students (user_id, student_number, department_id) VALUES (4, '2026/KIU/001', 1);
+INSERT INTO system_settings (key_name, value) VALUES
+    ('system_name',          'KIU Student Complaint Management System'),
+    ('system_email',         'scms@kiu.ac.ug'),
+    ('max_file_size_mb',     '10'),
+    ('allowed_file_types',   'pdf,jpg,jpeg,png,doc,docx');
