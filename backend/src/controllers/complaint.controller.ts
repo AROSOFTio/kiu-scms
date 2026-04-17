@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
 import { NotificationService } from '../services/notification.service';
+import { ensureStudentProfile } from '../services/student-profile.service';
 import path from 'path';
 
 // Helper: Generate reference number like KIU-CMP-2026-000123
@@ -16,21 +17,19 @@ const generateReference = async (): Promise<string> => {
 // @desc    Submit a new complaint
 export const submitComplaint = async (req: Request, res: Response) => {
   const userId = (req as any).user?.userId;
-  const { title, categoryId, description } = req.body;
+  const { title, categoryId, description, departmentId } = req.body;
 
   try {
-    // Get student record
-    const [students]: any = await db.query(
-      'SELECT id, department_id FROM students WHERE user_id = ?', [userId]
-    );
-    if (students.length === 0) {
-      return res.status(403).json({
+    const studentProfile = await ensureStudentProfile(userId, departmentId);
+    if (!studentProfile.profile) {
+      const statusCode = studentProfile.status === 'invalid_department' ? 400 : 403;
+      return res.status(statusCode).json({
         status: 'error',
-        message: 'This account is not linked to a student profile. Ask an administrator to create or link the student record.',
+        message: studentProfile.message,
       });
     }
-    const studentId = students[0].id;
-    const departmentId = students[0].department_id;
+    const studentId = studentProfile.profile.studentId;
+    const resolvedDepartmentId = studentProfile.profile.departmentId;
 
     const [hods]: any = await db.query(
       `SELECT s.id as staff_id, u.id as user_id, u.first_name, u.last_name, r.name as role_name
@@ -39,7 +38,7 @@ export const submitComplaint = async (req: Request, res: Response) => {
        JOIN roles r ON u.role_id = r.id
        WHERE s.department_id = ? AND r.name IN ('Department Officer', 'Admin') AND u.is_active = 1
        ORDER BY CASE WHEN r.name = 'Department Officer' THEN 0 ELSE 1 END, s.id`,
-      [departmentId]
+      [resolvedDepartmentId]
     );
     const primaryHod = hods[0] || null;
 
@@ -49,7 +48,7 @@ export const submitComplaint = async (req: Request, res: Response) => {
     const [result]: any = await db.query(
       `INSERT INTO complaints (student_id, category_id, department_id, title, description, priority, status, reference_number, assigned_staff_id)
        VALUES (?, ?, ?, ?, ?, ?, 'Submitted', ?, ?)`,
-      [studentId, categoryId, departmentId, title, description, 'Medium', reference, primaryHod?.staff_id || null]
+      [studentId, categoryId, resolvedDepartmentId, title, description, 'Medium', reference, primaryHod?.staff_id || null]
     );
     const complaintId = result.insertId;
 

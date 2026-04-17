@@ -1,20 +1,15 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import {
+    ensureStudentProfile,
+    findStudentProfile,
+    STUDENT_PROFILE_DEPARTMENT_MESSAGE,
+    STUDENT_PROFILE_MISSING_MESSAGE,
+} from '../services/student-profile.service';
 
 const getRoleName = async (roleId: number): Promise<string> => {
     const [rows]: any = await db.query('SELECT name FROM roles WHERE id = ?', [roleId]);
     return rows.length > 0 ? rows[0].name : '';
-};
-
-const getStudentScope = async (userId: number) => {
-    const [rows]: any = await db.query(
-        `SELECT s.id as student_id, s.department_id, d.faculty_id
-         FROM students s
-         JOIN departments d ON s.department_id = d.id
-         WHERE s.user_id = ?`,
-        [userId]
-    );
-    return rows.length > 0 ? rows[0] : null;
 };
 
 const getStaffScope = async (userId: number) => {
@@ -121,26 +116,47 @@ export const getStudentDepartments = async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
 
   try {
-    const scope = await getStudentScope(userId);
-    if (!scope) {
-      return res.status(403).json({ status: 'error', message: 'Only students can book appointments' });
+    const scope = await findStudentProfile(userId);
+
+    if (scope.profile) {
+      const [departments]: any = await db.query(
+        `SELECT d.id, d.name, d.faculty_id,
+                CASE WHEN d.id = ? THEN TRUE ELSE FALSE END as is_default
+         FROM departments d
+         WHERE d.faculty_id = ?
+         ORDER BY d.name`,
+        [scope.profile.departmentId, scope.profile.facultyId]
+      );
+
+      return res.json({
+        status: 'success',
+        data: {
+          facultyId: scope.profile.facultyId,
+          defaultDepartmentId: scope.profile.departmentId,
+          departments,
+          profileLinked: true,
+        }
+      });
     }
 
     const [departments]: any = await db.query(
       `SELECT d.id, d.name, d.faculty_id,
-              CASE WHEN d.id = ? THEN TRUE ELSE FALSE END as is_default
+              FALSE as is_default
        FROM departments d
-       WHERE d.faculty_id = ?
-       ORDER BY d.name`,
-      [scope.department_id, scope.faculty_id]
+       ORDER BY d.name`
     );
 
     res.json({
       status: 'success',
       data: {
-        facultyId: scope.faculty_id,
-        defaultDepartmentId: scope.department_id,
+        facultyId: null,
+        defaultDepartmentId: null,
         departments,
+        profileLinked: false,
+        profileMessage:
+          scope.status === 'invalid_department'
+            ? STUDENT_PROFILE_DEPARTMENT_MESSAGE
+            : STUDENT_PROFILE_MISSING_MESSAGE,
       }
     });
   } catch (err: any) {
@@ -152,13 +168,14 @@ export const getStudentDepartments = async (req: Request, res: Response) => {
 // @route   POST /api/v1/appointments
 export const bookAppointment = async (req: Request, res: Response) => {
   await ensureTablesExist();
-  const studentId = (req as any).user.userId;
+  const userId = (req as any).user.userId;
   const { hodId, contactId, departmentId, date, timeSlot, reason } = req.body;
 
   try {
-    const studentScope = await getStudentScope(studentId);
-    if (!studentScope) {
-      return res.status(403).json({ status: 'error', message: 'Only students can book appointments' });
+    const studentScope = await ensureStudentProfile(userId, departmentId);
+    if (!studentScope.profile) {
+      const statusCode = studentScope.status === 'invalid_department' ? 400 : 403;
+      return res.status(statusCode).json({ status: 'error', message: studentScope.message });
     }
 
     const targetContactId = contactId || hodId;
@@ -181,7 +198,7 @@ export const bookAppointment = async (req: Request, res: Response) => {
     }
 
     const contact = contacts[0];
-    if (contact.faculty_id !== studentScope.faculty_id) {
+    if (contact.faculty_id !== studentScope.profile.facultyId) {
       return res.status(403).json({ status: 'error', message: 'You can only book appointments within your faculty' });
     }
 
@@ -201,7 +218,7 @@ export const bookAppointment = async (req: Request, res: Response) => {
 
     await db.query(
       'INSERT INTO appointments (student_id, hod_id, appointment_date, time_slot, reason) VALUES (?, ?, ?, ?, ?)',
-      [studentId, targetContactId, date, timeSlot, reason]
+      [userId, targetContactId, date, timeSlot, reason]
     );
 
     res.status(201).json({ status: 'success', message: 'Appointment booked successfully' });
@@ -278,12 +295,23 @@ export const getHODs = async (req: Request, res: Response) => {
     const userId = (req as any).user.userId;
     const { departmentId } = req.query as any;
     try {
-        const scope = await getStudentScope(userId);
-        if (!scope) {
-            return res.status(403).json({ status: 'error', message: 'Only students can view appointment contacts' });
+        const scope = await findStudentProfile(userId);
+        const requestedDepartmentId = departmentId ? Number(departmentId) : null;
+        const targetDepartmentId = requestedDepartmentId || Number(scope.profile?.departmentId);
+
+        if (!Number.isInteger(targetDepartmentId) || targetDepartmentId <= 0) {
+            return res.status(400).json({ status: 'error', message: 'Select a department to view appointment contacts' });
         }
 
-        const targetDepartmentId = departmentId ? Number(departmentId) : Number(scope.department_id);
+        const [departmentRows]: any = await db.query(
+            'SELECT id, faculty_id FROM departments WHERE id = ? LIMIT 1',
+            [targetDepartmentId],
+        );
+        if (departmentRows.length === 0) {
+            return res.status(400).json({ status: 'error', message: 'Selected department is invalid' });
+        }
+
+        const targetFacultyId = scope.profile?.facultyId ?? departmentRows[0].faculty_id;
 
         let query = `
             SELECT u.id, u.first_name, u.last_name, r.name as role_name, d.id as department_id, d.name as department_name
@@ -294,7 +322,7 @@ export const getHODs = async (req: Request, res: Response) => {
             WHERE r.name IN ("Admin", "Department Officer", "Staff")
               AND d.faculty_id = ?
               AND d.id = ?`;
-        const params: any[] = [scope.faculty_id, targetDepartmentId];
+        const params: any[] = [targetFacultyId, targetDepartmentId];
 
         query += ' ORDER BY CASE WHEN r.name = "Admin" THEN 0 WHEN r.name = "Department Officer" THEN 1 ELSE 2 END, u.first_name';
 

@@ -288,6 +288,7 @@ export default function NewComplaint() {
       const formData = new FormData();
       formData.append('title', data.title.trim());
       formData.append('categoryId', String(categoryId));
+      formData.append('departmentId', data.departmentId);
       formData.append('description', composedDescription);
 
       files.forEach((file) => {

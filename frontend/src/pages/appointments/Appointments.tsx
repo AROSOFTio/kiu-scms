@@ -74,6 +74,8 @@ export default function Appointments() {
   const [contacts, setContacts] = useState<OfficeContact[]>([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [selectedContactId, setSelectedContactId] = useState('');
+  const [profileLinked, setProfileLinked] = useState(true);
+  const [profileMessage, setProfileMessage] = useState('');
 
   const [availability, setAvailability] = useState<AvailabilityRecord[]>([]);
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
@@ -106,13 +108,19 @@ export default function Appointments() {
 
   const loadStudentDepartments = async () => {
     const response = await api.get('/appointments/departments');
-    const departmentData = response.data.data?.departments || [];
-    const defaultDepartmentId = response.data.data?.defaultDepartmentId;
+    const payload = response.data.data || {};
+    const departmentData = payload.departments || [];
+    const defaultDepartmentId = payload.defaultDepartmentId;
+    const linked = payload.profileLinked !== false;
     setDepartments(departmentData);
+    setProfileLinked(linked);
+    setProfileMessage(payload.profileMessage || '');
     if (defaultDepartmentId) {
       setSelectedDepartmentId(String(defaultDepartmentId));
-    } else if (departmentData.length > 0) {
+    } else if (linked && departmentData.length > 0) {
       setSelectedDepartmentId(String(departmentData[0].id));
+    } else {
+      setSelectedDepartmentId('');
     }
   };
 
@@ -199,7 +207,10 @@ export default function Appointments() {
       toast.success('Appointment requested successfully');
       setReason('');
       setSelectedDate(null);
-      await loadAppointments();
+      await Promise.all([
+        loadAppointments(),
+        loadStudentDepartments(),
+      ]);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to book appointment');
     } finally {
@@ -273,6 +284,12 @@ export default function Appointments() {
         <section className="space-y-5">
           {!isOfficeRole && (
             <div className="app-card p-5">
+              {!profileLinked && profileMessage ? (
+                <div className="mb-4 rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {profileMessage}
+                </div>
+              ) : null}
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Department</label>
