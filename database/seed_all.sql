@@ -25,7 +25,24 @@ INSERT INTO departments (id, faculty_id, name) VALUES
 (4, 1, 'Data Science'),
 (5, 2, 'Business Admin');
 
--- 4. Demo Users (Password: Admin@123)
+-- 4. Complaint Categories
+INSERT INTO complaint_categories (name, description) VALUES
+    ('Academic',        'Issues related to lectures, exams, marks, and academic performance'),
+    ('Technical',       'Portal issues, WiFi, lab equipment, software problems'),
+    ('Hostel',          'Accommodation, utilities, room allocation complaints'),
+    ('Financial',       'Fee payments, bursaries, scholarships, refunds'),
+    ('Library',         'Books, resources, library access problems'),
+    ('Administration',  'Registration, documents, certificates, staff conduct'),
+    ('Other',           'General complaints not covered by other categories');
+
+-- 5. System Settings
+INSERT INTO system_settings (key_name, value) VALUES
+    ('system_name',          'KIU Student Complaint Management System'),
+    ('system_email',         'scms@kiu.ac.ug'),
+    ('max_file_size_mb',     '10'),
+    ('allowed_file_types',   'pdf,jpg,jpeg,png,doc,docx');
+
+-- 6. Demo Users (Password: Admin@123)
 -- All demo accounts here use Admin@123 hash for static SQL consistency.
 -- The node seeder (npm run seed) will generate the full 40+ user spread.
 

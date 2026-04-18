@@ -278,52 +278,10 @@ CREATE TABLE appointments (
     FOREIGN KEY (hod_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+
 -- ===============================================================
--- SEED DATA
+-- END OF SCHEMA
 -- ===============================================================
-
--- 1. Roles
-INSERT INTO roles (name) VALUES
-    ('SuperAdmin'),
-    ('HOD'),
-    ('Lecturer'),
-    ('Student'),
-    ('Registrar'),
-    ('Vice Chancellor'),
-    ('Quality Assurance'),
-    ('PRO');
-
--- 2. Faculties
-INSERT INTO faculties (id, name) VALUES
-    (1, 'Faculty of Computing & Informatics'),
-    (2, 'Faculty of Business');
-
--- 3. Departments
-INSERT INTO departments (id, faculty_id, name) VALUES
-    (1, 1, 'Computer Science'),
-    (2, 1, 'Information Technology'),
-    (3, 1, 'Software Engineering'),
-    (4, 1, 'Data Science'),
-    (5, 2, 'Business Admin');
-
--- 4. Complaint Categories
-INSERT INTO complaint_categories (name, description) VALUES
-    ('Academic',        'Issues related to lectures, exams, marks, and academic performance'),
-    ('Technical',       'Portal issues, WiFi, lab equipment, software problems'),
-    ('Hostel',          'Accommodation, utilities, room allocation complaints'),
-    ('Financial',       'Fee payments, bursaries, scholarships, refunds'),
-    ('Library',         'Books, resources, library access problems'),
-    ('Administration',  'Registration, documents, certificates, staff conduct'),
-    ('Other',           'General complaints not covered by other categories');
-
--- 5. System Settings
-INSERT INTO system_settings (key_name, value) VALUES
-    ('system_name',          'KIU Student Complaint Management System'),
-    ('system_email',         'scms@kiu.ac.ug'),
-    ('max_file_size_mb',     '10'),
-    ('allowed_file_types',   'pdf,jpg,jpeg,png,doc,docx');
-
--- Removed Initial Admin as per Top Management wipe request.
 -- ============================================================
 -- KIU SCMS â€” Full Demo Seed Data (Synchronized with seed.ts)
 -- Demo password for ALL accounts: Admin@123
@@ -351,7 +309,24 @@ INSERT INTO departments (id, faculty_id, name) VALUES
 (4, 1, 'Data Science'),
 (5, 2, 'Business Admin');
 
--- 4. Demo Users (Password: Admin@123)
+-- 4. Complaint Categories
+INSERT INTO complaint_categories (name, description) VALUES
+    ('Academic',        'Issues related to lectures, exams, marks, and academic performance'),
+    ('Technical',       'Portal issues, WiFi, lab equipment, software problems'),
+    ('Hostel',          'Accommodation, utilities, room allocation complaints'),
+    ('Financial',       'Fee payments, bursaries, scholarships, refunds'),
+    ('Library',         'Books, resources, library access problems'),
+    ('Administration',  'Registration, documents, certificates, staff conduct'),
+    ('Other',           'General complaints not covered by other categories');
+
+-- 5. System Settings
+INSERT INTO system_settings (key_name, value) VALUES
+    ('system_name',          'KIU Student Complaint Management System'),
+    ('system_email',         'scms@kiu.ac.ug'),
+    ('max_file_size_mb',     '10'),
+    ('allowed_file_types',   'pdf,jpg,jpeg,png,doc,docx');
+
+-- 6. Demo Users (Password: Admin@123)
 -- All demo accounts here use Admin@123 hash for static SQL consistency.
 -- The node seeder (npm run seed) will generate the full 40+ user spread.
 
