@@ -1,7 +1,7 @@
 -- ============================================================
 -- KIU Student Complaint Management System — Database Schema
--- Roles: SuperAdmin | HOD | Lecturer | Student
--- Faculties: SONAS | SOMAC | Education
+-- Roles: HOD | Lecturer | Student
+-- Faculties: Faculty of Computing & Informatics | Faculty of Business
 -- ============================================================
 
 -- Removed hardcoded USE statement for aaPanel compatibility

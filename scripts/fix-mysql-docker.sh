@@ -69,9 +69,9 @@ if [ -f "$ENV_FILE" ]; then
   source <(grep -E '^(DB_USER|DB_PASSWORD|DB_NAME)=' "$ENV_FILE")
 fi
 
-DB_USER="${DB_USER:-kiu-scms}"
-DB_PASSWORD="${DB_PASSWORD:-GzcWmMW38T5Zmrji}"
-DB_NAME="${DB_NAME:-kiu-scms}"
+DB_USER="${DB_USER:-kiu_scms}"
+DB_PASSWORD="${DB_PASSWORD:-CHANGE_ME_STRONG_PASSWORD}"
+DB_NAME="${DB_NAME:-kiu_scms}"
 
 mysql -u root -e "
 GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'172.%.%.%' IDENTIFIED BY '${DB_PASSWORD}';

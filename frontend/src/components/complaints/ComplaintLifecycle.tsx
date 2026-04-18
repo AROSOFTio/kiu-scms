@@ -2,8 +2,8 @@ import { CheckCircle2, Clock3, FileWarning, MessageSquareMore, Route, ShieldAler
 
 export const LIFECYCLE_STATUSES = [
   'Submitted',
-  'Under Review',
-  'Forwarded',
+  'Received by HOD',
+  'Assigned to Lecturer',
   'In Progress',
   'Awaiting Student',
   'Resolved',
@@ -42,9 +42,9 @@ export function getComplaintStatusTone(status?: string) {
   switch (resolveStatus(status)) {
     case 'Submitted':
       return 'border-slate-200 bg-slate-100 text-slate-700';
-    case 'Under Review':
+    case 'Received by HOD':
       return 'border-blue-100 bg-blue-50 text-blue-700';
-    case 'Forwarded':
+    case 'Assigned to Lecturer':
       return 'border-cyan-100 bg-cyan-50 text-cyan-700';
     case 'In Progress':
       return 'border-amber-100 bg-amber-50 text-amber-700';
@@ -65,9 +65,9 @@ export function getComplaintStatusIcon(status?: string) {
   switch (resolveStatus(status)) {
     case 'Submitted':
       return Clock3;
-    case 'Under Review':
+    case 'Received by HOD':
       return MessageSquareMore;
-    case 'Forwarded':
+    case 'Assigned to Lecturer':
       return Route;
     case 'In Progress':
       return FileWarning;
@@ -116,15 +116,15 @@ function describeStatusEvent(status: string, remarks: string, actor: string) {
         title: `Submitted by ${actor}`,
         summary: remarks || 'Complaint received and logged.',
       };
-    case 'Under Review':
+    case 'Received by HOD':
       return {
-        title: `Reviewed by ${actor}`,
-        summary: remarks || 'Complaint moved into review.',
+        title: `Received by HOD`,
+        summary: remarks || `Complaint acknowledged by ${actor}.`,
       };
-    case 'Forwarded':
+    case 'Assigned to Lecturer':
       return {
-        title: remarks.startsWith('Forwarded to') ? remarks.split('. ')[0] : `Forwarded by ${actor}`,
-        summary: remarks,
+        title: remarks.startsWith('Routed to') ? remarks.split('. ')[0] : `Assigned by ${actor}`,
+        summary: remarks || 'Complaint assigned to a lecturer for action.',
       };
     case 'In Progress':
       return {

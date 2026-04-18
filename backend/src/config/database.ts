@@ -16,9 +16,9 @@ const connectionOptions = hasDiscreteDbConfig
   ? {
       host: process.env.DB_HOST || 'localhost',
       port: Number(process.env.DB_PORT || 3306),
-      user: process.env.DB_USER || 'scms_user',
+      user: process.env.DB_USER || 'kiu_scms',
       password: process.env.DB_PASSWORD || 'scms_password',
-      database: process.env.DB_NAME || 'scms_db',
+      database: process.env.DB_NAME || 'kiu_scms',
     }
   : databaseUrl
   ? (() => {
@@ -35,9 +35,9 @@ const connectionOptions = hasDiscreteDbConfig
   : {
       host: 'localhost',
       port: 3306,
-      user: 'scms_user',
+      user: 'kiu_scms',
       password: 'scms_password',
-      database: 'scms_db',
+      database: 'kiu_scms',
     };
 
 export const db = mysql.createPool({

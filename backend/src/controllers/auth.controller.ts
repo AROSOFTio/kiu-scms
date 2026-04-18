@@ -51,7 +51,7 @@ export const loginUser = async (req: Request, res: Response) => {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        role: user.role_name,   // HOD | Lecturer | Student | SuperAdmin
+        role: user.role_name,   // HOD | Lecturer | Student
       },
     });
   } catch (err: any) {

@@ -1,54 +1,82 @@
 # KIU Student Complaint Management System (SCMS)
 
-The official KIU Student Complaint Management System repository for centralizing, managing, and tracking student complaints with robust role-based workflows and institutional notifications.
+KIU SCMS is a TypeScript monorepo for managing student complaints with a department-based academic workflow.
 
-## 🚀 Architecture
-This platform is a fully decoupled **TypeScript** monorepo:
-- **Frontend**: React + Vite, styled precisely with Tailwind CSS + Lucide Icons. Uses secure Redux/TanStack Context patterns.
-- **Backend API**: Node.js + Express, architected with modular middleware routing (JWT, Bcrypt) and pure MySQL2 promise mapping.
-- **Database**: MySQL 8.0 containing advanced relational tables measuring complaint workflows, staff assignments, and audit tracking.
-- **Infrastructure**: Ultra-secure multi-container Docker cluster isolating backend communication and proxy-passing exclusively via NGINX.
+## Stack
+
+- Frontend: React + Vite + Tailwind CSS
+- Backend: Node.js + Express + MySQL2
+- Database: MySQL 8
+- Deployment: Docker Compose + NGINX
+
+## Role Model
+
+This project now uses only these roles:
+
+- HOD
+- Lecturer
+- Student
+
+Seeded demo data is organized as:
+
+- 1 HOD per department
+- 5 Lecturers per department
+- 5 Students per department
+
+Departments included:
+
+- Computer Science
+- Information Technology
+- Software Engineering
+- Data Science
+- Business Admin
+
+## Database Setup
+
+For a fresh manual install in phpMyAdmin:
+
+1. Create the database `kiu_scms`
+2. Select that database
+3. Import [database/complete_install.sql](/d:/SYSTEMS/kiu_scms/database/complete_install.sql)
+
+That single SQL file creates the schema and inserts the full demo dataset.
 
 ## Production Deployment
-This repository is now prepared for an aaPanel deployment model where:
-- aaPanel manages the public website and reverse proxy
-- aaPanel MySQL is the production database
-- Docker only runs the application services
 
-Recommended server layout:
+Recommended server path:
+
+`/www/wwwroot/kiuscms.arosoft.io`
+
+Setup steps:
+
 1. Clone the repo into `/www/wwwroot/kiuscms.arosoft.io`
 2. Copy `.env.production.example` to `.env`
 3. Set the aaPanel MySQL credentials in `.env`
-4. Keep `FRONTEND_PORT=3001`
-5. Run:
-   ```bash
-   bash ./scripts/deploy.sh
-   ```
-6. In aaPanel, configure the site reverse proxy to:
-   ```text
-   http://127.0.0.1:3001
-   ```
-7. Import `database/init.sql` into the aaPanel MySQL database before first login
+4. Keep `VITE_API_URL=/api/v1`
+5. Run `bash scripts/deploy.sh`
+6. Point aaPanel reverse proxy to `http://127.0.0.1:3001`
 
-### Production Ports
-- **Frontend container host port**: `3001`
-- **Backend container**: internal-only on `5000`
-- **Database**: aaPanel-managed MySQL, typically `3306`
+## Useful Commands
 
-### Reverse Proxy
-Use the domain `kiuscms.arosoft.io` in aaPanel and forward traffic to:
-```text
-http://127.0.0.1:3001
+Production:
+
+```bash
+cd /www/wwwroot/kiuscms.arosoft.io
+git pull --ff-only origin main
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f backend
 ```
-The frontend container already proxies `/api/` and `/uploads/` to the backend container over Docker networking.
 
-## 💼 Role-Based Access Scopes
-SCMS utilizes precise JSON Web Token verification mapping to Database Access Controls.
-- **Students**: Create complaints, track real-time resolution metrics, withdraw tracking.
-- **Staff Resolvers**: View uniquely allocated complaints, transition statuses (Pending -> Under Review -> Resolved).
-- **Administrators**: Central insight across all institutional departments, direct staff assignment, system-wide management.
+Local development:
 
-## 🧹 Developer Tools
-To enforce automated CI/CD security:
-- Run `./scripts/backup.sh` to extract a secure zip snapshot of the production MySQL matrix using native `.env` configurations.
-- Run `./scripts/restore.sh <BACKUP_FILE>.sql.gz` to seamlessly format and rewrite table schemas.
+```bash
+docker compose up -d
+```
+
+Backend reseed on an existing database:
+
+```bash
+cd backend
+npm run seed
+```

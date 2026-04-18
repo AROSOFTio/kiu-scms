@@ -28,12 +28,12 @@ const router = Router();
 
 /**
  * Role definitions used throughout admin routes:
- *   FULL_ADMIN  — can do everything (HOD-level + SuperAdmin oversight)
+ *   FULL_ADMIN  — HOD-only management routes
  *   STAFF_READ  — all staff roles that can at least read/view
  *   Lecturer    — has limited write access only on assigned complaints
  */
-const FULL_ADMIN  = ['HOD', 'SuperAdmin'] as const;
-const STAFF_READ  = ['HOD', 'SuperAdmin', 'Lecturer'] as const;
+const FULL_ADMIN  = ['HOD'] as const;
+const STAFF_READ  = ['HOD', 'Lecturer'] as const;
 
 // ---------------------------------------------------------------
 // Dashboard
@@ -59,19 +59,19 @@ router.get('/complaints/:id',
   getComplaintById
 );
 
-// @route   PATCH /api/v1/admin/complaints/:id/assign   — HOD / SuperAdmin only
+// @route   PATCH /api/v1/admin/complaints/:id/assign   — HOD only
 router.patch('/complaints/:id/assign',
   requireAuth, requireRole([...FULL_ADMIN]),
   assignStaff
 );
 
-// @route   PATCH /api/v1/admin/complaints/:id/route    — HOD / SuperAdmin only
+// @route   PATCH /api/v1/admin/complaints/:id/route    — HOD only
 router.patch('/complaints/:id/route',
   requireAuth, requireRole([...FULL_ADMIN]),
   routeComplaint
 );
 
-// @route   PATCH /api/v1/admin/complaints/:id/status   — HOD / SuperAdmin / Lecturer
+// @route   PATCH /api/v1/admin/complaints/:id/status   — HOD / Lecturer
 router.patch('/complaints/:id/status',
   requireAuth, requireRole([...STAFF_READ]),
   updateStatus
@@ -99,7 +99,7 @@ router.get('/staff',
 );
 
 // ---------------------------------------------------------------
-// User Management — HOD / SuperAdmin only
+// User Management — HOD only
 // ---------------------------------------------------------------
 // @route   GET /api/v1/admin/users
 router.get('/users',
@@ -139,7 +139,7 @@ router.put('/settings',
 );
 
 // ---------------------------------------------------------------
-// Audit Logs — HOD / SuperAdmin only
+// Audit Logs — HOD only
 // ---------------------------------------------------------------
 router.get('/audit-logs',
   requireAuth, requireRole([...FULL_ADMIN]),

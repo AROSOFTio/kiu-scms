@@ -3,6 +3,9 @@ import bcrypt from 'bcrypt';
 import { db } from '../config/database';
 import { NotificationService } from '../services/notification.service';
 
+const MANAGEABLE_ROLE_NAMES = ['HOD', 'Lecturer', 'Student'];
+const STAFF_ROLE_NAMES = ['HOD', 'Lecturer'];
+
 // ===========================================================
 // HELPERS
 // ===========================================================
@@ -43,6 +46,29 @@ const verifyHODComplaintScope = async (
     [complaintId, departmentId]
   );
   return rows.length > 0;
+};
+
+const verifyStaffComplaintScope = async (
+  userId: number,
+  roleName: string,
+  complaintId: number
+): Promise<boolean> => {
+  if (roleName === 'HOD') {
+    return verifyHODComplaintScope(userId, roleName, complaintId);
+  }
+
+  if (roleName === 'Lecturer') {
+    const [rows]: any = await db.query(
+      `SELECT 1
+       FROM complaints c
+       JOIN staff st ON c.assigned_staff_id = st.id
+       WHERE c.id = ? AND st.user_id = ?`,
+      [complaintId, userId]
+    );
+    return rows.length > 0;
+  }
+
+  return false;
 };
 
 /**
@@ -172,11 +198,10 @@ export const getComplaintById = async (req: Request, res: Response) => {
   const roleName = (req as any).user?.roleName;
 
   try {
-    // Department-level scope check for HOD
-    if (!await verifyHODComplaintScope(userId, roleName, parseInt(id))) {
+    if (!await verifyStaffComplaintScope(userId, roleName, parseInt(id))) {
       return res.status(403).json({
         status: 'error',
-        message: 'Forbidden: You can only view complaints in your department.',
+        message: 'Forbidden: You can only view complaints in your allowed queue.',
       });
     }
 
@@ -185,6 +210,7 @@ export const getComplaintById = async (req: Request, res: Response) => {
               cc.name AS category_name,
               d.name AS department_name,
               u.first_name AS student_first_name, u.last_name AS student_last_name, u.email AS student_email,
+              ast.user_id AS assigned_staff_user_id,
               lu.first_name AS lecturer_first_name, lu.last_name AS lecturer_last_name,
               abu.first_name AS assigned_by_first, abu.last_name AS assigned_by_last,
               f.rating AS feedback_rating, f.comments AS feedback_comments, f.created_at AS feedback_date
@@ -484,23 +510,20 @@ export const updateStatus = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get dashboard stats (HOD / Lecturer / SuperAdmin)
+// @desc    Get dashboard stats (HOD / Lecturer)
 // @route   GET /api/v1/admin/dashboard
 export const getAdminStats = async (req: Request, res: Response) => {
   const userId   = (req as any).user?.userId;
   const roleName = (req as any).user?.roleName;
 
-  // Roles that bypass department scoping — they see all complaints
-  const SUPER_ROLES = ['SuperAdmin', 'Registrar', 'Vice Chancellor', 'Quality Assurance', 'PRO'];
-
   try {
     /**
      * filterSQL   — used in simple "WHERE <column> = ?" (no table alias)
      * scopedFilter — used where the complaints table is aliased as "c."
-     * Both default to '1=1' (no restriction) for SuperAdmin / full-access roles.
+     * Both default to fail-closed restrictions until a valid staff role is applied.
      */
-    let filterSQL    = '1=1';
-    let scopedFilter = '1=1';
+    let filterSQL    = '1=0';
+    let scopedFilter = '1=0';
     let filterParam: any = null;
 
     if (roleName === 'HOD') {
@@ -518,8 +541,6 @@ export const getAdminStats = async (req: Request, res: Response) => {
       scopedFilter = 'c.assigned_staff_id = (SELECT id FROM staff WHERE user_id = ? LIMIT 1)';
       filterParam  = userId;
     }
-    // SuperAdmin / Registrar / VC / QA / PRO → filterSQL='1=1', scopedFilter='1=1' (sees everything)
-
     const params = filterParam !== null ? [filterParam] : [];
     const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
@@ -571,13 +592,6 @@ export const getAdminStats = async (req: Request, res: Response) => {
         );
         unassigned = ua[0].count;
       }
-    } else if (SUPER_ROLES.includes(roleName)) {
-      const [ua]: any = await db.query(
-        `SELECT COUNT(*) AS count FROM complaints
-         WHERE assigned_staff_id IS NULL
-           AND status NOT IN ('Resolved','Closed','Rejected')`
-      );
-      unassigned = ua[0].count;
     }
 
     // Recent activity (scoped)
@@ -640,12 +654,20 @@ export const addInternalNote = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { note } = req.body;
   const userId = (req as any).user?.userId;
+  const roleName = (req as any).user?.roleName;
 
   if (!note) {
     return res.status(400).json({ status: 'error', message: 'Note content is required' });
   }
 
   try {
+    if (!await verifyStaffComplaintScope(userId, roleName, parseInt(id))) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: You can only add notes to complaints in your allowed queue.',
+      });
+    }
+
     await db.query(
       'INSERT INTO complaint_internal_notes (complaint_id, user_id, note) VALUES (?, ?, ?)',
       [id, userId, note]
@@ -660,8 +682,17 @@ export const addInternalNote = async (req: Request, res: Response) => {
 // @route   GET /api/v1/admin/complaints/:id/notes
 export const getInternalNotes = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const userId = (req as any).user?.userId;
+  const roleName = (req as any).user?.roleName;
 
   try {
+    if (!await verifyStaffComplaintScope(userId, roleName, parseInt(id))) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: You can only view notes for complaints in your allowed queue.',
+      });
+    }
+
     const [rows]: any = await db.query(
       `SELECT cin.*, u.first_name, u.last_name
        FROM complaint_internal_notes cin
@@ -691,6 +722,9 @@ export const getAllUsers = async (req: Request, res: Response) => {
   try {
     let where = 'WHERE 1=1';
     const params: any[] = [];
+
+    where += ` AND r.name IN (${MANAGEABLE_ROLE_NAMES.map(() => '?').join(',')})`;
+    params.push(...MANAGEABLE_ROLE_NAMES);
 
     // HOD sees only users in their department
     if (adminRole === 'HOD') {
@@ -750,9 +784,12 @@ export const createUser = async (req: Request, res: Response) => {
   const { roleName, firstName, lastName, email, password, idNumber, departmentId } = req.body;
   const adminId = (req as any).user?.userId;
   const adminRole = (req as any).user?.roleName;
-  const staffRoles = ['HOD', 'Lecturer'];
 
   try {
+    if (!MANAGEABLE_ROLE_NAMES.includes(roleName)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid role. Use: HOD, Lecturer, or Student' });
+    }
+
     // Scope: HOD can only create users in their own department
     if (adminRole === 'HOD' && departmentId) {
       const hodDeptId = await getHODDepartmentId(adminId);
@@ -801,7 +838,7 @@ export const createUser = async (req: Request, res: Response) => {
         'INSERT INTO students (user_id, student_number, department_id) VALUES (?, ?, ?)',
         [userId, idNumber, departmentId]
       );
-    } else if (staffRoles.includes(roleName) && idNumber && departmentId) {
+    } else if (STAFF_ROLE_NAMES.includes(roleName) && idNumber && departmentId) {
       await db.query(
         'INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
         [userId, idNumber, departmentId, roleId]
@@ -829,9 +866,12 @@ export const updateUser = async (req: Request, res: Response) => {
   const { firstName, lastName, email, roleName, idNumber, departmentId } = req.body;
   const adminId = (req as any).user?.userId;
   const adminRole = (req as any).user?.roleName;
-  const staffRoles = ['HOD', 'Lecturer'];
 
   try {
+    if (!MANAGEABLE_ROLE_NAMES.includes(roleName)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid role. Use: HOD, Lecturer, or Student' });
+    }
+
     if (!await verifyHODUserScope(adminId, adminRole, parseInt(id))) {
       return res.status(403).json({
         status: 'error',
@@ -868,7 +908,7 @@ export const updateUser = async (req: Request, res: Response) => {
          ON DUPLICATE KEY UPDATE student_number = ?, department_id = ?`,
         [id, idNumber, departmentId, idNumber, departmentId]
       );
-    } else if (staffRoles.includes(roleName) && idNumber && departmentId) {
+    } else if (STAFF_ROLE_NAMES.includes(roleName) && idNumber && departmentId) {
       await db.query('DELETE FROM students WHERE user_id = ?', [id]);
       await db.query(
         `INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)

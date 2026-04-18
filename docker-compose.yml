@@ -6,12 +6,12 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-kiudbpass!23}
-      MYSQL_DATABASE: ${DB_NAME:-scms_db}
-      MYSQL_USER: ${DB_USER:-kiu_user}
+      MYSQL_DATABASE: ${DB_NAME:-kiu_scms}
+      MYSQL_USER: ${DB_USER:-kiu_scms}
       MYSQL_PASSWORD: ${DB_PASSWORD:-kiupass!123}
     volumes:
       - db_data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/complete_install.sql:/docker-entrypoint-initdb.d/complete_install.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -31,8 +31,8 @@ services:
       PORT: 5000
       DB_HOST: db
       DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-scms_db}
-      DB_USER: ${DB_USER:-kiu_user}
+      DB_NAME: ${DB_NAME:-kiu_scms}
+      DB_USER: ${DB_USER:-kiu_scms}
       DB_PASSWORD: ${DB_PASSWORD:-kiupass!123}
       JWT_SECRET: ${JWT_SECRET:-PROD_SECURE_TOKEN_REPLACE_ME}
     volumes:

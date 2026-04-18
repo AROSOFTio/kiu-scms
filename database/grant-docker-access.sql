@@ -1,20 +1,18 @@
 -- ============================================================
 -- grant-docker-access.sql
--- Run this ONCE in phpMyAdmin (select kiu-scms DB → SQL tab)
--- Grants the kiu-scms user access from all Docker bridge IPs
+-- Run this only if your aaPanel MySQL server is refusing Docker
+-- connections from the application containers.
+--
+-- Before running:
+-- 1. Replace CHANGE_ME_STRONG_PASSWORD
+-- 2. Confirm the database/user name matches your .env values
 -- ============================================================
 
--- Allow connections from any Docker subnet (172.x.x.x)
-GRANT ALL PRIVILEGES ON `kiu-scms`.* TO 'kiu-scms'@'172.%.%.%' IDENTIFIED BY 'GzcWmMW38T5Zmrji';
-
--- Allow from 192.168.x.x subnets (some Docker setups use this range)
-GRANT ALL PRIVILEGES ON `kiu-scms`.* TO 'kiu-scms'@'192.168.%.%' IDENTIFIED BY 'GzcWmMW38T5Zmrji';
-
--- Keep localhost access as well
-GRANT ALL PRIVILEGES ON `kiu-scms`.* TO 'kiu-scms'@'localhost' IDENTIFIED BY 'GzcWmMW38T5Zmrji';
-GRANT ALL PRIVILEGES ON `kiu-scms`.* TO 'kiu-scms'@'127.0.0.1' IDENTIFIED BY 'GzcWmMW38T5Zmrji';
+GRANT ALL PRIVILEGES ON `kiu_scms`.* TO 'kiu_scms'@'172.%.%.%' IDENTIFIED BY 'CHANGE_ME_STRONG_PASSWORD';
+GRANT ALL PRIVILEGES ON `kiu_scms`.* TO 'kiu_scms'@'192.168.%.%' IDENTIFIED BY 'CHANGE_ME_STRONG_PASSWORD';
+GRANT ALL PRIVILEGES ON `kiu_scms`.* TO 'kiu_scms'@'localhost' IDENTIFIED BY 'CHANGE_ME_STRONG_PASSWORD';
+GRANT ALL PRIVILEGES ON `kiu_scms`.* TO 'kiu_scms'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME_STRONG_PASSWORD';
 
 FLUSH PRIVILEGES;
 
--- Verify: check the grants were created
-SELECT User, Host FROM mysql.user WHERE User = 'kiu-scms';
+SELECT User, Host FROM mysql.user WHERE User = 'kiu_scms';

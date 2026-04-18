@@ -84,8 +84,8 @@ export default function Appointments() {
   const [timeSlot, setTimeSlot] = useState(TIME_SLOTS[1]);
   const [isBooking, setIsBooking] = useState(false);
 
-  // HOD manages availability; Lecturer and Student book appointments
-  const isHODRole = user?.role === 'HOD' || user?.role === 'SuperAdmin';
+  // HOD manages availability; students book appointments with their department HOD.
+  const isHODRole = user?.role === 'HOD';
 
   const selectedContact = useMemo(
     () => contacts.find((contact) => String(contact.id) === selectedContactId) || null,
@@ -309,7 +309,7 @@ export default function Appointments() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Office contact</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Department HOD</label>
                   <select
                     value={selectedContactId}
                     onChange={(event) => {
@@ -343,8 +343,8 @@ export default function Appointments() {
                 <div className="mt-4">
                   <EmptyState
                     icon={UserRound}
-                    title="No contacts in this department"
-                    description="Select another department or ask an administrator to assign an office contact."
+                    title="No HOD in this department"
+                    description="Select another department or ask the department to assign its HOD."
                   />
                 </div>
               )}
@@ -424,7 +424,7 @@ export default function Appointments() {
         <aside className="space-y-5">
           {!isHODRole && selectedContact && (
             <section className="app-card p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Selected office</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Selected HOD</h2>
               <div className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm font-semibold text-slate-900">
                   {selectedContact.first_name} {selectedContact.last_name}

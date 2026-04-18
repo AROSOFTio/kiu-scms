@@ -83,7 +83,7 @@ export default function ReportsOverview() {
     const resolutionValues = (data?.resolutionTime || []).map((item) => toNumber(item.avgHours)).filter((value) => value > 0);
     const total = byStatus.reduce((sum, item) => sum + toNumber(item.value), 0);
     const pending = byStatus
-      .filter((item) => ['Submitted', 'Under Review', 'Forwarded', 'In Progress', 'Awaiting Student'].includes(String(item.name || '')))
+      .filter((item) => ['Submitted', 'Received by HOD', 'Assigned to Lecturer', 'In Progress', 'Awaiting Student'].includes(String(item.name || '')))
       .reduce((sum, item) => sum + toNumber(item.value), 0);
     const resolved = byStatus
       .filter((item) => ['Resolved', 'Closed'].includes(String(item.name || '')))
@@ -125,7 +125,7 @@ export default function ReportsOverview() {
           title="Reports unavailable"
           description={error}
           actionLabel="Open dashboard"
-          actionLink="/dashboard/admin"
+          actionLink="/dashboard/hod"
         />
       </div>
     );

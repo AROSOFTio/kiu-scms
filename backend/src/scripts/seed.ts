@@ -1,138 +1,277 @@
-import { db } from '../config/database';
 import bcrypt from 'bcrypt';
+import { db } from '../config/database';
+
+const DEMO_PASSWORD = 'Admin@123';
+
+type StaffSeed = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  staffNumber: string;
+};
+
+type StudentSeed = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  studentNumber: string;
+};
+
+type DepartmentSeed = {
+  id: number;
+  facultyId: number;
+  name: string;
+  hod: StaffSeed;
+  lecturers: StaffSeed[];
+  students: StudentSeed[];
+};
+
+const FACULTIES = [
+  { id: 1, name: 'Faculty of Computing & Informatics' },
+  { id: 2, name: 'Faculty of Business' },
+];
+
+const DEPARTMENTS: DepartmentSeed[] = [
+  {
+    id: 1,
+    facultyId: 1,
+    name: 'Computer Science',
+    hod: { firstName: 'Fred', lastName: 'Bwire', email: 'fbwire.hod@kiu.ac.ug', staffNumber: 'STF/2026/0001' },
+    lecturers: [
+      { firstName: 'Alice', lastName: 'Nanteza', email: 'lec1.computerscience@kiu.ac.ug', staffNumber: 'STF/2026/0002' },
+      { firstName: 'Brian', lastName: 'Kato', email: 'lec2.computerscience@kiu.ac.ug', staffNumber: 'STF/2026/0003' },
+      { firstName: 'Claire', lastName: 'Atwine', email: 'lec3.computerscience@kiu.ac.ug', staffNumber: 'STF/2026/0004' },
+      { firstName: 'Daniel', lastName: 'Mugisha', email: 'lec4.computerscience@kiu.ac.ug', staffNumber: 'STF/2026/0005' },
+      { firstName: 'Esther', lastName: 'Nankya', email: 'lec5.computerscience@kiu.ac.ug', staffNumber: 'STF/2026/0006' },
+    ],
+    students: [
+      { firstName: 'Enoch', lastName: 'Micah', email: 'enoch.micah@kiu.ac.ug', studentNumber: '2026/KIU/CS001' },
+      { firstName: 'Brian', lastName: 'Tumwesigye', email: 'std2.computerscience@kiu.ac.ug', studentNumber: '2026/KIU/CS002' },
+      { firstName: 'Carol', lastName: 'Namugerwa', email: 'std3.computerscience@kiu.ac.ug', studentNumber: '2026/KIU/CS003' },
+      { firstName: 'Diana', lastName: 'Akoth', email: 'std4.computerscience@kiu.ac.ug', studentNumber: '2026/KIU/CS004' },
+      { firstName: 'Ethan', lastName: 'Mugenyi', email: 'std5.computerscience@kiu.ac.ug', studentNumber: '2026/KIU/CS005' },
+    ],
+  },
+  {
+    id: 2,
+    facultyId: 1,
+    name: 'Information Technology',
+    hod: { firstName: 'Sarah', lastName: 'Namusoke', email: 'hod.informationtechnology@kiu.ac.ug', staffNumber: 'STF/2026/0007' },
+    lecturers: [
+      { firstName: 'Apio', lastName: 'Presiline', email: 'apio.presiline@kiu.ac.ug', staffNumber: 'STF/2026/0008' },
+      { firstName: 'Denis', lastName: 'Ssemanda', email: 'lec2.informationtechnology@kiu.ac.ug', staffNumber: 'STF/2026/0009' },
+      { firstName: 'Fiona', lastName: 'Nabirye', email: 'lec3.informationtechnology@kiu.ac.ug', staffNumber: 'STF/2026/0010' },
+      { firstName: 'John', lastName: 'Mwesige', email: 'lec4.informationtechnology@kiu.ac.ug', staffNumber: 'STF/2026/0011' },
+      { firstName: 'Lydia', lastName: 'Namata', email: 'lec5.informationtechnology@kiu.ac.ug', staffNumber: 'STF/2026/0012' },
+    ],
+    students: [
+      { firstName: 'Faith', lastName: 'Nalubega', email: 'std1.informationtechnology@kiu.ac.ug', studentNumber: '2026/KIU/IT001' },
+      { firstName: 'Henry', lastName: 'Ssembatya', email: 'std2.informationtechnology@kiu.ac.ug', studentNumber: '2026/KIU/IT002' },
+      { firstName: 'Irene', lastName: 'Namutebi', email: 'std3.informationtechnology@kiu.ac.ug', studentNumber: '2026/KIU/IT003' },
+      { firstName: 'Joel', lastName: 'Twinamatsiko', email: 'std4.informationtechnology@kiu.ac.ug', studentNumber: '2026/KIU/IT004' },
+      { firstName: 'Kevin', lastName: 'Ochan', email: 'std5.informationtechnology@kiu.ac.ug', studentNumber: '2026/KIU/IT005' },
+    ],
+  },
+  {
+    id: 3,
+    facultyId: 1,
+    name: 'Software Engineering',
+    hod: { firstName: 'Isaac', lastName: 'Kato', email: 'hod.softwareengineering@kiu.ac.ug', staffNumber: 'STF/2026/0013' },
+    lecturers: [
+      { firstName: 'Mark', lastName: 'Turyasingura', email: 'lec1.softwareengineering@kiu.ac.ug', staffNumber: 'STF/2026/0014' },
+      { firstName: 'Peace', lastName: 'Atuhaire', email: 'lec2.softwareengineering@kiu.ac.ug', staffNumber: 'STF/2026/0015' },
+      { firstName: 'Ronald', lastName: 'Ssekandi', email: 'lec3.softwareengineering@kiu.ac.ug', staffNumber: 'STF/2026/0016' },
+      { firstName: 'Sharon', lastName: 'Mirembe', email: 'lec4.softwareengineering@kiu.ac.ug', staffNumber: 'STF/2026/0017' },
+      { firstName: 'Victor', lastName: 'Twinomujuni', email: 'lec5.softwareengineering@kiu.ac.ug', staffNumber: 'STF/2026/0018' },
+    ],
+    students: [
+      { firstName: 'Lillian', lastName: 'Auma', email: 'std1.softwareengineering@kiu.ac.ug', studentNumber: '2026/KIU/SE001' },
+      { firstName: 'Martin', lastName: 'Sserwanja', email: 'std2.softwareengineering@kiu.ac.ug', studentNumber: '2026/KIU/SE002' },
+      { firstName: 'Naomi', lastName: 'Kyomugisha', email: 'std3.softwareengineering@kiu.ac.ug', studentNumber: '2026/KIU/SE003' },
+      { firstName: 'Oscar', lastName: 'Muhwezi', email: 'std4.softwareengineering@kiu.ac.ug', studentNumber: '2026/KIU/SE004' },
+      { firstName: 'Patricia', lastName: 'Aciro', email: 'std5.softwareengineering@kiu.ac.ug', studentNumber: '2026/KIU/SE005' },
+    ],
+  },
+  {
+    id: 4,
+    facultyId: 1,
+    name: 'Data Science',
+    hod: { firstName: 'Miriam', lastName: 'Ayo', email: 'hod.datascience@kiu.ac.ug', staffNumber: 'STF/2026/0019' },
+    lecturers: [
+      { firstName: 'Anna', lastName: 'Akello', email: 'lec1.datascience@kiu.ac.ug', staffNumber: 'STF/2026/0020' },
+      { firstName: 'David', lastName: 'Otema', email: 'lec2.datascience@kiu.ac.ug', staffNumber: 'STF/2026/0021' },
+      { firstName: 'Grace', lastName: 'Alupo', email: 'lec3.datascience@kiu.ac.ug', staffNumber: 'STF/2026/0022' },
+      { firstName: 'Moses', lastName: 'Okello', email: 'lec4.datascience@kiu.ac.ug', staffNumber: 'STF/2026/0023' },
+      { firstName: 'Ruth', lastName: 'Chebet', email: 'lec5.datascience@kiu.ac.ug', staffNumber: 'STF/2026/0024' },
+    ],
+    students: [
+      { firstName: 'Queen', lastName: 'Nakato', email: 'std1.datascience@kiu.ac.ug', studentNumber: '2026/KIU/DS001' },
+      { firstName: 'Richard', lastName: 'Okidi', email: 'std2.datascience@kiu.ac.ug', studentNumber: '2026/KIU/DS002' },
+      { firstName: 'Stella', lastName: 'Namirembe', email: 'std3.datascience@kiu.ac.ug', studentNumber: '2026/KIU/DS003' },
+      { firstName: 'Timothy', lastName: 'Opiro', email: 'std4.datascience@kiu.ac.ug', studentNumber: '2026/KIU/DS004' },
+      { firstName: 'Violet', lastName: 'Achieng', email: 'std5.datascience@kiu.ac.ug', studentNumber: '2026/KIU/DS005' },
+    ],
+  },
+  {
+    id: 5,
+    facultyId: 2,
+    name: 'Business Admin',
+    hod: { firstName: 'Brian', lastName: 'Ssenkaaba', email: 'hod.businessadmin@kiu.ac.ug', staffNumber: 'STF/2026/0025' },
+    lecturers: [
+      { firstName: 'Sentongo', lastName: 'Sayid', email: 'ssayid@kiu.ac.ug', staffNumber: 'STF/2026/0026' },
+      { firstName: 'Brenda', lastName: 'Nakalema', email: 'lec2.businessadmin@kiu.ac.ug', staffNumber: 'STF/2026/0027' },
+      { firstName: 'Charles', lastName: 'Byaruhanga', email: 'lec3.businessadmin@kiu.ac.ug', staffNumber: 'STF/2026/0028' },
+      { firstName: 'Diana', lastName: 'Naigaga', email: 'lec4.businessadmin@kiu.ac.ug', staffNumber: 'STF/2026/0029' },
+      { firstName: 'Peter', lastName: 'Walusimbi', email: 'lec5.businessadmin@kiu.ac.ug', staffNumber: 'STF/2026/0030' },
+    ],
+    students: [
+      { firstName: 'Winnie', lastName: 'Nantege', email: 'std1.businessadmin@kiu.ac.ug', studentNumber: '2026/KIU/BA001' },
+      { firstName: 'Xavier', lastName: 'Mugerwa', email: 'std2.businessadmin@kiu.ac.ug', studentNumber: '2026/KIU/BA002' },
+      { firstName: 'Yvonne', lastName: 'Atuhairwe', email: 'std3.businessadmin@kiu.ac.ug', studentNumber: '2026/KIU/BA003' },
+      { firstName: 'Zedekiah', lastName: 'Ssenyonjo', email: 'std4.businessadmin@kiu.ac.ug', studentNumber: '2026/KIU/BA004' },
+      { firstName: 'Tracy', lastName: 'Namuli', email: 'std5.businessadmin@kiu.ac.ug', studentNumber: '2026/KIU/BA005' },
+    ],
+  },
+];
+
+const COMPLAINT_CATEGORIES = [
+  ['Academic', 'Issues related to lectures, exams, marks, and academic performance'],
+  ['Technical', 'Portal issues, WiFi, lab equipment, software problems'],
+  ['Hostel', 'Accommodation, utilities, room allocation complaints'],
+  ['Financial', 'Fee payments, bursaries, scholarships, refunds'],
+  ['Library', 'Books, resources, library access problems'],
+  ['Administration', 'Registration, documents, certificates, staff conduct'],
+  ['Other', 'General complaints not covered by other categories'],
+];
+
+const SYSTEM_SETTINGS = [
+  ['system_name', 'KIU Student Complaint Management System'],
+  ['system_email', 'scms@kiu.ac.ug'],
+  ['max_file_size_mb', '10'],
+  ['allowed_file_types', 'pdf,jpg,jpeg,png,doc,docx'],
+];
 
 async function seed() {
-  console.log('Starting clear and clean user seeding (HOD, Lecturer, Student only)...');
+  const connection = await db.getConnection();
 
   try {
-    await db.query('SET FOREIGN_KEY_CHECKS = 0;');
-    
-    console.log('Cleaning up old records...');
-    await db.query('TRUNCATE TABLE students');
-    await db.query('TRUNCATE TABLE staff');
-    await db.query('TRUNCATE TABLE users');
+    console.log('Starting clean academic demo seeding...');
+    await connection.beginTransaction();
 
-    console.log('Setting up roles & departments...');
-    await db.query(`INSERT IGNORE INTO roles (name) VALUES ('SuperAdmin'), ('HOD'), ('Lecturer'), ('Student'), ('Registrar'), ('Vice Chancellor'), ('Quality Assurance'), ('PRO')`);
-    await db.query(`INSERT IGNORE INTO faculties (id, name) VALUES (1, 'Faculty of Computing & Informatics'), (2, 'Faculty of Business')`);
-    await db.query(`INSERT IGNORE INTO departments (id, faculty_id, name) VALUES (1, 1, 'Computer Science'), (2, 1, 'Information Technology'), (3, 1, 'Software Engineering'), (4, 1, 'Data Science'), (5, 2, 'Business Admin')`);
-
-    // Fetch IDs
-    const [roles]: any = await db.query('SELECT id, name FROM roles');
-    const getRoleId = (name: string) => roles.find((r: any) => r.name === name)?.id;
-    const [depts]: any = await db.query('SELECT id, name FROM departments');
-    const getDeptId = (name: string) => depts.find((d: any) => d.name === name)?.id;
-
-    // Use consistent password for all generated demo users
-    const hash = await bcrypt.hash('Admin@123', 10);
-
-    const accountsToCreate: any[] = [];
-
-    const deptsList = [
-      'Computer Science',
-      'Information Technology',
-      'Software Engineering',
-      'Data Science',
-      'Business Admin'
+    const cleanupStatements = [
+      'DELETE FROM appointments',
+      'DELETE FROM hod_availability',
+      'DELETE FROM audit_logs',
+      'DELETE FROM feedback',
+      'DELETE FROM notifications',
+      'DELETE FROM complaint_internal_notes',
+      'DELETE FROM complaint_status_history',
+      'DELETE FROM complaint_attachments',
+      'DELETE FROM complaints',
+      'DELETE FROM staff',
+      'DELETE FROM students',
+      'DELETE FROM users',
+      'DELETE FROM complaint_categories',
+      'DELETE FROM system_settings',
+      'DELETE FROM departments',
+      'DELETE FROM faculties',
+      'DELETE FROM roles',
     ];
 
-    // HODs (1 per department = 5 HODs)
-    deptsList.forEach((dept) => {
-      if (dept === 'Computer Science') {
-        accountsToCreate.push({ role: 'HOD', first: 'Fred', last: 'Bwire', email: 'fbwire.hod@kiu.ac.ug', dept: dept });
-      } else {
-        accountsToCreate.push({
-          role: 'HOD',
-          first: 'HOD',
-          last: dept.split(' ')[0],
-          email: `hod.${dept.toLowerCase().replace(' ', '')}@kiu.ac.ug`,
-          dept: dept
-        });
-      }
-    });
-
-    // LECTURERS (5 per department = 25 Lecturers)
-    deptsList.forEach((dept) => {
-      for (let i = 1; i <= 5; i++) {
-        if (dept === 'Information Technology' && i === 1) {
-          accountsToCreate.push({ role: 'Lecturer', first: 'Apio', last: 'Presiline', email: 'apio.presiline@kiu.ac.ug', dept: dept });
-        } else if (dept === 'Business Admin' && i === 1) {
-          accountsToCreate.push({ role: 'Lecturer', first: 'Sentongo', last: 'Sayid', email: 'ssayid@kiu.ac.ug', dept: dept });
-        } else {
-          accountsToCreate.push({
-            role: 'Lecturer',
-            first: 'Lecturer',
-            last: `${i} ${dept.split(' ')[0]}`,
-            email: `lec${i}.${dept.toLowerCase().replace(' ', '')}@kiu.ac.ug`,
-            dept: dept
-          });
-        }
-      }
-    });
-
-    // STUDENTS (5 per Faculty = 10 Students)
-    // Faculty 1 (Computing & Informatics): 5 Students in Computer Science
-    for (let i = 1; i <= 5; i++) {
-      if (i === 1) {
-        accountsToCreate.push({ role: 'Student', first: 'Enoch', last: 'Micah', email: 'enoch.micah@kiu.ac.ug', dept: 'Computer Science', num: '2026/KIU/C001' });
-      } else {
-        accountsToCreate.push({
-          role: 'Student',
-          first: 'Stud',
-          last: `Comp${i}`,
-          email: `std.comp${i}@kiu.ac.ug`,
-          dept: 'Computer Science',
-          num: `2026/KIU/C${i.toString().padStart(3, '0')}`
-        });
-      }
+    for (const statement of cleanupStatements) {
+      await connection.query(statement);
     }
 
-    // Faculty 2 (Business): 5 Students in Business Admin
-    for (let i = 1; i <= 5; i++) {
-        accountsToCreate.push({
-          role: 'Student',
-          first: 'Stud',
-          last: `Bus${i}`,
-          email: `std.bus${i}@kiu.ac.ug`,
-          dept: 'Business Admin',
-          num: `2026/KIU/B${i.toString().padStart(3, '0')}`
-        });
+    await connection.query(
+      `INSERT INTO roles (id, name) VALUES
+       (1, 'HOD'),
+       (2, 'Lecturer'),
+       (3, 'Student')`
+    );
+
+    for (const faculty of FACULTIES) {
+      await connection.query('INSERT INTO faculties (id, name) VALUES (?, ?)', [faculty.id, faculty.name]);
     }
 
-    console.log('Inserting accounts...');
-
-    for (const acc of accountsToCreate) {
-      const rId = getRoleId(acc.role);
-      const dId = acc.dept ? getDeptId(acc.dept) : 1;
-
-      const [uRes]: any = await db.query(
-        'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-        [rId, acc.first, acc.last, acc.email, hash, 1]
+    for (const department of DEPARTMENTS) {
+      await connection.query(
+        'INSERT INTO departments (id, faculty_id, name) VALUES (?, ?, ?)',
+        [department.id, department.facultyId, department.name]
       );
-      
-      const insertId = uRes.insertId;
+    }
 
-      if (acc.role === 'Student') {
-        await db.query(
-          'INSERT INTO students (user_id, student_number, department_id) VALUES (?, ?, ?)',
-          [insertId, acc.num, dId]
+    for (const [name, description] of COMPLAINT_CATEGORIES) {
+      await connection.query(
+        'INSERT INTO complaint_categories (name, description) VALUES (?, ?)',
+        [name, description]
+      );
+    }
+
+    for (const [key, value] of SYSTEM_SETTINGS) {
+      await connection.query(
+        'INSERT INTO system_settings (key_name, value) VALUES (?, ?)',
+        [key, value]
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+
+    const [roleRows]: any = await connection.query('SELECT id, name FROM roles');
+    const roleIds = roleRows.reduce((acc: Record<string, number>, row: { id: number; name: string }) => {
+      acc[row.name] = row.id;
+      return acc;
+    }, {});
+
+    for (const department of DEPARTMENTS) {
+      const staffMembers: Array<StaffSeed & { roleName: 'HOD' | 'Lecturer' }> = [
+        { ...department.hod, roleName: 'HOD' },
+        ...department.lecturers.map((lecturer) => ({ ...lecturer, roleName: 'Lecturer' as const })),
+      ];
+
+      for (const staffMember of staffMembers) {
+        const [userResult]: any = await connection.query(
+          'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, 1)',
+          [
+            roleIds[staffMember.roleName],
+            staffMember.firstName,
+            staffMember.lastName,
+            staffMember.email,
+            passwordHash,
+          ]
         );
-      } else if (['HOD', 'Lecturer'].includes(acc.role)) {
-        await db.query(
+
+        await connection.query(
           'INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (?, ?, ?, ?)',
-          [insertId, `STF/2026/${insertId.toString().padStart(4, '0')}`, dId, rId]
+          [userResult.insertId, staffMember.staffNumber, department.id, roleIds[staffMember.roleName]]
+        );
+      }
+
+      for (const student of department.students) {
+        const [userResult]: any = await connection.query(
+          'INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active) VALUES (?, ?, ?, ?, ?, 1)',
+          [roleIds.Student, student.firstName, student.lastName, student.email, passwordHash]
+        );
+
+        await connection.query(
+          'INSERT INTO students (user_id, student_number, department_id) VALUES (?, ?, ?)',
+          [userResult.insertId, student.studentNumber, department.id]
         );
       }
     }
 
-    await db.query('SET FOREIGN_KEY_CHECKS = 1;');
-    
-    console.log('✅ Seeding complete! HODs, Lecturers, and Students initialized.');
-    process.exit(0);
+    await connection.commit();
 
+    const lecturerCount = DEPARTMENTS.reduce((sum, department) => sum + department.lecturers.length, 0);
+    const studentCount = DEPARTMENTS.reduce((sum, department) => sum + department.students.length, 0);
+
+    console.log(`Seed complete. HODs: ${DEPARTMENTS.length}, Lecturers: ${lecturerCount}, Students: ${studentCount}`);
+    process.exit(0);
   } catch (error) {
+    await connection.rollback();
     console.error('Seeding failed:', error);
     process.exit(1);
+  } finally {
+    connection.release();
   }
 }
 

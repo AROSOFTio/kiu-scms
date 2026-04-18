@@ -42,9 +42,10 @@ interface ComplaintDetail {
   student_first_name: string;
   student_last_name: string;
   student_email: string;
-  staff_first_name?: string;
-  staff_last_name?: string;
+  lecturer_first_name?: string;
+  lecturer_last_name?: string;
   assigned_staff_id: number | null;
+  assigned_staff_user_id: number | null;
   attachments: { id: number; file_path: string; file_name: string }[];
   timeline: TimelineEvent[];
 }
@@ -69,7 +70,7 @@ export default function ComplaintWorkspace() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canRoute = user?.role === 'HOD' || user?.role === 'SuperAdmin';
+  const canRoute = user?.role === 'HOD';
   const backPath = canRoute ? '/dashboard/hod/complaints' : '/dashboard/lecturer';
 
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
@@ -80,7 +81,7 @@ export default function ComplaintWorkspace() {
   const [savingRoute, setSavingRoute] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
 
-  const [statusForm, setStatusForm] = useState({ status: 'Under Review', remarks: '' });
+  const [statusForm, setStatusForm] = useState({ status: 'Received by HOD', remarks: '' });
   const [routeForm, setRouteForm] = useState({ destination: '', otherUnit: '', staffId: '', remarks: '' });
   const [noteForm, setNoteForm] = useState('');
 
@@ -96,6 +97,8 @@ export default function ComplaintWorkspace() {
           ? 'Received by HOD'
           : (data.display_status || data.status),
       }));
+    } catch {
+      setComplaint(null);
     } finally {
       setLoading(false);
     }
@@ -126,7 +129,7 @@ export default function ComplaintWorkspace() {
     return [...statusEntries, ...noteEntries].sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime());
   }, [complaint?.timeline, notes]);
 
-  const canAccessComplaint = canRoute || complaint?.assigned_staff_id === user?.id;
+  const canAccessComplaint = canRoute || complaint?.assigned_staff_user_id === user?.id;
 
   const handleStatusUpdate = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -265,7 +268,7 @@ export default function ComplaintWorkspace() {
               <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Assigned Lecturer</p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">
-                  {complaint.staff_first_name ? `${complaint.staff_first_name} ${complaint.staff_last_name}` : 'Not yet assigned'}
+                  {complaint.lecturer_first_name ? `${complaint.lecturer_first_name} ${complaint.lecturer_last_name}` : 'Not yet assigned'}
                 </p>
               </div>
             </div>

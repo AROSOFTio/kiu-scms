@@ -19,7 +19,7 @@ type LoginForm = z.infer<typeof loginSchema>;
  * Lecturer gets their own workspace.
  * Everyone else (Student) gets the student portal.
  */
-const ADMIN_ROLES = ['HOD', 'SuperAdmin', 'Registrar', 'Vice Chancellor', 'Quality Assurance', 'PRO'];
+const ADMIN_ROLES = ['HOD'];
 
 function getRoleDashboard(role: string): string {
   if (ADMIN_ROLES.includes(role)) return '/dashboard/hod';
@@ -191,7 +191,12 @@ export default function Login() {
             Student Complaint Management System
           </p>
           <div className="mt-4">
-            <a href="/credentials" className="text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest text-[10px]">
+            <a
+              href="/credentials"
+              target="_blank"
+              rel="noreferrer"
+              className="text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest text-[10px]"
+            >
               Demo Credentials
             </a>
           </div>

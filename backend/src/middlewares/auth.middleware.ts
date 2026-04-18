@@ -33,7 +33,7 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
 /**
  * Role-based access middleware factory.
  * Usage: requireRole(['HOD', 'Lecturer']) or requireRole(['HOD'])
- * Valid academic roles: HOD | Lecturer | Student | SuperAdmin
+ * Valid academic roles: HOD | Lecturer | Student
  */
 export const requireRole = (allowedRoles: string[]) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {

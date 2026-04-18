@@ -28,14 +28,7 @@ import { useAuth } from '../context/AuthContext';
  * All "admin-class" roles share the HOD dashboard interface.
  * Keep this in sync with Login.tsx and DashboardLayout.tsx.
  */
-export const ADMIN_ROLES = [
-  'HOD',
-  'SuperAdmin',
-  'Registrar',
-  'Vice Chancellor',
-  'Quality Assurance',
-  'PRO',
-];
+export const ADMIN_ROLES = ['HOD'];
 
 function RoleRedirect() {
   const { user } = useAuth();
@@ -152,7 +145,10 @@ export default function AppRoutes() {
         <Route path="staff/complaints/:id" element={<Navigate to="/dashboard/lecturer" replace />} />
 
         {/* ─────────────────────────────────────── SHARED ── */}
-        <Route path="appointments" element={<Appointments />} />
+        <Route
+          path="appointments"
+          element={<ProtectedRoute allowedRoles={['HOD', 'Student']}><Appointments /></ProtectedRoute>}
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

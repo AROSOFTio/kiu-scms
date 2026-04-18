@@ -21,8 +21,8 @@ interface ComplaintRecord {
   created_at: string;
   student_first_name: string;
   student_last_name: string;
-  staff_first_name?: string;
-  staff_last_name?: string;
+  lecturer_first_name?: string;
+  lecturer_last_name?: string;
 }
 
 interface StaffRecord {
@@ -46,7 +46,7 @@ const formatDate = (value: string) =>
 
 export default function ComplaintQueue() {
   const { user } = useAuth();
-  const isHOD = user?.role === 'HOD' || user?.role === 'SuperAdmin';
+  const isHOD = user?.role === 'HOD';
   const canRoute = isHOD;
   const detailBasePath = isHOD ? '/dashboard/hod/complaints' : '/dashboard/lecturer/complaints';
 
@@ -251,7 +251,7 @@ export default function ComplaintQueue() {
           ) : complaints.length ? (
             complaints.map((complaint) => {
               const currentStatus = complaint.display_status || complaint.status;
-              const assignedLabel = complaint.staff_first_name ? `${complaint.staff_first_name} ${complaint.staff_last_name}` : 'Unassigned';
+              const assignedLabel = complaint.lecturer_first_name ? `${complaint.lecturer_first_name} ${complaint.lecturer_last_name}` : 'Unassigned';
 
               return (
                 <div

@@ -11,8 +11,8 @@ services:
       # aaPanel MySQL host — host-gateway maps to host.docker.internal on Linux
       DB_HOST: ${DB_HOST:-host.docker.internal}
       DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-kiu-scms}
-      DB_USER: ${DB_USER:-kiu-scms}
+      DB_NAME: ${DB_NAME:-kiu_scms}
+      DB_USER: ${DB_USER:-kiu_scms}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:-PROD_SECURE_TOKEN_REPLACE_ME}
       # Increase timeout so slow aaPanel MySQL handshakes don't fail immediately

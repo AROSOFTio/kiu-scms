@@ -38,8 +38,7 @@ function getNavigation(role?: string): NavigationItem[] {
 
   if (role === 'Lecturer') {
     return [
-      { label: 'Worklist',     href: '/dashboard/lecturer',       icon: LayoutDashboard },
-      { label: 'Appointments', href: '/dashboard/appointments',   icon: CalendarDays    },
+      { label: 'Worklist', href: '/dashboard/lecturer', icon: LayoutDashboard },
     ];
   }
 
@@ -54,9 +53,7 @@ function getNavigation(role?: string): NavigationItem[] {
 
 function getRoleMeta(role?: string) {
   if (role && ADMIN_ROLES.includes(role)) {
-    // Show the actual role name for non-HOD admin-class users
-    const label = role === 'HOD' || role === 'SuperAdmin' ? 'HOD' : role;
-    return { title: label, badge: label };
+    return { title: 'HOD', badge: 'HOD' };
   }
   if (role === 'Lecturer') return { title: 'Lecturer', badge: 'Lecturer' };
   return { title: 'Student', badge: 'Student' };

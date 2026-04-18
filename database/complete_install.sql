@@ -1,7 +1,7 @@
 ﻿-- ============================================================
--- KIU Student Complaint Management System â€” Database Schema
--- Roles: SuperAdmin | HOD | Lecturer | Student
--- Faculties: SONAS | SOMAC | Education
+-- KIU Student Complaint Management System - Database Schema
+-- Roles: HOD | Lecturer | Student
+-- Faculties: Faculty of Computing & Informatics | Faculty of Business
 -- ============================================================
 
 -- Removed hardcoded USE statement for aaPanel compatibility
@@ -88,7 +88,7 @@ CREATE TABLE students (
 );
 
 -- ---------------------------------------------------------------
--- 6. Staff (HODs and Lecturers â€” one department per person)
+-- 6. Staff (HODs and Lecturers - one department per person)
 -- role_id mirrors users.role_id for quick querying
 -- ---------------------------------------------------------------
 CREATE TABLE staff (
@@ -283,7 +283,7 @@ CREATE TABLE appointments (
 -- END OF SCHEMA
 -- ===============================================================
 -- ============================================================
--- KIU SCMS â€” Full Demo Seed Data (Synchronized with seed.ts)
+-- KIU SCMS - Full Demo Seed Data (Synchronized with seed.ts)
 -- Demo password for ALL accounts: Admin@123
 -- Hash: $2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW
 -- ============================================================
@@ -292,9 +292,10 @@ CREATE TABLE appointments (
 
 
 -- 1. Roles
-INSERT INTO roles (name) VALUES 
-('SuperAdmin'), ('HOD'), ('Lecturer'), ('Student'), 
-('Registrar'), ('Vice Chancellor'), ('Quality Assurance'), ('PRO');
+INSERT INTO roles (id, name) VALUES
+(1, 'HOD'),
+(2, 'Lecturer'),
+(3, 'Student');
 
 -- 2. Faculties
 INSERT INTO faculties (id, name) VALUES 
@@ -328,25 +329,126 @@ INSERT INTO system_settings (key_name, value) VALUES
 
 -- 6. Demo Users (Password: Admin@123)
 -- All demo accounts here use Admin@123 hash for static SQL consistency.
--- The node seeder (npm run seed) will generate the full 40+ user spread.
+-- Distribution:
+--   1 HOD per department = 5 HODs
+--   5 Lecturers per department = 25 Lecturers
+--   5 Students per department = 25 Students
+--   Total demo users = 55
 
--- HODs
-INSERT INTO users (id, role_id, first_name, last_name, email, password_hash, is_active)
-VALUES (1, (SELECT id FROM roles WHERE name='HOD'), 'Fred', 'Bwire', 'fbwire.hod@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
-INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (1, 'STF/2026/0001', 1, (SELECT id FROM roles WHERE name='HOD'));
+INSERT INTO users (id, role_id, first_name, last_name, email, password_hash, is_active) VALUES
+(1, 1, 'Fred', 'Bwire', 'fbwire.hod@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(2, 2, 'Alice', 'Nanteza', 'lec1.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(3, 2, 'Brian', 'Kato', 'lec2.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(4, 2, 'Claire', 'Atwine', 'lec3.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(5, 2, 'Daniel', 'Mugisha', 'lec4.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(6, 2, 'Esther', 'Nankya', 'lec5.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(7, 3, 'Enoch', 'Micah', 'enoch.micah@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(8, 3, 'Brian', 'Tumwesigye', 'std2.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(9, 3, 'Carol', 'Namugerwa', 'std3.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(10, 3, 'Diana', 'Akoth', 'std4.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(11, 3, 'Ethan', 'Mugenyi', 'std5.computerscience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(12, 1, 'Sarah', 'Namusoke', 'hod.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(13, 2, 'Apio', 'Presiline', 'apio.presiline@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(14, 2, 'Denis', 'Ssemanda', 'lec2.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(15, 2, 'Fiona', 'Nabirye', 'lec3.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(16, 2, 'John', 'Mwesige', 'lec4.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(17, 2, 'Lydia', 'Namata', 'lec5.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(18, 3, 'Faith', 'Nalubega', 'std1.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(19, 3, 'Henry', 'Ssembatya', 'std2.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(20, 3, 'Irene', 'Namutebi', 'std3.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(21, 3, 'Joel', 'Twinamatsiko', 'std4.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(22, 3, 'Kevin', 'Ochan', 'std5.informationtechnology@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(23, 1, 'Isaac', 'Kato', 'hod.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(24, 2, 'Mark', 'Turyasingura', 'lec1.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(25, 2, 'Peace', 'Atuhaire', 'lec2.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(26, 2, 'Ronald', 'Ssekandi', 'lec3.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(27, 2, 'Sharon', 'Mirembe', 'lec4.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(28, 2, 'Victor', 'Twinomujuni', 'lec5.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(29, 3, 'Lillian', 'Auma', 'std1.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(30, 3, 'Martin', 'Sserwanja', 'std2.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(31, 3, 'Naomi', 'Kyomugisha', 'std3.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(32, 3, 'Oscar', 'Muhwezi', 'std4.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(33, 3, 'Patricia', 'Aciro', 'std5.softwareengineering@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(34, 1, 'Miriam', 'Ayo', 'hod.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(35, 2, 'Anna', 'Akello', 'lec1.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(36, 2, 'David', 'Otema', 'lec2.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(37, 2, 'Grace', 'Alupo', 'lec3.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(38, 2, 'Moses', 'Okello', 'lec4.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(39, 2, 'Ruth', 'Chebet', 'lec5.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(40, 3, 'Queen', 'Nakato', 'std1.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(41, 3, 'Richard', 'Okidi', 'std2.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(42, 3, 'Stella', 'Namirembe', 'std3.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(43, 3, 'Timothy', 'Opiro', 'std4.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(44, 3, 'Violet', 'Achieng', 'std5.datascience@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(45, 1, 'Brian', 'Ssenkaaba', 'hod.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(46, 2, 'Sentongo', 'Sayid', 'ssayid@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(47, 2, 'Brenda', 'Nakalema', 'lec2.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(48, 2, 'Charles', 'Byaruhanga', 'lec3.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(49, 2, 'Diana', 'Naigaga', 'lec4.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(50, 2, 'Peter', 'Walusimbi', 'lec5.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(51, 3, 'Winnie', 'Nantege', 'std1.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(52, 3, 'Xavier', 'Mugerwa', 'std2.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(53, 3, 'Yvonne', 'Atuhairwe', 'std3.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(54, 3, 'Zedekiah', 'Ssenyonjo', 'std4.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1),
+(55, 3, 'Tracy', 'Namuli', 'std5.businessadmin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
 
--- Lecturers
-INSERT INTO users (id, role_id, first_name, last_name, email, password_hash, is_active)
-VALUES (2, (SELECT id FROM roles WHERE name='Lecturer'), 'Apio', 'Presiline', 'apio.presiline@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
-INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (2, 'STF/2026/0002', 2, (SELECT id FROM roles WHERE name='Lecturer'));
+INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES
+(1, 'STF/2026/0001', 1, 1),
+(2, 'STF/2026/0002', 1, 2),
+(3, 'STF/2026/0003', 1, 2),
+(4, 'STF/2026/0004', 1, 2),
+(5, 'STF/2026/0005', 1, 2),
+(6, 'STF/2026/0006', 1, 2),
+(12, 'STF/2026/0007', 2, 1),
+(13, 'STF/2026/0008', 2, 2),
+(14, 'STF/2026/0009', 2, 2),
+(15, 'STF/2026/0010', 2, 2),
+(16, 'STF/2026/0011', 2, 2),
+(17, 'STF/2026/0012', 2, 2),
+(23, 'STF/2026/0013', 3, 1),
+(24, 'STF/2026/0014', 3, 2),
+(25, 'STF/2026/0015', 3, 2),
+(26, 'STF/2026/0016', 3, 2),
+(27, 'STF/2026/0017', 3, 2),
+(28, 'STF/2026/0018', 3, 2),
+(34, 'STF/2026/0019', 4, 1),
+(35, 'STF/2026/0020', 4, 2),
+(36, 'STF/2026/0021', 4, 2),
+(37, 'STF/2026/0022', 4, 2),
+(38, 'STF/2026/0023', 4, 2),
+(39, 'STF/2026/0024', 4, 2),
+(45, 'STF/2026/0025', 5, 1),
+(46, 'STF/2026/0026', 5, 2),
+(47, 'STF/2026/0027', 5, 2),
+(48, 'STF/2026/0028', 5, 2),
+(49, 'STF/2026/0029', 5, 2),
+(50, 'STF/2026/0030', 5, 2);
 
-INSERT INTO users (id, role_id, first_name, last_name, email, password_hash, is_active)
-VALUES (3, (SELECT id FROM roles WHERE name='Lecturer'), 'Sentongo', 'Sayid', 'ssayid@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
-INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (3, 'STF/2026/0003', 5, (SELECT id FROM roles WHERE name='Lecturer'));
-
--- Students
-INSERT INTO users (id, role_id, first_name, last_name, email, password_hash, is_active)
-VALUES (4, (SELECT id FROM roles WHERE name='Student'), 'Enoch', 'Micah', 'enoch.micah@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
-INSERT INTO students (user_id, student_number, department_id) VALUES (4, '2026/KIU/C001', 1);
+INSERT INTO students (user_id, student_number, department_id) VALUES
+(7, '2026/KIU/CS001', 1),
+(8, '2026/KIU/CS002', 1),
+(9, '2026/KIU/CS003', 1),
+(10, '2026/KIU/CS004', 1),
+(11, '2026/KIU/CS005', 1),
+(18, '2026/KIU/IT001', 2),
+(19, '2026/KIU/IT002', 2),
+(20, '2026/KIU/IT003', 2),
+(21, '2026/KIU/IT004', 2),
+(22, '2026/KIU/IT005', 2),
+(29, '2026/KIU/SE001', 3),
+(30, '2026/KIU/SE002', 3),
+(31, '2026/KIU/SE003', 3),
+(32, '2026/KIU/SE004', 3),
+(33, '2026/KIU/SE005', 3),
+(40, '2026/KIU/DS001', 4),
+(41, '2026/KIU/DS002', 4),
+(42, '2026/KIU/DS003', 4),
+(43, '2026/KIU/DS004', 4),
+(44, '2026/KIU/DS005', 4),
+(51, '2026/KIU/BA001', 5),
+(52, '2026/KIU/BA002', 5),
+(53, '2026/KIU/BA003', 5),
+(54, '2026/KIU/BA004', 5),
+(55, '2026/KIU/BA005', 5);
 
 SET FOREIGN_KEY_CHECKS = 1;
