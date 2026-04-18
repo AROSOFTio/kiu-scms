@@ -24,6 +24,19 @@ import Credentials from '../pages/Credentials';
 
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * All "admin-class" roles share the HOD dashboard interface.
+ * Keep this in sync with Login.tsx and DashboardLayout.tsx.
+ */
+export const ADMIN_ROLES = [
+  'HOD',
+  'SuperAdmin',
+  'Registrar',
+  'Vice Chancellor',
+  'Quality Assurance',
+  'PRO',
+];
+
 function RoleRedirect() {
   const { user } = useAuth();
   const token = localStorage.getItem('token');
@@ -34,12 +47,14 @@ function RoleRedirect() {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
         <div className="h-10 w-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Resolving Identity…</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+          Resolving Identity…
+        </p>
       </div>
     );
   }
 
-  if (user.role === 'HOD' || user.role === 'SuperAdmin') return <Navigate to="/dashboard/hod" replace />;
+  if (ADMIN_ROLES.includes(user.role)) return <Navigate to="/dashboard/hod" replace />;
   if (user.role === 'Lecturer') return <Navigate to="/dashboard/lecturer" replace />;
   return <Navigate to="/dashboard/student" replace />;
 }
@@ -81,29 +96,45 @@ export default function AppRoutes() {
           element={<ProtectedRoute allowedRoles={['Student']}><StudentComplaintDetail /></ProtectedRoute>}
         />
 
-        {/* ─────────────────────────────────────── HOD ── */}
+        {/* ─────────────────────────────────────── HOD / ADMIN ── */}
         <Route
           path="hod"
-          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><AdminDashboard /></ProtectedRoute>}
+          element={
+            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="hod/complaints"
-          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><ComplaintQueue /></ProtectedRoute>}
+          element={
+            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+              <ComplaintQueue />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="hod/complaints/:id"
-          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><ComplaintWorkspace /></ProtectedRoute>}
+          element={
+            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+              <ComplaintWorkspace />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="hod/reports"
-          element={<ProtectedRoute allowedRoles={['HOD', 'SuperAdmin']}><ReportsOverview /></ProtectedRoute>}
+          element={
+            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
+              <ReportsOverview />
+            </ProtectedRoute>
+          }
         />
 
         {/* Legacy /dashboard/admin/* → redirect to /dashboard/hod/* */}
-        <Route path="admin" element={<Navigate to="/dashboard/hod" replace />} />
-        <Route path="admin/complaints" element={<Navigate to="/dashboard/hod/complaints" replace />} />
-        <Route path="admin/complaints/:id" element={<Navigate to="/dashboard/hod" replace />} />
-        <Route path="admin/reports" element={<Navigate to="/dashboard/hod/reports" replace />} />
+        <Route path="admin"                    element={<Navigate to="/dashboard/hod" replace />} />
+        <Route path="admin/complaints"         element={<Navigate to="/dashboard/hod/complaints" replace />} />
+        <Route path="admin/complaints/:id"     element={<Navigate to="/dashboard/hod" replace />} />
+        <Route path="admin/reports"            element={<Navigate to="/dashboard/hod/reports" replace />} />
 
         {/* ─────────────────────────────────────── LECTURER ── */}
         <Route
@@ -116,8 +147,8 @@ export default function AppRoutes() {
         />
 
         {/* Legacy /dashboard/staff/* → redirect to /dashboard/lecturer/* */}
-        <Route path="staff" element={<Navigate to="/dashboard/lecturer" replace />} />
-        <Route path="staff/worklist" element={<Navigate to="/dashboard/lecturer" replace />} />
+        <Route path="staff"               element={<Navigate to="/dashboard/lecturer" replace />} />
+        <Route path="staff/worklist"      element={<Navigate to="/dashboard/lecturer" replace />} />
         <Route path="staff/complaints/:id" element={<Navigate to="/dashboard/lecturer" replace />} />
 
         {/* ─────────────────────────────────────── SHARED ── */}

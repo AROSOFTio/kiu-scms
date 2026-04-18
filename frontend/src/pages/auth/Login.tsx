@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, GraduationCap, Briefcase } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,10 +14,16 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+/**
+ * All "admin-class" staff roles share the HOD dashboard.
+ * Lecturer gets their own workspace.
+ * Everyone else (Student) gets the student portal.
+ */
+const ADMIN_ROLES = ['HOD', 'SuperAdmin', 'Registrar', 'Vice Chancellor', 'Quality Assurance', 'PRO'];
+
 function getRoleDashboard(role: string): string {
-  if (role === 'HOD') return '/dashboard/hod';
+  if (ADMIN_ROLES.includes(role)) return '/dashboard/hod';
   if (role === 'Lecturer') return '/dashboard/lecturer';
-  if (role === 'SuperAdmin') return '/dashboard/hod';
   return '/dashboard/student';
 }
 
@@ -26,10 +32,12 @@ export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [userType, setUserType] = useState<'student' | 'staff'>('student');
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
@@ -37,6 +45,12 @@ export default function Login() {
   useEffect(() => {
     if (user) navigate(getRoleDashboard(user.role), { replace: true });
   }, [user, navigate]);
+
+  const handleTypeSwitch = (type: 'student' | 'staff') => {
+    setUserType(type);
+    setApiError('');
+    reset();
+  };
 
   const onSubmit = async (values: LoginForm) => {
     setApiError('');
@@ -46,6 +60,7 @@ export default function Login() {
         password: values.password,
       });
       login(data.token, data.user);
+      // Backend auto-detects role; redirect accordingly
       navigate(getRoleDashboard(data.user.role), { replace: true });
     } catch (err: any) {
       setApiError(err.response?.data?.message || 'Login failed. Please try again.');
@@ -58,32 +73,67 @@ export default function Login() {
       style={{ backgroundImage: `url('/bg-clean.png')` }}
     >
       <div className="relative z-10 w-full max-w-[420px] bg-white p-10 shadow-2xl rounded-sm">
-        <div className="mb-10 flex flex-col items-center text-center">
+        {/* Logo & Title */}
+        <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 h-16 w-32">
             <img src="/kiu-logo.png" alt="KIU" className="h-full w-full object-contain" />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
-            KIU SCMS
-          </h1>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">KIU SCMS</h1>
           <p className="mt-1 text-sm font-medium text-slate-500">
             Student Complaint Management System
           </p>
         </div>
 
+        {/* ── Student / Staff Toggle ── */}
+        <div className="mb-7 flex overflow-hidden rounded-sm border border-slate-200">
+          <button
+            id="type-student"
+            type="button"
+            onClick={() => handleTypeSwitch('student')}
+            className={`flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors ${
+              userType === 'student'
+                ? 'bg-[#34b05a] text-white shadow-sm'
+                : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+            }`}
+          >
+            <GraduationCap className="h-4 w-4" />
+            Student
+          </button>
+          <div className="w-px bg-slate-200" />
+          <button
+            id="type-staff"
+            type="button"
+            onClick={() => handleTypeSwitch('staff')}
+            className={`flex flex-1 items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-colors ${
+              userType === 'staff'
+                ? 'bg-[#34b05a] text-white shadow-sm'
+                : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+            }`}
+          >
+            <Briefcase className="h-4 w-4" />
+            Staff
+          </button>
+        </div>
+
+        {/* Error Banner */}
         {apiError && (
-          <div className="mb-6 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mb-5 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {apiError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
           {/* Identifier */}
           <div className="space-y-2">
             <input
               id="identifier"
               type="text"
               autoComplete="username"
-              placeholder="Email or Registration number"
+              placeholder={
+                userType === 'student'
+                  ? 'Registration No. or Email'
+                  : 'Staff No. or Email'
+              }
               {...register('identifier')}
               className={`w-full rounded-sm border px-4 py-3.5 text-base text-slate-800 outline-none transition focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a] ${
                 errors.identifier ? 'border-rose-400 bg-rose-50' : 'border-slate-300 bg-white'
@@ -125,10 +175,12 @@ export default function Login() {
             id="login-submit"
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 flex w-full items-center justify-center rounded-sm bg-[#34b05a] py-3.5 text-base font-bold text-white transition-colors hover:bg-[#2d9a4e] focus:outline-none focus:ring-2 focus:ring-[#34b05a]/50 disabled:pointer-events-none disabled:opacity-70"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-sm bg-[#34b05a] py-4 text-base font-bold text-white transition-colors hover:bg-[#2d9a4e] focus:outline-none focus:ring-2 focus:ring-[#34b05a]/50 disabled:pointer-events-none disabled:opacity-70"
           >
-            {isSubmitting && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
-            {isSubmitting ? 'Authenticating…' : 'Next'}
+            {isSubmitting && <Loader2 className="h-5 w-5 animate-spin" />}
+            {isSubmitting
+              ? 'Authenticating…'
+              : `Sign in as ${userType === 'student' ? 'Student' : 'Staff'}`}
           </button>
         </form>
 
@@ -138,6 +190,11 @@ export default function Login() {
             <br />
             Student Complaint Management System
           </p>
+          <div className="mt-4">
+            <a href="/credentials" className="text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest text-[10px]">
+              Demo Credentials
+            </a>
+          </div>
         </div>
       </div>
     </div>

@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import TimeDisplay from '../dashboard/TimeDisplay';
 import NotificationDropdown from './NotificationDropdown';
+import { ADMIN_ROLES } from '../../routes';
 
 type NavigationItem = {
   label: string;
@@ -26,35 +27,39 @@ type NavigationItem = {
 };
 
 function getNavigation(role?: string): NavigationItem[] {
-  if (role === 'HOD' || role === 'SuperAdmin') {
+  if (role && ADMIN_ROLES.includes(role)) {
     return [
-      { label: 'Dashboard',       href: '/dashboard/hod',              icon: ShieldCheck   },
-      { label: 'Complaint Queue', href: '/dashboard/hod/complaints',   icon: ClipboardList },
-      { label: 'Reports',         href: '/dashboard/hod/reports',      icon: BarChart3     },
-      { label: 'Appointments',    href: '/dashboard/appointments',     icon: CalendarDays  },
+      { label: 'Dashboard',       href: '/dashboard/hod',            icon: ShieldCheck   },
+      { label: 'Complaint Queue', href: '/dashboard/hod/complaints', icon: ClipboardList },
+      { label: 'Reports',         href: '/dashboard/hod/reports',    icon: BarChart3     },
+      { label: 'Appointments',    href: '/dashboard/appointments',   icon: CalendarDays  },
     ];
   }
 
   if (role === 'Lecturer') {
     return [
-      { label: 'Worklist',     href: '/dashboard/lecturer',         icon: LayoutDashboard },
-      { label: 'Appointments', href: '/dashboard/appointments',     icon: CalendarDays    },
+      { label: 'Worklist',     href: '/dashboard/lecturer',       icon: LayoutDashboard },
+      { label: 'Appointments', href: '/dashboard/appointments',   icon: CalendarDays    },
     ];
   }
 
-  // Student
+  // Student (default)
   return [
-    { label: 'Dashboard',        href: '/dashboard/student',                 icon: LayoutDashboard },
-    { label: 'Submit Complaint', href: '/dashboard/student/complaints/new',  icon: FilePlus2       },
-    { label: 'My Complaints',    href: '/dashboard/student/complaints',      icon: FileText        },
-    { label: 'Appointments',     href: '/dashboard/appointments',            icon: CalendarDays    },
+    { label: 'Dashboard',        href: '/dashboard/student',                icon: LayoutDashboard },
+    { label: 'Submit Complaint', href: '/dashboard/student/complaints/new', icon: FilePlus2       },
+    { label: 'My Complaints',    href: '/dashboard/student/complaints',     icon: FileText        },
+    { label: 'Appointments',     href: '/dashboard/appointments',           icon: CalendarDays    },
   ];
 }
 
 function getRoleMeta(role?: string) {
-  if (role === 'HOD' || role === 'SuperAdmin') return { title: 'HOD',      badge: 'HOD'      };
-  if (role === 'Lecturer')                     return { title: 'Lecturer', badge: 'Lecturer' };
-  return                                              { title: 'Student',  badge: 'Student'  };
+  if (role && ADMIN_ROLES.includes(role)) {
+    // Show the actual role name for non-HOD admin-class users
+    const label = role === 'HOD' || role === 'SuperAdmin' ? 'HOD' : role;
+    return { title: label, badge: label };
+  }
+  if (role === 'Lecturer') return { title: 'Lecturer', badge: 'Lecturer' };
+  return { title: 'Student', badge: 'Student' };
 }
 
 function getPageTitle(pathname: string) {
@@ -64,7 +69,7 @@ function getPageTitle(pathname: string) {
     { match: /^\/dashboard\/student\/complaints\/new$/,   title: 'Submit Complaint'  },
     { match: /^\/dashboard\/student\/complaints\/[^/]+$/, title: 'Complaint Details' },
     { match: /^\/dashboard\/student\/complaints$/,        title: 'My Complaints'     },
-    // HOD
+    // HOD / Admin
     { match: /^\/dashboard\/hod$/,                        title: 'HOD Dashboard'     },
     { match: /^\/dashboard\/hod\/complaints$/,            title: 'Complaint Queue'   },
     { match: /^\/dashboard\/hod\/complaints\/[^/]+$/,     title: 'Complaint Details' },
@@ -84,14 +89,16 @@ function isActivePath(pathname: string, href: string) {
 }
 
 export default function DashboardLayout() {
-  const location = useLocation();
+  const location   = useLocation();
   const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const navigation  = getNavigation(user?.role);
-  const roleMeta    = getRoleMeta(user?.role);
-  const pageTitle   = getPageTitle(location.pathname);
-  const isHODRole   = user?.role === 'HOD' || user?.role === 'SuperAdmin';
+  const navigation = getNavigation(user?.role);
+  const roleMeta   = getRoleMeta(user?.role);
+  const pageTitle  = getPageTitle(location.pathname);
+
+  // All admin-class roles share the dark HOD workspace UI
+  const isHODRole = !!(user?.role && ADMIN_ROLES.includes(user.role));
 
   useEffect(() => { setIsSidebarOpen(false); }, [location.pathname]);
 
@@ -127,7 +134,9 @@ export default function DashboardLayout() {
                   Student Complaint System
                 </h1>
                 {isHODRole && (
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/55">HOD Control</p>
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/55">
+                    {user?.role === 'Lecturer' ? 'Lecturer Workspace' : 'Staff Control'}
+                  </p>
                 )}
                 {user?.role === 'Lecturer' && (
                   <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/55">Lecturer Workspace</p>
@@ -202,7 +211,7 @@ export default function DashboardLayout() {
                 {isHODRole ? (
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold uppercase tracking-[0.16em] text-white/72">
-                      KIU · HOD Complaint Oversight
+                      KIU · Staff Complaint Oversight
                     </p>
                     <h2 className="truncate text-[24px] font-bold text-white">{pageTitle}</h2>
                   </div>
@@ -242,7 +251,7 @@ export default function DashboardLayout() {
                     <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center">
                       <div className="h-12 w-1 rounded-full bg-[#33b35a]" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6e7a72]">HOD Workspace</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6e7a72]">Staff Workspace</p>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                           <h3 className="text-[22px] font-semibold text-[#292929]">{pageTitle}</h3>
                           <span className="text-sm font-medium text-[#33b35a]">Complaint review, routing and lecturer assignment</span>

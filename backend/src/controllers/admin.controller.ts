@@ -484,48 +484,64 @@ export const updateStatus = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Get dashboard stats (HOD / Lecturer)
+// @desc    Get dashboard stats (HOD / Lecturer / SuperAdmin)
 // @route   GET /api/v1/admin/dashboard
 export const getAdminStats = async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  const userId   = (req as any).user?.userId;
   const roleName = (req as any).user?.roleName;
 
+  // Roles that bypass department scoping — they see all complaints
+  const SUPER_ROLES = ['SuperAdmin', 'Registrar', 'Vice Chancellor', 'Quality Assurance', 'PRO'];
+
   try {
-    let filterSQL = '';
+    /**
+     * filterSQL   — used in simple "WHERE <column> = ?" (no table alias)
+     * scopedFilter — used where the complaints table is aliased as "c."
+     * Both default to '1=1' (no restriction) for SuperAdmin / full-access roles.
+     */
+    let filterSQL    = '1=1';
+    let scopedFilter = '1=1';
     let filterParam: any = null;
 
     if (roleName === 'HOD') {
       const deptId = await getHODDepartmentId(userId);
       if (deptId) {
-        filterSQL = 'department_id = ?';
-        filterParam = deptId;
+        filterSQL    = 'department_id = ?';
+        scopedFilter = 'c.department_id = ?';
+        filterParam  = deptId;
       } else {
-        filterSQL = '1=0';
+        filterSQL    = '1=0';
+        scopedFilter = '1=0';
       }
     } else if (roleName === 'Lecturer') {
-      filterSQL = 'assigned_staff_id = (SELECT id FROM staff WHERE user_id = ? LIMIT 1)';
-      filterParam = userId;
+      filterSQL    = 'assigned_staff_id = (SELECT id FROM staff WHERE user_id = ? LIMIT 1)';
+      scopedFilter = 'c.assigned_staff_id = (SELECT id FROM staff WHERE user_id = ? LIMIT 1)';
+      filterParam  = userId;
     }
+    // SuperAdmin / Registrar / VC / QA / PRO → filterSQL='1=1', scopedFilter='1=1' (sees everything)
 
     const params = filterParam !== null ? [filterParam] : [];
-    const scopedFilter = filterSQL
-      .replace(/\bassigned_staff_id\b/g, 'c.assigned_staff_id')
-      .replace(/\bdepartment_id\b/g, 'c.department_id');
     const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
-    const [total]: any = await db.query(`SELECT COUNT(*) AS count FROM complaints WHERE ${filterSQL}`, params);
+    const [total]: any = await db.query(
+      `SELECT COUNT(*) AS count FROM complaints WHERE ${filterSQL}`,
+      params
+    );
+
     const [byStatus]: any = await db.query(
       `SELECT ${displayStatusSql} AS status, COUNT(*) AS count
        FROM complaints c WHERE ${scopedFilter} GROUP BY ${displayStatusSql}`,
       params
     );
+
     const [byCategory]: any = await db.query(
       `SELECT cc.name AS category, COUNT(c.id) AS count
        FROM complaint_categories cc
-       LEFT JOIN complaints c ON cc.id = c.category_id AND c.${filterSQL}
+       LEFT JOIN complaints c ON cc.id = c.category_id AND ${scopedFilter}
        GROUP BY cc.name`,
       params
     );
+
     const [slaMetrics]: any = await db.query(
       `SELECT
          SUM(CASE WHEN status NOT IN ('Resolved','Closed','Rejected')
@@ -542,7 +558,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
       params
     );
 
-    // HOD-specific: unassigned count
+    // Unassigned count — scoped for HOD, system-wide for super roles
     let unassigned = 0;
     if (roleName === 'HOD') {
       const deptId = await getHODDepartmentId(userId);
@@ -555,21 +571,28 @@ export const getAdminStats = async (req: Request, res: Response) => {
         );
         unassigned = ua[0].count;
       }
+    } else if (SUPER_ROLES.includes(roleName)) {
+      const [ua]: any = await db.query(
+        `SELECT COUNT(*) AS count FROM complaints
+         WHERE assigned_staff_id IS NULL
+           AND status NOT IN ('Resolved','Closed','Rejected')`
+      );
+      unassigned = ua[0].count;
     }
 
-    // Recent activity
+    // Recent activity (scoped)
     const [recent]: any = await db.query(
       `SELECT csh.*, c.reference_number, u.first_name, u.last_name
        FROM complaint_status_history csh
        JOIN complaints c ON csh.complaint_id = c.id
        JOIN users u ON csh.changed_by_user_id = u.id
-       WHERE ${filterSQL.replace('department_id', 'c.department_id').replace('assigned_staff_id', 'c.assigned_staff_id')}
+       WHERE ${scopedFilter}
           OR csh.changed_by_user_id = ?
        ORDER BY csh.changed_at DESC LIMIT 15`,
       [...params, userId]
     );
 
-    // Urgent cases
+    // Urgent cases (high-priority or overdue)
     const [urgentCases]: any = await db.query(
       `SELECT id, reference_number, title, priority, status, created_at
        FROM complaints
@@ -580,14 +603,14 @@ export const getAdminStats = async (req: Request, res: Response) => {
       params
     );
 
-    // Recent feedback
+    // Recent student feedback (scoped)
     const [recentFeedback]: any = await db.query(
       `SELECT f.*, c.reference_number, u.first_name, u.last_name, u.email
        FROM feedback f
        JOIN complaints c ON f.complaint_id = c.id
        JOIN students s ON f.student_id = s.id
        JOIN users u ON s.user_id = u.id
-       WHERE c.${filterSQL}
+       WHERE ${scopedFilter}
        ORDER BY f.created_at DESC LIMIT 3`,
       params
     );

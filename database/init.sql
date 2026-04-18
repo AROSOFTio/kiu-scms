@@ -4,8 +4,8 @@
 -- Faculties: SONAS | SOMAC | Education
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS scms_db;
-USE scms_db;
+CREATE DATABASE IF NOT EXISTS kiu_scms;
+USE kiu_scms;
 
 -- ---------------------------------------------------------------
 -- 1. Roles
@@ -301,6 +301,4 @@ INSERT INTO system_settings (key_name, value) VALUES
     ('max_file_size_mb',     '10'),
     ('allowed_file_types',   'pdf,jpg,jpeg,png,doc,docx');
 
--- 6. Initial Admin (Password: Admin@123)
-INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active)
-VALUES (1, 'System', 'Admin', 'admin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
+-- Removed Initial Admin as per Top Management wipe request.
