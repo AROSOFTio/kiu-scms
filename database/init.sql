@@ -260,35 +260,31 @@ CREATE TABLE appointments (
 -- SEED DATA
 -- ===============================================================
 
--- Roles (id=1 SuperAdmin, id=2 HOD, id=3 Lecturer, id=4 Student)
+-- 1. Roles
 INSERT INTO roles (name) VALUES
     ('SuperAdmin'),
     ('HOD'),
     ('Lecturer'),
-    ('Student');
+    ('Student'),
+    ('Registrar'),
+    ('Vice Chancellor'),
+    ('Quality Assurance'),
+    ('PRO');
 
--- Faculties (id=1 SONAS, id=2 SOMAC, id=3 Education)
-INSERT INTO faculties (name) VALUES
-    ('SONAS'),
-    ('SOMAC'),
-    ('Education');
+-- 2. Faculties
+INSERT INTO faculties (id, name) VALUES
+    (1, 'Faculty of Computing & Informatics'),
+    (2, 'Faculty of Business');
 
--- Departments
--- SONAS: id 1-3
--- SOMAC: id 4-6
--- Education: id 7-9
-INSERT INTO departments (faculty_id, name) VALUES
-    (1, 'Department of Environmental Management'),            -- id=1
-    (1, 'Department of Wildlife Management & Conservation'), -- id=2
-    (1, 'Department of Chemistry'),                          -- id=3
-    (2, 'Department of Computer Science'),                   -- id=4
-    (2, 'Department of Data Science and Analytics'),         -- id=5
-    (2, 'Department of Information Technology'),             -- id=6
-    (3, 'Department of Primary Education'),                  -- id=7
-    (3, 'Department of Secondary Education'),                -- id=8
-    (3, 'Department of Early Childhood Education');          -- id=9
+-- 3. Departments
+INSERT INTO departments (id, faculty_id, name) VALUES
+    (1, 1, 'Computer Science'),
+    (2, 1, 'Information Technology'),
+    (3, 1, 'Software Engineering'),
+    (4, 1, 'Data Science'),
+    (5, 2, 'Business Admin');
 
--- Complaint Categories
+-- 4. Complaint Categories
 INSERT INTO complaint_categories (name, description) VALUES
     ('Academic',        'Issues related to lectures, exams, marks, and academic performance'),
     ('Technical',       'Portal issues, WiFi, lab equipment, software problems'),
@@ -298,9 +294,13 @@ INSERT INTO complaint_categories (name, description) VALUES
     ('Administration',  'Registration, documents, certificates, staff conduct'),
     ('Other',           'General complaints not covered by other categories');
 
--- System Settings
+-- 5. System Settings
 INSERT INTO system_settings (key_name, value) VALUES
     ('system_name',          'KIU Student Complaint Management System'),
     ('system_email',         'scms@kiu.ac.ug'),
     ('max_file_size_mb',     '10'),
     ('allowed_file_types',   'pdf,jpg,jpeg,png,doc,docx');
+
+-- 6. Initial Admin (Password: Admin@123)
+INSERT INTO users (role_id, first_name, last_name, email, password_hash, is_active)
+VALUES (1, 'System', 'Admin', 'admin@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
