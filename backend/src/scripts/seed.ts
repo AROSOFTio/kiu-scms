@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import type { PoolConnection } from 'mysql2/promise';
 import { db } from '../config/database';
 
 const DEMO_PASSWORD = 'Admin@123';
@@ -151,8 +152,43 @@ const SYSTEM_SETTINGS = [
   ['allowed_file_types', 'pdf,jpg,jpeg,png,doc,docx'],
 ];
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function getSeedConnection(): Promise<PoolConnection> {
+  const attempts = Number(process.env.DB_CONNECT_RETRIES || 10);
+  const delayMs = Number(process.env.DB_CONNECT_RETRY_DELAY_MS || 3000);
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    let connection: PoolConnection | null = null;
+
+    try {
+      connection = await db.getConnection();
+      await connection.query('SELECT 1');
+
+      if (attempt > 1) {
+        console.log(`Database connection succeeded on attempt ${attempt}/${attempts}.`);
+      }
+
+      return connection;
+    } catch (error) {
+      lastError = error;
+      connection?.release();
+
+      const message = error instanceof Error ? error.message : 'Unknown database connection error';
+      console.warn(`Database not ready yet (attempt ${attempt}/${attempts}): ${message}`);
+
+      if (attempt < attempts) {
+        await wait(delayMs);
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Unable to establish a database connection for seeding.');
+}
+
 async function seed() {
-  const connection = await db.getConnection();
+  const connection = await getSeedConnection();
 
   try {
     console.log('Starting clean academic demo seeding...');

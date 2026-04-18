@@ -9,7 +9,14 @@ import {
   Search,
   Users,
 } from 'lucide-react';
-import { DEMO_PASSWORD, demoDepartments, demoUsers, type DemoRole, type DemoUser } from '../data/demoUsers';
+import {
+  DEMO_PASSWORD,
+  demoDepartments,
+  demoUsers,
+  type DemoDepartmentGroup,
+  type DemoRole,
+  type DemoUser,
+} from '../data/demoUsers';
 
 const roleStyles: Record<DemoRole, string> = {
   HOD: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -22,6 +29,21 @@ const getRoleIcon = (role: DemoRole) => {
   if (role === 'Lecturer') return <Users className="h-4 w-4" />;
   return <GraduationCap className="h-4 w-4" />;
 };
+
+type VisibleDepartmentGroup = DemoDepartmentGroup & {
+  visibleUsers: DemoUser[];
+};
+
+const getDepartmentUsers = (group: DemoDepartmentGroup): DemoUser[] => [
+  group.hod,
+  ...group.lecturers,
+  ...group.students,
+];
+
+const credentialGroups: VisibleDepartmentGroup[] = demoDepartments.map((group) => ({
+  ...group,
+  visibleUsers: getDepartmentUsers(group),
+}));
 
 const getIdentifierLabel = (role: DemoRole) => (role === 'Student' ? 'Student No.' : 'Staff No.');
 
@@ -111,13 +133,13 @@ export default function Credentials() {
     window.setTimeout(() => setCopied(null), 1800);
   };
 
-  const filteredDepartments = useMemo(() => {
+  const filteredDepartments = useMemo<VisibleDepartmentGroup[]>(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return demoDepartments;
+    if (!term) return credentialGroups;
 
-    return demoDepartments
+    return credentialGroups
       .map((group) => {
-        const users = [group.hod, ...group.lecturers, ...group.students].filter((user) => {
+        const users = group.visibleUsers.filter((user) => {
           const haystack = [
             user.name,
             user.email,
@@ -139,7 +161,7 @@ export default function Credentials() {
           visibleUsers: users,
         };
       })
-      .filter(Boolean) as Array<(typeof demoDepartments)[number] & { visibleUsers: DemoUser[] }>;
+      .filter((group): group is VisibleDepartmentGroup => group !== null);
   }, [search]);
 
   const totals = {
@@ -203,9 +225,7 @@ export default function Credentials() {
         </section>
 
         {filteredDepartments.map((group) => {
-          const visibleUsers = 'visibleUsers' in group
-            ? group.visibleUsers
-            : [group.hod, ...group.lecturers, ...group.students];
+          const visibleUsers = group.visibleUsers;
 
           return (
             <section key={group.department} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
