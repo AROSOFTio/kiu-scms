@@ -4,7 +4,7 @@
 -- Hash: $2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW
 -- ============================================================
 
-USE kiu_scms;
+-- Removed hardcoded USE statement for aaPanel compatibility
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE students;

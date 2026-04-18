@@ -4,8 +4,7 @@
 -- Faculties: SONAS | SOMAC | Education
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS kiu_scms;
-USE kiu_scms;
+-- Removed hardcoded USE statement for aaPanel compatibility
 
 -- ---------------------------------------------------------------
 -- 1. Roles
