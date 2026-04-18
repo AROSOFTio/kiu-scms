@@ -20,6 +20,7 @@ import StaffDashboard from '../pages/dashboard/StaffDashboard';
 
 // Shared
 import Appointments from '../pages/appointments/Appointments';
+import Credentials from '../pages/Credentials';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -48,6 +49,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/credentials" element={<Credentials />} />
 
       {/* All dashboard routes share the layout */}
       <Route
