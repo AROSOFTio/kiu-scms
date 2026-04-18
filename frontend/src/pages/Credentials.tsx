@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Copy, CheckCircle, Shield, Briefcase, GraduationCap, Users } from 'lucide-react';
 
 interface Credential {
