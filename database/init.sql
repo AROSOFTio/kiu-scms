@@ -6,6 +6,29 @@
 
 -- Removed hardcoded USE statement for aaPanel compatibility
 
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ---------------------------------------------------------------
+-- 0. Clean Slate (Drop all tables if they exist)
+-- ---------------------------------------------------------------
+DROP TABLE IF EXISTS appointments;
+DROP TABLE IF EXISTS hod_availability;
+DROP TABLE IF EXISTS system_settings;
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS feedback;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS complaint_internal_notes;
+DROP TABLE IF EXISTS complaint_status_history;
+DROP TABLE IF EXISTS complaint_attachments;
+DROP TABLE IF EXISTS complaints;
+DROP TABLE IF EXISTS complaint_categories;
+DROP TABLE IF EXISTS staff;
+DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS faculties;
+DROP TABLE IF EXISTS roles;
+
 -- ---------------------------------------------------------------
 -- 1. Roles
 -- ---------------------------------------------------------------

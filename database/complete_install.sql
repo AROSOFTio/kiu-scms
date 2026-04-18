@@ -6,6 +6,29 @@
 
 -- Removed hardcoded USE statement for aaPanel compatibility
 
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ---------------------------------------------------------------
+-- 0. Clean Slate (Drop all tables if they exist)
+-- ---------------------------------------------------------------
+DROP TABLE IF EXISTS appointments;
+DROP TABLE IF EXISTS hod_availability;
+DROP TABLE IF EXISTS system_settings;
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS feedback;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS complaint_internal_notes;
+DROP TABLE IF EXISTS complaint_status_history;
+DROP TABLE IF EXISTS complaint_attachments;
+DROP TABLE IF EXISTS complaints;
+DROP TABLE IF EXISTS complaint_categories;
+DROP TABLE IF EXISTS staff;
+DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS faculties;
+DROP TABLE IF EXISTS roles;
+
 -- ---------------------------------------------------------------
 -- 1. Roles
 -- ---------------------------------------------------------------
@@ -309,11 +332,6 @@ INSERT INTO system_settings (key_name, value) VALUES
 
 -- Removed hardcoded USE statement for aaPanel compatibility
 
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE students;
-TRUNCATE TABLE staff;
-TRUNCATE TABLE users;
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- 1. Roles
 INSERT INTO roles (name) VALUES 
@@ -355,3 +373,5 @@ INSERT INTO staff (user_id, staff_number, department_id, role_id) VALUES (3, 'ST
 INSERT INTO users (id, role_id, first_name, last_name, email, password_hash, is_active)
 VALUES (4, (SELECT id FROM roles WHERE name='Student'), 'Enoch', 'Micah', 'enoch.micah@kiu.ac.ug', '$2b$12$gwzusvLSAEzNeF.lkW8uxe3Nsf7Z3FPNkpbQvPbVA7o1hCID/A5LW', 1);
 INSERT INTO students (user_id, student_number, department_id) VALUES (4, '2026/KIU/C001', 1);
+
+SET FOREIGN_KEY_CHECKS = 1;
