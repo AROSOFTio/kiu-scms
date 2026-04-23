@@ -258,10 +258,6 @@ export default function ComplaintWorkspace() {
                 <p className="mt-2 text-sm font-semibold text-slate-900">{complaint.category_name}</p>
               </div>
               <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Complaint Channel</p>
-                <p className="mt-2 text-sm font-semibold text-slate-900">{(complaint as any).complaint_channel || 'Portal Submission'}</p>
-              </div>
-              <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Submitted</p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">{formatDate(complaint.created_at)}</p>
               </div>

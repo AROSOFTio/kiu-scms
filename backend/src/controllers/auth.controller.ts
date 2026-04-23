@@ -5,11 +5,21 @@ import { db } from '../config/database';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
+/**
+ * Roles that belong to the "staff" side of the system.
+ * Keep in sync with Login.tsx STAFF_ROLES constant.
+ */
+const STAFF_ROLES = ['HOD', 'Lecturer'];
+
 // @desc    Login a user (single form — role detected automatically)
 // @route   POST /api/v1/auth/login
 export const loginUser = async (req: Request, res: Response) => {
-  // Accept identifier only (email, student number, or staff number)
-  const { identifier, password } = req.body;
+  const { identifier, password, loginType } = req.body as {
+    identifier: string;
+    password: string;
+    /** 'student' | 'staff' — sent by the frontend login tab */
+    loginType?: 'student' | 'staff';
+  };
 
   if (!identifier || !password) {
     return res.status(400).json({ status: 'error', message: 'Identifier and password are required' });
@@ -40,6 +50,26 @@ export const loginUser = async (req: Request, res: Response) => {
     if (!user.is_active) {
       return res.status(401).json({ status: 'error', message: 'Account is deactivated. Contact your administrator.' });
     }
+
+    // ── Role / login-type enforcement ──────────────────────────────────────────
+    // loginType sent by frontend tab enforces which accounts may authenticate here.
+    const isStudentRole = user.role_name === 'Student';
+    const isStaffRole   = STAFF_ROLES.includes(user.role_name);
+
+    if (loginType === 'student' && isStaffRole) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Staff accounts must use the Staff login tab.',
+      });
+    }
+
+    if (loginType === 'staff' && isStudentRole) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Student accounts must use the Student login tab.',
+      });
+    }
+    // ───────────────────────────────────────────────────────────────────────────
 
     const token = jwt.sign({ userId: user.id, roleId: user.role_id }, JWT_SECRET, { expiresIn: '1d' });
 

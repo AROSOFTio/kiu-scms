@@ -15,11 +15,11 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 /**
- * All "admin-class" staff roles share the HOD dashboard.
- * Lecturer gets their own workspace.
- * Everyone else (Student) gets the student portal.
+ * Staff roles: HOD, Lecturer.
+ * Keep in sync with auth.controller.ts STAFF_ROLES.
  */
 const ADMIN_ROLES = ['HOD'];
+const STAFF_ROLES = ['HOD', 'Lecturer'];
 
 function getRoleDashboard(role: string): string {
   if (ADMIN_ROLES.includes(role)) return '/dashboard/hod';
@@ -58,10 +58,23 @@ export default function Login() {
       const { data } = await api.post('/auth/login', {
         identifier: values.identifier.trim(),
         password: values.password,
+        loginType: userType,   // ← backend enforces role matches this tab
       });
+
+      const role: string = data.user.role;
+
+      // Double-check client-side: if role doesn't match tab, clear and warn
+      if (userType === 'student' && STAFF_ROLES.includes(role)) {
+        setApiError('Staff accounts must use the Staff login tab.');
+        return;
+      }
+      if (userType === 'staff' && role === 'Student') {
+        setApiError('Student accounts must use the Student login tab.');
+        return;
+      }
+
       login(data.token, data.user);
-      // Backend auto-detects role; redirect accordingly
-      navigate(getRoleDashboard(data.user.role), { replace: true });
+      navigate(getRoleDashboard(role), { replace: true });
     } catch (err: any) {
       setApiError(err.response?.data?.message || 'Login failed. Please try again.');
     }

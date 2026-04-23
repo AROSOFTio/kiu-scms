@@ -7,7 +7,6 @@ import {
   Clock3,
   FilePlus2,
   FileSearch,
-  FileText,
   ListFilter,
   LucideIcon,
   Search,
@@ -175,16 +174,7 @@ export default function StudentDashboard() {
 
   const statCards = [
     {
-      label: 'Total Complaints',
-      value: stats?.total || 0,
-      icon: FileText,
-      tone: 'bg-[#2f3542]',
-      textTone: 'text-white',
-      iconTone: 'bg-white/12 text-white',
-      border: 'border-[#3f4759]',
-    },
-    {
-      label: 'Pending',
+      label: 'Active',
       value: stats?.pending || 0,
       icon: Clock3,
       tone: 'bg-[#d6a317]',
@@ -265,9 +255,9 @@ export default function StudentDashboard() {
         </div>
       </section>
 
-      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${appointmentsActive ? 'xl:grid-cols-6' : 'xl:grid-cols-5'}`}>
+      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${appointmentsActive ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
         {loading
-          ? Array(appointmentsActive ? 6 : 5)
+          ? Array(appointmentsActive ? 5 : 4)
               .fill(0)
               .map((_, index) => <StatSkeleton key={index} />)
           : (
