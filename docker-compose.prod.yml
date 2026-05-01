@@ -22,6 +22,12 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./backend/uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5000/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 20s
     networks:
       - scms_prod_network
 
@@ -36,7 +42,14 @@ services:
     ports:
       - "${FRONTEND_PORT:-3001}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 10s
     networks:
       - scms_prod_network
 
