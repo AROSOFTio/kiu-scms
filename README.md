@@ -57,6 +57,7 @@ Setup steps:
 6. Run `bash scripts/deploy.sh`
 7. Point aaPanel reverse proxy to `http://127.0.0.1:3001`
 8. Verify the deployed stack with `http://127.0.0.1:3001/health`
+9. If login shows `Access denied for user ...@172.x.x.x`, run `database/grant-docker-access.sql` in aaPanel phpMyAdmin or run `bash scripts/fix-mysql-docker.sh` as root
 
 Important:
 
