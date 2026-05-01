@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, FileText, Loader2, Route, Send, UserRound } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Loader2, Route, Send } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -9,7 +9,6 @@ import {
   ComplaintActivityTimeline,
   ComplaintStatusBadge,
   ROUTING_DESTINATIONS,
-  createInternalNoteActivity,
   createStatusActivity,
 } from '../../components/complaints/ComplaintLifecycle';
 
@@ -20,14 +19,6 @@ interface TimelineEvent {
   changed_at: string;
   first_name?: string;
   last_name?: string;
-}
-
-interface InternalNote {
-  id: number;
-  note: string;
-  created_at: string;
-  first_name: string;
-  last_name: string;
 }
 
 interface ComplaintDetail {
@@ -74,16 +65,13 @@ export default function ComplaintWorkspace() {
   const backPath = canRoute ? '/dashboard/hod/complaints' : '/dashboard/lecturer';
 
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
-  const [notes, setNotes] = useState<InternalNote[]>([]);
   const [staffList, setStaffList] = useState<StaffRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingStatus, setSavingStatus] = useState(false);
   const [savingRoute, setSavingRoute] = useState(false);
-  const [savingNote, setSavingNote] = useState(false);
 
   const [statusForm, setStatusForm] = useState({ status: 'Received by HOD', remarks: '' });
-  const [routeForm, setRouteForm] = useState({ destination: '', otherUnit: '', staffId: '', remarks: '' });
-  const [noteForm, setNoteForm] = useState('');
+  const [routeForm, setRouteForm] = useState({ destination: '', otherUnit: '', staffId: '' });
 
   const loadComplaint = async () => {
     setLoading(true);
@@ -104,18 +92,8 @@ export default function ComplaintWorkspace() {
     }
   };
 
-  const loadNotes = async () => {
-    try {
-      const response = await api.get(`/admin/complaints/${id}/notes`);
-      setNotes(response.data.data || []);
-    } catch {
-      setNotes([]);
-    }
-  };
-
   useEffect(() => {
     loadComplaint();
-    loadNotes();
   }, [id]);
 
   useEffect(() => {
@@ -123,11 +101,10 @@ export default function ComplaintWorkspace() {
     api.get('/admin/staff').then((response) => setStaffList(response.data.data || [])).catch(() => setStaffList([]));
   }, [canRoute]);
 
-  const activityEntries = useMemo(() => {
-    const statusEntries = (complaint?.timeline || []).map((event) => createStatusActivity(event));
-    const noteEntries = notes.map((note) => createInternalNoteActivity(note));
-    return [...statusEntries, ...noteEntries].sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime());
-  }, [complaint?.timeline, notes]);
+  const activityEntries = useMemo(
+    () => (complaint?.timeline || []).map((event) => createStatusActivity(event)),
+    [complaint?.timeline],
+  );
 
   const canAccessComplaint = canRoute || complaint?.assigned_staff_user_id === user?.id;
 
@@ -150,35 +127,39 @@ export default function ComplaintWorkspace() {
 
   const handleRoute = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!routeForm.destination) return;
+    const trimmedOtherUnit = routeForm.otherUnit.trim();
+    const requiresLecturer = routeForm.destination === 'Lecturer';
+    const requiresOtherUnit = routeForm.destination === 'Other unit';
+
+    if (
+      !routeForm.destination
+      || (requiresLecturer && !routeForm.staffId)
+      || (requiresOtherUnit && !trimmedOtherUnit)
+    ) {
+      return;
+    }
 
     setSavingRoute(true);
     try {
       await api.patch(`/admin/complaints/${id}/route`, {
         destination: routeForm.destination,
-        otherUnit: routeForm.destination === 'Other unit' ? routeForm.otherUnit.trim() : undefined,
-        staffId: routeForm.staffId || undefined,
-        remarks: routeForm.remarks.trim() || undefined,
+        otherUnit: requiresOtherUnit ? trimmedOtherUnit : undefined,
+        staffId: requiresLecturer ? routeForm.staffId : undefined,
       });
-      setRouteForm({ destination: '', otherUnit: '', staffId: '', remarks: '' });
+      setRouteForm({ destination: '', otherUnit: '', staffId: '' });
       await loadComplaint();
     } finally {
       setSavingRoute(false);
     }
   };
 
-  const handleAddNote = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!noteForm.trim()) return;
-
-    setSavingNote(true);
-    try {
-      await api.post(`/admin/complaints/${id}/notes`, { note: noteForm.trim() });
-      setNoteForm('');
-      await loadNotes();
-    } finally {
-      setSavingNote(false);
-    }
+  const handleRouteDestinationChange = (value: string) => {
+    setRouteForm((current) => ({
+      ...current,
+      destination: value,
+      otherUnit: value === 'Other unit' ? current.otherUnit : '',
+      staffId: value === 'Lecturer' ? current.staffId : '',
+    }));
   };
 
   if (loading) {
@@ -209,6 +190,7 @@ export default function ComplaintWorkspace() {
   }
 
   const currentStatus = complaint.display_status || complaint.status;
+  const lecturerRoutingEnabled = routeForm.destination === 'Lecturer';
   const statusOptions = canRoute
     ? ['Received by HOD', 'Assigned to Lecturer', 'In Progress', 'Awaiting Student', 'Resolved', 'Closed', 'Rejected']
     : ['In Progress', 'Awaiting Student', 'Resolved'];
@@ -312,7 +294,7 @@ export default function ComplaintWorkspace() {
                 </div>
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">Assignment</h2>
-                  <p className="text-sm text-slate-500">Assign this complaint to a Lecturer in your department.</p>
+                  <p className="text-sm text-slate-500">Route this complaint to a lecturer in your department or another destination.</p>
                 </div>
               </div>
 
@@ -321,10 +303,10 @@ export default function ComplaintWorkspace() {
                   <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Forward to</label>
                   <select
                     value={routeForm.destination}
-                    onChange={(event) => setRouteForm((current) => ({ ...current, destination: event.target.value }))}
+                    onChange={(event) => handleRouteDestinationChange(event.target.value)}
                     className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
                   >
-                    <option value="">Select unit</option>
+                    <option value="">-- Select destination --</option>
                     {ROUTING_DESTINATIONS.map((item) => (
                       <option key={item} value={item}>
                         {item}
@@ -338,9 +320,10 @@ export default function ComplaintWorkspace() {
                   <select
                     value={routeForm.staffId}
                     onChange={(event) => setRouteForm((current) => ({ ...current, staffId: event.target.value }))}
-                    className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+                    disabled={!lecturerRoutingEnabled}
+                    className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="">No direct assignee</option>
+                    <option value="">Select lecturer</option>
                     {staffList.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.first_name} {item.last_name} ({item.role_name})
@@ -361,25 +344,14 @@ export default function ComplaintWorkspace() {
                   </div>
                 )}
 
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Routing note</label>
-                  <textarea
-                    value={routeForm.remarks}
-                    onChange={(event) => setRouteForm((current) => ({ ...current, remarks: event.target.value }))}
-                    rows={4}
-                    placeholder="Add routing context"
-                    className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
-                  />
-                </div>
-
                 <div className="md:col-span-2">
                   <button
                     type="submit"
-                    disabled={!routeForm.destination || (routeForm.destination === 'Other unit' && !routeForm.otherUnit.trim()) || savingRoute}
+                    disabled={!routeForm.destination || (routeForm.destination === 'Lecturer' && !routeForm.staffId) || (routeForm.destination === 'Other unit' && !routeForm.otherUnit.trim()) || savingRoute}
                     className="inline-flex items-center gap-2 rounded-[16px] bg-[#34b05a] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#2d9a4e] disabled:opacity-50"
                   >
                     {savingRoute ? <Loader2 className="h-4 w-4 animate-spin" /> : <Route className="h-4 w-4" />}
-                    Save route
+                    Send route
                   </button>
                 </div>
               </form>
@@ -431,33 +403,10 @@ export default function ComplaintWorkspace() {
           </section>
 
           <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
-            <h2 className="text-sm font-semibold text-slate-900">Internal notes</h2>
-            <p className="mt-1 text-sm text-slate-500">Notes stay inside the complaint workflow.</p>
-
-            <form onSubmit={handleAddNote} className="mt-5 space-y-4">
-              <textarea
-                value={noteForm}
-                onChange={(event) => setNoteForm(event.target.value)}
-                rows={4}
-                placeholder="Add internal note"
-                className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
-              />
-              <button
-                type="submit"
-                disabled={!noteForm.trim() || savingNote}
-                className="inline-flex items-center gap-2 rounded-[16px] border border-slate-200 px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 transition hover:border-[#34b05a]/25 hover:text-[#34b05a] disabled:opacity-50"
-              >
-                {savingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
-                Save note
-              </button>
-            </form>
-          </section>
-
-          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_52px_-40px_rgba(41,41,41,0.28)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">Activity timeline</h2>
-                <p className="mt-1 text-sm text-slate-500">Submitted, reviewed, routed, updated, noted, and resolved actions.</p>
+                <p className="mt-1 text-sm text-slate-500">Submitted, reviewed, routed, updated, and resolved actions.</p>
               </div>
               <ComplaintStatusBadge status={currentStatus} />
             </div>

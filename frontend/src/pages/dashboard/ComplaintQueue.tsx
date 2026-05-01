@@ -68,7 +68,6 @@ export default function ComplaintQueue() {
   const [targetUnit, setTargetUnit] = useState('');
   const [otherUnit, setOtherUnit] = useState('');
   const [targetStaffId, setTargetStaffId] = useState('');
-  const [routingNote, setRoutingNote] = useState('');
 
   const currentStatuses = useMemo(
     () => complaints.reduce<Record<string, number>>((acc, complaint) => {
@@ -130,20 +129,39 @@ export default function ComplaintQueue() {
     setTargetUnit('');
     setOtherUnit('');
     setTargetStaffId('');
-    setRoutingNote('');
     setRouteModalOpen(true);
   };
 
+  const handleDestinationChange = (value: string) => {
+    setTargetUnit(value);
+    if (value !== 'Other unit') {
+      setOtherUnit('');
+    }
+    if (value !== 'Lecturer') {
+      setTargetStaffId('');
+    }
+  };
+
   const handleRouteComplaint = async () => {
-    if (!selectedComplaint || !targetUnit) return;
+    const trimmedOtherUnit = otherUnit.trim();
+    const requiresLecturer = targetUnit === 'Lecturer';
+    const requiresOtherUnit = targetUnit === 'Other unit';
+
+    if (
+      !selectedComplaint
+      || !targetUnit
+      || (requiresLecturer && !targetStaffId)
+      || (requiresOtherUnit && !trimmedOtherUnit)
+    ) {
+      return;
+    }
 
     setSubmitting(true);
     try {
       await api.patch(`/admin/complaints/${selectedComplaint.id}/route`, {
         destination: targetUnit,
-        otherUnit: targetUnit === 'Other unit' ? otherUnit.trim() : undefined,
-        staffId: targetStaffId || undefined,
-        remarks: routingNote.trim() || undefined,
+        otherUnit: requiresOtherUnit ? trimmedOtherUnit : undefined,
+        staffId: requiresLecturer ? targetStaffId : undefined,
       });
       setRouteModalOpen(false);
       await loadQueue();
@@ -346,7 +364,7 @@ export default function ComplaintQueue() {
       <Modal
         isOpen={isRouteModalOpen}
         onClose={() => setRouteModalOpen(false)}
-        title="Assign Complaint to Lecturer"
+        title="Route Complaint"
         footer={
           <>
             <button onClick={() => setRouteModalOpen(false)} className="px-6 py-3 text-slate-400 font-bold text-xs uppercase tracking-widest">
@@ -354,10 +372,10 @@ export default function ComplaintQueue() {
             </button>
             <button
               onClick={handleRouteComplaint}
-              disabled={!targetUnit || (targetUnit === 'Other unit' && !otherUnit.trim()) || submitting}
+              disabled={!targetUnit || (targetUnit === 'Lecturer' && !targetStaffId) || (targetUnit === 'Other unit' && !otherUnit.trim()) || submitting}
               className="px-8 py-3 bg-[#34b05a] text-white rounded-2xl text-xs font-semibold uppercase tracking-[0.16em] disabled:bg-slate-200"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save route'}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send route'}
             </button>
           </>
         }
@@ -370,13 +388,13 @@ export default function ComplaintQueue() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Assign destination</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Destination</label>
             <select
               value={targetUnit}
-              onChange={(event) => setTargetUnit(event.target.value)}
+              onChange={(event) => handleDestinationChange(event.target.value)}
               className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
             >
-              <option value="">Select unit</option>
+              <option value="">-- Select destination --</option>
               {ROUTING_DESTINATIONS.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -402,26 +420,16 @@ export default function ComplaintQueue() {
             <select
               value={targetStaffId}
               onChange={(event) => setTargetStaffId(event.target.value)}
-              className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+              disabled={targetUnit !== 'Lecturer'}
+              className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="">No direct assignee</option>
+              <option value="">Select lecturer</option>
               {staffList.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.first_name} {item.last_name} ({item.role_name})
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Routing note</label>
-            <textarea
-              value={routingNote}
-              onChange={(event) => setRoutingNote(event.target.value)}
-              rows={4}
-              placeholder="Add context for the routed complaint"
-              className="w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
-            />
           </div>
         </div>
       </Modal>

@@ -7,6 +7,7 @@ import {
   FileText,
   RefreshCcw,
   Route,
+  Search,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
@@ -35,11 +36,22 @@ function toNumber(value: number | string | undefined) {
   return Number(value || 0);
 }
 
+function monthLabelToDate(value?: string) {
+  if (!value) return null;
+  const parsed = new Date(`01 ${value}`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export default function ReportsOverview() {
   const [data, setData] = useState<ReportsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const toast = useToast();
 
   const fetchAnalytics = async () => {
@@ -58,6 +70,70 @@ export default function ReportsOverview() {
   useEffect(() => {
     fetchAnalytics();
   }, []);
+
+  const searchQuery = search.trim().toLowerCase();
+
+  const matchesSearch = (values: Array<string | number | undefined>) =>
+    !searchQuery || values.some((value) => String(value || '').toLowerCase().includes(searchQuery));
+
+  const isMonthInRange = (month?: string) => {
+    const monthDate = monthLabelToDate(month);
+    if (!monthDate) return true;
+
+    if (startDate) {
+      const start = new Date(startDate);
+      if (monthDate < new Date(start.getFullYear(), start.getMonth(), 1)) {
+        return false;
+      }
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      if (monthDate > new Date(end.getFullYear(), end.getMonth(), 1)) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const statusOptions = useMemo(
+    () => Array.from(new Set((data?.byStatus || []).map((item) => String(item.name || '')).filter(Boolean))),
+    [data?.byStatus],
+  );
+
+  const categoryOptions = useMemo(
+    () => Array.from(new Set((data?.byCategory || []).map((item) => String(item.name || '')).filter(Boolean))),
+    [data?.byCategory],
+  );
+
+  const filteredByStatus = useMemo(
+    () => (data?.byStatus || []).filter((item) => (!statusFilter || String(item.name || '') === statusFilter) && matchesSearch([item.name])),
+    [data?.byStatus, statusFilter, searchQuery],
+  );
+
+  const filteredByCategory = useMemo(
+    () => (data?.byCategory || []).filter((item) => (!categoryFilter || String(item.name || '') === categoryFilter) && matchesSearch([item.name])),
+    [categoryFilter, data?.byCategory, searchQuery],
+  );
+
+  const filteredTrends = useMemo(
+    () => (data?.trends || []).filter((item) => matchesSearch([item.month]) && isMonthInRange(item.month)),
+    [data?.trends, endDate, searchQuery, startDate],
+  );
+
+  const filteredTopActions = useMemo(
+    () => (data?.topActions || []).filter((item) => matchesSearch([item.action])),
+    [data?.topActions, searchQuery],
+  );
+
+  const resetFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setCategoryFilter('');
+    setStartDate('');
+    setEndDate('');
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -161,6 +237,67 @@ export default function ReportsOverview() {
             </button>
           </div>
         </div>
+
+        <div className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1fr)_200px_220px_170px_170px_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search report items"
+              className="w-full rounded-[16px] border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+            />
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+          >
+            <option value="">All statuses</option>
+            {statusOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+          >
+            <option value="">All types</option>
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+            className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+          />
+
+          <input
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+            className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#34b05a] focus:bg-white"
+          />
+
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center justify-center gap-2 rounded-[16px] border border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 transition hover:border-[#34b05a]/25 hover:text-[#34b05a]"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Reset
+          </button>
+        </div>
       </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -188,8 +325,8 @@ export default function ReportsOverview() {
         <section className="app-card p-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">By status</h2>
           <div className="mt-5 space-y-3">
-            {(data?.byStatus || []).length ? (
-              data!.byStatus.map((item) => {
+            {filteredByStatus.length ? (
+              filteredByStatus.map((item) => {
                 const value = toNumber(item.value);
                 const width = summary.total > 0 ? Math.max(8, Math.round((value / summary.total) * 100)) : 8;
                 return (
@@ -213,8 +350,8 @@ export default function ReportsOverview() {
         <section className="app-card p-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">By type</h2>
           <div className="mt-5 space-y-3">
-            {(data?.byCategory || []).length ? (
-              data!.byCategory.map((item) => {
+            {filteredByCategory.length ? (
+              filteredByCategory.map((item) => {
                 const value = toNumber(item.value);
                 const width = summary.total > 0 ? Math.max(8, Math.round((value / summary.total) * 100)) : 8;
                 return (
@@ -240,7 +377,7 @@ export default function ReportsOverview() {
         <section className="app-card p-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Monthly activity</h2>
           <div className="mt-5 overflow-hidden rounded-[18px] border border-slate-200">
-            {(data?.trends || []).length ? (
+            {filteredTrends.length ? (
               <table className="min-w-full text-left">
                 <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                   <tr>
@@ -249,7 +386,7 @@ export default function ReportsOverview() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {data!.trends.map((item) => (
+                  {filteredTrends.map((item) => (
                     <tr key={String(item.month)}>
                       <td className="px-4 py-3 text-sm text-slate-700">{item.month}</td>
                       <td className="px-4 py-3 text-right text-sm font-semibold text-slate-900">{toNumber(item.count)}</td>
@@ -268,8 +405,8 @@ export default function ReportsOverview() {
         <section className="app-card p-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Resolution actions</h2>
           <div className="mt-5 space-y-3">
-            {(data?.topActions || []).length ? (
-              data!.topActions.map((item, index) => (
+            {filteredTopActions.length ? (
+              filteredTopActions.map((item, index) => (
                 <div key={`${item.action}-${index}`} className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4">
                   <p className="text-sm font-medium leading-6 text-slate-800">{item.action}</p>
                   <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">

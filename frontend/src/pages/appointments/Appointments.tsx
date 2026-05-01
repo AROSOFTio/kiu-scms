@@ -134,11 +134,14 @@ export default function Appointments() {
       return;
     }
 
+    setSelectedContactId('');
+    setAvailability([]);
+    setSelectedDate(null);
+
     try {
       const response = await api.get('/appointments/hods', { params: { departmentId } });
       const contactData = response.data.data || [];
       setContacts(contactData);
-      setSelectedContactId(contactData.length ? String(contactData[0].id) : '');
     } catch {
       setContacts([]);
       setSelectedContactId('');
@@ -191,14 +194,15 @@ export default function Appointments() {
   const handleBook = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!selectedDate || !selectedContactId) {
-      toast.error('Select a date and HOD to book with');
+    if (!selectedDepartmentId || !selectedDate || !selectedContactId) {
+      toast.error('Select a department, contact, and date to book');
       return;
     }
 
     setIsBooking(true);
     try {
       await api.post('/appointments', {
+        departmentId: Number(selectedDepartmentId),
         hodId: Number(selectedContactId),
         date: selectedDate.toISOString().split('T')[0],
         timeSlot,
@@ -309,15 +313,15 @@ export default function Appointments() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Department HOD</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Select Contact</label>
                   <select
                     value={selectedContactId}
                     onChange={(event) => {
                       setSelectedContactId(event.target.value);
                       setSelectedDate(null);
                     }}
-                    disabled={!contacts.length}
-                    className={`app-input ${!contacts.length ? 'cursor-not-allowed bg-slate-50 text-slate-400' : ''}`}
+                    disabled={!selectedDepartmentId || !contacts.length}
+                    className={`app-input ${!selectedDepartmentId || !contacts.length ? 'cursor-not-allowed bg-slate-50 text-slate-400' : ''}`}
                   >
                     <option value="">Select contact</option>
                     {contacts.map((contact) => (
@@ -409,7 +413,7 @@ export default function Appointments() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={!reason.trim() || isBooking}
+                    disabled={!selectedDepartmentId || !selectedContactId || !reason.trim() || isBooking}
                     className="inline-flex items-center gap-2 rounded-[16px] bg-[#34b05a] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#2d9a4e] disabled:bg-slate-300"
                   >
                     {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

@@ -344,20 +344,29 @@ export const assignStaff = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Route complaint (HOD internal routing with remarks)
+// @desc    Route complaint (HOD internal routing)
 // @route   PATCH /api/v1/admin/complaints/:id/route
 export const routeComplaint = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { destination, staffId, remarks } = req.body;
+  const { destination, otherUnit, staffId } = req.body;
   const hodUserId = (req as any).user?.userId;
   const roleName = (req as any).user?.roleName;
+  const complaintId = parseInt(id);
+  const rawDestination = String(destination || '').trim();
+  const customDestination = String(otherUnit || '').trim();
+  const resolvedDestination = rawDestination === 'Other unit' ? customDestination : rawDestination;
+  const isLecturerDestination = rawDestination === 'Lecturer';
 
-  if (!destination) {
+  if (!rawDestination) {
     return res.status(400).json({ status: 'error', message: 'Routing destination is required' });
   }
 
+  if (rawDestination === 'Other unit' && !customDestination) {
+    return res.status(400).json({ status: 'error', message: 'Specify the destination unit' });
+  }
+
   try {
-    if (!await verifyHODComplaintScope(hodUserId, roleName, parseInt(id))) {
+    if (!await verifyHODComplaintScope(hodUserId, roleName, complaintId)) {
       return res.status(403).json({
         status: 'error',
         message: 'Forbidden: You can only manage complaints in your department.',
@@ -365,9 +374,15 @@ export const routeComplaint = async (req: Request, res: Response) => {
     }
 
     const hodDeptId = await getHODDepartmentId(hodUserId);
+    if (!hodDeptId) {
+      return res.status(403).json({ status: 'error', message: 'HOD department not found' });
+    }
 
-    let assignedLecturer: any = null;
-    if (staffId && hodDeptId) {
+    if (isLecturerDestination) {
+      if (!staffId) {
+        return res.status(400).json({ status: 'error', message: 'Lecturer selection is required for lecturer routing' });
+      }
+
       const [staffRows]: any = await db.query(
         `SELECT st.id, u.first_name, u.last_name
          FROM staff st
@@ -376,33 +391,52 @@ export const routeComplaint = async (req: Request, res: Response) => {
          WHERE st.id = ? AND r.name = 'Lecturer' AND st.department_id = ?`,
         [staffId, hodDeptId]
       );
-      assignedLecturer = staffRows[0] || null;
+
+      if (staffRows.length === 0) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid lecturer selected. Lecturers must belong to your department.',
+        });
+      }
+
+      const lecturer = staffRows[0];
+      const assignmentMessage = `Assigned to Lecturer ${lecturer.first_name} ${lecturer.last_name}`;
+
+      await db.query(
+        `UPDATE complaints
+         SET assigned_staff_id = ?, assigned_by_user_id = ?, status = 'Assigned to Lecturer'
+         WHERE id = ?`,
+        [lecturer.id, hodUserId, id]
+      );
+
+      await db.query(
+        `INSERT INTO complaint_status_history (complaint_id, status, changed_by_user_id, remarks)
+         VALUES (?, 'Assigned to Lecturer', ?, ?)`,
+        [id, hodUserId, assignmentMessage]
+      );
+
+      await NotificationService.notifyAssignment(complaintId, lecturer.id);
+      await NotificationService.notifyStatusChange(complaintId, 'Assigned to Lecturer', assignmentMessage);
+
+      return res.json({ status: 'success', message: 'Complaint assigned to lecturer successfully' });
     }
+
+    const routingMessage = `Routed to: ${resolvedDestination}`;
 
     await db.query(
       `UPDATE complaints
-       SET assigned_staff_id = ?, assigned_by_user_id = ?, status = 'Assigned to Lecturer'
+       SET assigned_staff_id = NULL, assigned_by_user_id = ?, status = 'Received by HOD'
        WHERE id = ?`,
-      [assignedLecturer ? assignedLecturer.id : null, hodUserId, id]
+      [hodUserId, id]
     );
-
-    const routingMessage = [
-      `Routed to: ${destination}`,
-      assignedLecturer ? `Assigned to Lecturer ${assignedLecturer.first_name} ${assignedLecturer.last_name}` : '',
-      remarks ? String(remarks).trim() : '',
-    ].filter(Boolean).join('. ');
 
     await db.query(
       `INSERT INTO complaint_status_history (complaint_id, status, changed_by_user_id, remarks)
-       VALUES (?, 'Assigned to Lecturer', ?, ?)`,
+       VALUES (?, 'Received by HOD', ?, ?)`,
       [id, hodUserId, routingMessage]
     );
 
-    if (assignedLecturer) {
-      await NotificationService.notifyAssignment(parseInt(id), assignedLecturer.id);
-    }
-
-    await NotificationService.notifyStatusChange(parseInt(id), 'Assigned to Lecturer', routingMessage);
+    await NotificationService.notifyStatusChange(complaintId, routingMessage, routingMessage);
 
     res.json({ status: 'success', message: 'Complaint routed successfully' });
   } catch (err: any) {
@@ -1243,6 +1277,7 @@ export const getDetailedReports = async (req: Request, res: Response) => {
       if (staffRow.length > 0) { where += ' AND c.assigned_staff_id = ?'; params.push(staffRow[0].id); }
       else { where += ' AND 1=0'; }
     }
+    const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
     const [byCategory]: any = await db.query(
       `SELECT cc.name AS name, COUNT(c.id) AS value
@@ -1250,7 +1285,10 @@ export const getDetailedReports = async (req: Request, res: Response) => {
        GROUP BY cc.name`, params
     );
     const [byStatus]: any = await db.query(
-      `SELECT status AS name, COUNT(*) AS value FROM complaints c ${where} GROUP BY status`, params
+      `SELECT ${displayStatusSql} AS name, COUNT(*) AS value
+       FROM complaints c ${where}
+       GROUP BY ${displayStatusSql}`,
+      params
     );
     const [trends]: any = await db.query(
       `SELECT DATE_FORMAT(created_at, '%b %Y') AS month, COUNT(*) AS count
@@ -1263,8 +1301,23 @@ export const getDetailedReports = async (req: Request, res: Response) => {
        ${where} AND c.status IN ('Resolved','Closed')
        GROUP BY cc.name`, params
     );
+    const [topActions]: any = await db.query(
+      `SELECT
+         CASE
+           WHEN TRIM(COALESCE(csh.remarks, '')) = '' THEN csh.status
+           ELSE csh.remarks
+         END AS action,
+         COUNT(*) AS count
+       FROM complaint_status_history csh
+       JOIN complaints c ON c.id = csh.complaint_id
+       ${where} AND csh.status IN ('Resolved', 'Closed')
+       GROUP BY action
+       ORDER BY count DESC, action ASC
+       LIMIT 5`,
+      params
+    );
 
-    res.json({ status: 'success', data: { byCategory, byStatus, trends, resolutionTime } });
+    res.json({ status: 'success', data: { byCategory, byStatus, trends, resolutionTime, topActions } });
   } catch (err: any) {
     res.status(500).json({ status: 'error', message: err.message });
   }

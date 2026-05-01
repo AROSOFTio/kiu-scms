@@ -46,6 +46,7 @@ const complaintSchema = z.object({
 
 type ComplaintFormData = z.infer<typeof complaintSchema>;
 type Category = { id: number; name: string; description: string };
+type Faculty = { id: number; name: string };
 
 function getFileExt(filename: string) {
   const p = filename.split('.');
@@ -58,6 +59,7 @@ export default function NewComplaint() {
   const { user } = useAuth();
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [departmentId, setDepartmentId] = useState<number | null>(null);
   const [profileLinked, setProfileLinked] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -116,12 +118,14 @@ export default function NewComplaint() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [catRes, deptRes] = await Promise.all([
+        const [catRes, deptRes, facultyRes] = await Promise.all([
           api.get('/complaints/categories'),
           api.get('/appointments/departments'),
+          api.get('/auth/faculties'),
         ]);
 
         setCategories(catRes.data.data || []);
+        setFaculties(facultyRes.data.data || []);
 
         // Backend returns { data: { departments: [...], defaultDepartmentId, profileLinked, ... } }
         const deptData = deptRes.data.data;
@@ -175,7 +179,7 @@ export default function NewComplaint() {
     lines.push(`Student: ${data.studentName} | Reg No: ${data.regNo} | ${data.college} | ${data.currentYear}, ${data.currentSemester} | Tel: ${data.contact}`);
     if (isAcademic) {
       lines.push('');
-      lines.push('Incomplete Results Details:');
+      lines.push('Result / Academic Complaint Details:');
       lines.push(`Course: ${data.courseCode || 'N/A'} - ${data.courseName || 'N/A'}`);
       lines.push(`Period: ${data.acadYear || 'N/A'}, ${data.acadSemester || 'N/A'}`);
       lines.push(`Assessment type: ${data.cwFeMention || 'N/A'}`);
@@ -286,7 +290,14 @@ export default function NewComplaint() {
             </div>
             <div className="sm:col-span-2">
               <label className="text-sm font-bold tracking-wide text-slate-700">College / School</label>
-              <input type="text" {...register('college')} className={inputCls} placeholder="e.g. Faculty of Engineering" />
+              <select {...register('college')} className={selectCls}>
+                <option value="">Select college / school</option>
+                {faculties.map((faculty) => (
+                  <option key={faculty.id} value={faculty.name}>
+                    {faculty.name}
+                  </option>
+                ))}
+              </select>
               {errors.college && <p className={errCls}>{errors.college.message}</p>}
             </div>
             <div>
@@ -361,7 +372,7 @@ export default function NewComplaint() {
           <div className="rounded-[24px] border border-blue-100 bg-gradient-to-b from-blue-50/50 to-white p-6 shadow-sm">
             <div className="mb-6 flex items-center gap-2 border-b border-blue-100/50 pb-4">
               <BookOpen className="h-5 w-5 text-blue-600" />
-              <h2 className="text-base font-extrabold uppercase tracking-widest text-blue-900">Incomplete Results Specifics</h2>
+              <h2 className="text-base font-extrabold uppercase tracking-widest text-blue-900">Result / Academic Complaint Details</h2>
             </div>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>

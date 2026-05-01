@@ -110,51 +110,65 @@ function resolveTimestamp(event: { changed_at?: string; created_at?: string; tim
 }
 
 function describeStatusEvent(status: string, remarks: string, actor: string) {
+  const trimmedRemarks = remarks.trim();
+
   switch (status) {
     case 'Submitted':
       return {
         title: `Submitted by ${actor}`,
-        summary: remarks || 'Complaint received and logged.',
+        summary: trimmedRemarks || 'Complaint received and logged.',
       };
     case 'Received by HOD':
+      if (trimmedRemarks.startsWith('Routed to:')) {
+        return {
+          title: trimmedRemarks,
+          summary: 'Complaint routed from the department queue for follow-up.',
+        };
+      }
       return {
         title: `Received by HOD`,
-        summary: remarks || `Complaint acknowledged by ${actor}.`,
+        summary: trimmedRemarks || `Complaint acknowledged by ${actor}.`,
       };
     case 'Assigned to Lecturer':
+      if (trimmedRemarks.startsWith('Assigned to Lecturer')) {
+        return {
+          title: trimmedRemarks,
+          summary: 'Complaint assigned to a lecturer for handling.',
+        };
+      }
       return {
-        title: remarks.startsWith('Routed to') ? remarks.split('. ')[0] : `Assigned by ${actor}`,
-        summary: remarks || 'Complaint assigned to a lecturer for action.',
+        title: trimmedRemarks.startsWith('Routed to') ? trimmedRemarks.split('. ')[0] : `Assigned by ${actor}`,
+        summary: trimmedRemarks || 'Complaint assigned to a lecturer for action.',
       };
     case 'In Progress':
       return {
         title: `In progress update by ${actor}`,
-        summary: remarks || 'Work is ongoing.',
+        summary: trimmedRemarks || 'Work is ongoing.',
       };
     case 'Awaiting Student':
       return {
         title: `Awaiting student response`,
-        summary: remarks || `Update posted by ${actor}.`,
+        summary: trimmedRemarks || `Update posted by ${actor}.`,
       };
     case 'Resolved':
       return {
         title: `Resolved by ${actor}`,
-        summary: remarks || 'Complaint marked as resolved.',
+        summary: trimmedRemarks || 'Complaint marked as resolved.',
       };
     case 'Closed':
       return {
         title: `Closed by ${actor}`,
-        summary: remarks || 'Complaint closed.',
+        summary: trimmedRemarks || 'Complaint closed.',
       };
     case 'Rejected':
       return {
         title: `Rejected by ${actor}`,
-        summary: remarks || 'Complaint rejected.',
+        summary: trimmedRemarks || 'Complaint rejected.',
       };
     default:
       return {
         title: `Status changed by ${actor}`,
-        summary: remarks || status,
+        summary: trimmedRemarks || status,
       };
   }
 }

@@ -121,11 +121,11 @@ export const getStudentDepartments = async (req: Request, res: Response) => {
 // @route   POST /api/v1/appointments
 export const bookAppointment = async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
-  const { hodId, date, timeSlot, reason } = req.body;
+  const { hodId, date, timeSlot, reason, departmentId } = req.body;
 
   try {
     // Ensure student profile and resolve department
-    const studentScope = await ensureStudentProfile(userId, undefined);
+    const studentScope = await ensureStudentProfile(userId, departmentId);
     if (!studentScope.profile) {
       return res.status(403).json({ status: 'error', message: studentScope.message });
     }
@@ -251,18 +251,45 @@ export const updateAppointmentStatus = async (req: Request, res: Response) => {
 // @route   GET /api/v1/appointments/hods
 export const getHODs = async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
+  const requestedDepartmentId = Number(req.query.departmentId);
 
   try {
     const scope = await findStudentProfile(userId);
+    let departmentId: number | null = null;
 
-    if (!scope.profile) {
+    if (scope.profile) {
+      if (
+        Number.isInteger(requestedDepartmentId)
+        && requestedDepartmentId > 0
+        && requestedDepartmentId !== scope.profile.departmentId
+      ) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'You can only load contacts for your assigned department.',
+        });
+      }
+
+      departmentId = scope.profile.departmentId;
+    } else if (Number.isInteger(requestedDepartmentId) && requestedDepartmentId > 0) {
+      const [departments]: any = await db.query(
+        'SELECT id FROM departments WHERE id = ? LIMIT 1',
+        [requestedDepartmentId]
+      );
+
+      if (departments.length === 0) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Selected department is invalid.',
+        });
+      }
+
+      departmentId = requestedDepartmentId;
+    } else {
       return res.status(400).json({
         status: 'error',
-        message: 'Your student profile must be linked to a department before booking appointments.',
+        message: scope.message || 'Select a department first.',
       });
     }
-
-    const departmentId = scope.profile.departmentId;
 
     const [hods]: any = await db.query(
       `SELECT u.id, u.first_name, u.last_name, r.name AS role_name,
