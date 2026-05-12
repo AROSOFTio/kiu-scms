@@ -1277,45 +1277,59 @@ export const getDetailedReports = async (req: Request, res: Response) => {
       if (staffRow.length > 0) { where += ' AND c.assigned_staff_id = ?'; params.push(staffRow[0].id); }
       else { where += ' AND 1=0'; }
     }
-    const displayStatusSql = `COALESCE((SELECT csh.status FROM complaint_status_history csh WHERE csh.complaint_id = c.id ORDER BY csh.changed_at DESC, csh.id DESC LIMIT 1), c.status)`;
 
     const [byCategory]: any = await db.query(
       `SELECT cc.name AS name, COUNT(c.id) AS value
-       FROM complaint_categories cc LEFT JOIN complaints c ON cc.id = c.category_id ${where}
-       GROUP BY cc.name`, params
+       FROM complaints c
+       JOIN complaint_categories cc ON cc.id = c.category_id
+       ${where}
+       GROUP BY cc.name
+       ORDER BY cc.name`,
+      params
     );
     const [byStatus]: any = await db.query(
-      `SELECT ${displayStatusSql} AS name, COUNT(*) AS value
+      `SELECT c.status AS name, COUNT(*) AS value
        FROM complaints c ${where}
-       GROUP BY ${displayStatusSql}`,
+       GROUP BY c.status
+       ORDER BY c.status`,
       params
     );
     const [trends]: any = await db.query(
-      `SELECT DATE_FORMAT(created_at, '%b %Y') AS month, COUNT(*) AS count
-       FROM complaints c ${where} AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-       GROUP BY month ORDER BY MIN(created_at)`, params
+      `SELECT DATE_FORMAT(c.created_at, '%b %Y') AS month, COUNT(*) AS count
+       FROM complaints c ${where} AND c.created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+       GROUP BY YEAR(c.created_at), MONTH(c.created_at), month
+       ORDER BY YEAR(c.created_at), MONTH(c.created_at)`,
+      params
     );
     const [resolutionTime]: any = await db.query(
       `SELECT cc.name AS category, ROUND(AVG(TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at)), 1) AS avgHours
        FROM complaints c JOIN complaint_categories cc ON c.category_id = cc.id
        ${where} AND c.status IN ('Resolved','Closed')
-       GROUP BY cc.name`, params
-    );
-    const [topActions]: any = await db.query(
-      `SELECT
-         CASE
-           WHEN TRIM(COALESCE(csh.remarks, '')) = '' THEN csh.status
-           ELSE csh.remarks
-         END AS action,
-         COUNT(*) AS count
-       FROM complaint_status_history csh
-       JOIN complaints c ON c.id = csh.complaint_id
-       ${where} AND csh.status IN ('Resolved', 'Closed')
-       GROUP BY action
-       ORDER BY count DESC, action ASC
-       LIMIT 5`,
+       GROUP BY cc.name`,
       params
     );
+
+    let topActions: any[] = [];
+    try {
+      const [rows]: any = await db.query(
+        `SELECT
+           CASE
+             WHEN TRIM(COALESCE(csh.remarks, '')) = '' THEN csh.status
+             ELSE csh.remarks
+           END AS action,
+           COUNT(*) AS count
+         FROM complaint_status_history csh
+         JOIN complaints c ON c.id = csh.complaint_id
+         ${where} AND csh.status IN ('Resolved', 'Closed')
+         GROUP BY action
+         ORDER BY count DESC, action ASC
+         LIMIT 5`,
+        params
+      );
+      topActions = rows;
+    } catch {
+      topActions = [];
+    }
 
     res.json({ status: 'success', data: { byCategory, byStatus, trends, resolutionTime, topActions } });
   } catch (err: any) {
