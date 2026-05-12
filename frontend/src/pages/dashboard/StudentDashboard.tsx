@@ -79,11 +79,9 @@ export default function StudentDashboard() {
           api.get('/appointments'),
         ]);
 
-        if (complaintsRes.status === 'rejected') {
-          throw complaintsRes.reason;
-        }
-
-        const complaintData = complaintsRes.value.data.data || [];
+        const complaintData = complaintsRes.status === 'fulfilled'
+          ? complaintsRes.value.data.data || []
+          : [];
         setComplaints(complaintData);
 
         if (statsRes.status === 'fulfilled') {
@@ -137,9 +135,9 @@ export default function StudentDashboard() {
   const filteredComplaints = useMemo(() => {
     return complaints.filter((complaint) => {
       const matchesSearch =
-        complaint.title.toLowerCase().includes(search.toLowerCase()) ||
-        complaint.reference_number.toLowerCase().includes(search.toLowerCase()) ||
-        complaint.category_name.toLowerCase().includes(search.toLowerCase());
+        (complaint.title || '').toLowerCase().includes(search.toLowerCase()) ||
+        (complaint.reference_number || '').toLowerCase().includes(search.toLowerCase()) ||
+        (complaint.category_name || '').toLowerCase().includes(search.toLowerCase());
 
       const matchesStatus = statusFilter === 'All' || (complaint.display_status || complaint.status) === statusFilter;
       return matchesSearch && matchesStatus;

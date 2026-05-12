@@ -105,7 +105,7 @@ export default function DashboardLayout() {
   }, [isSidebarOpen]);
 
   return (
-    <div className={`min-h-screen text-slate-900 ${isHODRole ? 'bg-[#292929]' : 'bg-[#eef1f4]'}`}>
+    <div className={`min-h-screen overflow-x-hidden text-slate-900 ${isHODRole ? 'bg-[#292929]' : 'bg-[#eef1f4]'}`}>
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-sm lg:hidden"
@@ -193,7 +193,7 @@ export default function DashboardLayout() {
         </div>
       </aside>
 
-      <div className={isHODRole ? 'bg-[#292929] lg:pl-[310px]' : 'lg:pl-72'}>
+      <div className={`min-w-0 ${isHODRole ? 'bg-[#292929] lg:pl-[310px]' : 'lg:pl-72'}`}>
         <header className={`sticky top-0 z-30 text-white ${isHODRole ? 'bg-[#292929] shadow-[0_18px_40px_-28px_rgba(17,17,17,0.82)]' : 'border-b border-[#393836] bg-[#292929]'}`}>
           <div className={`mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 ${isHODRole ? 'h-20 max-w-none' : 'h-20 max-w-7xl'}`}>
             <div className="flex min-w-0 items-center gap-4">
@@ -223,7 +223,7 @@ export default function DashboardLayout() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               <TimeDisplay />
               <NotificationDropdown />
               <div className={`hidden items-center gap-3 rounded-[18px] border border-white/12 px-3 py-2 md:flex ${isHODRole ? 'bg-white/10' : 'bg-white/8'}`}>

@@ -18,6 +18,7 @@ const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'] as const
 
 const YEAR_OPTIONS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
 const SEMESTER_OPTIONS = ['Semester 1', 'Semester 2', 'Semester 3'];
+const COLLEGE_OPTIONS = ['SOL', 'CEM', 'CHSS', 'SONAS'];
 const CW_FE_OPTIONS = [
   { value: 'Coursework', label: 'Coursework' },
   { value: 'Final Exam', label: 'Final Exam' },
@@ -30,6 +31,7 @@ const complaintSchema = z.object({
   college:         z.string().min(1, 'College/School is required'),
   currentYear:     z.string().min(1, 'Current year is required'),
   currentSemester: z.string().min(1, 'Current semester is required'),
+  departmentId:     z.string().min(1, 'Department is required'),
   contact:         z.string().min(1, 'Contact number is required'),
   categories:      z.array(z.number()).min(1, 'Select at least one category'),
   title:           z.string().min(8, 'Subject must be at least 8 characters').max(200),
@@ -46,7 +48,7 @@ const complaintSchema = z.object({
 
 type ComplaintFormData = z.infer<typeof complaintSchema>;
 type Category = { id: number; name: string; description: string };
-type Faculty = { id: number; name: string };
+type Department = { id: number; name: string; faculty_name?: string; student_number?: string };
 
 function getFileExt(filename: string) {
   const p = filename.split('.');
@@ -59,7 +61,7 @@ export default function NewComplaint() {
   const { user } = useAuth();
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [departmentId, setDepartmentId] = useState<number | null>(null);
   const [profileLinked, setProfileLinked] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -78,6 +80,7 @@ export default function NewComplaint() {
       studentName: user ? `${user.firstName} ${user.lastName}` : '',
       categories: [], title: '', description: '',
       regNo: '', college: '', currentYear: '', currentSemester: '', contact: '',
+      departmentId: '',
       courseCode: '', courseName: '', acadYear: '', acadSemester: '',
       cwFeMention: '', lecturerName: '',
     },
@@ -118,29 +121,28 @@ export default function NewComplaint() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [catRes, deptRes, facultyRes] = await Promise.all([
+        const [catRes, deptRes] = await Promise.all([
           api.get('/complaints/categories'),
           api.get('/appointments/departments'),
-          api.get('/auth/faculties'),
         ]);
 
         setCategories(catRes.data.data || []);
-        setFaculties(facultyRes.data.data || []);
 
         // Backend returns { data: { departments: [...], defaultDepartmentId, profileLinked, ... } }
         const deptData = deptRes.data.data;
         if (deptData) {
           setProfileLinked(!!deptData.profileLinked);
+          const depts: Department[] = (deptData.departments || []).slice(0, 2);
+          setDepartments(depts);
 
           if (deptData.defaultDepartmentId) {
             setDepartmentId(deptData.defaultDepartmentId);
+            setValue('departmentId', String(deptData.defaultDepartmentId));
           }
 
           // Pre-fill reg no from first department entry if available
-          const depts: any[] = deptData.departments || [];
           if (depts.length > 0) {
             if (depts[0].student_number) setValue('regNo', depts[0].student_number);
-            if (depts[0].faculty_name)   setValue('college', depts[0].faculty_name);
           }
         }
       } catch (err: any) {
@@ -177,6 +179,7 @@ export default function NewComplaint() {
     const lines: string[] = [];
     lines.push(`Categories: ${catNames}`);
     lines.push(`Student: ${data.studentName} | Reg No: ${data.regNo} | ${data.college} | ${data.currentYear}, ${data.currentSemester} | Tel: ${data.contact}`);
+    lines.push(`Department: ${departments.find((department) => String(department.id) === data.departmentId)?.name || 'N/A'}`);
     if (isAcademic) {
       lines.push('');
       lines.push('Result / Academic Complaint Details:');
@@ -260,6 +263,7 @@ export default function NewComplaint() {
   const inputCls = 'w-full rounded-[14px] border border-slate-200 bg-slate-50 px-5 py-3.5 text-base font-medium outline-none focus:border-[#34b05a] focus:ring-1 focus:ring-[#34b05a]';
   const selectCls = `${inputCls} appearance-none`;
   const errCls = 'text-sm font-medium text-rose-500 mt-1';
+  const departmentInput = register('departmentId');
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
@@ -292,13 +296,32 @@ export default function NewComplaint() {
               <label className="text-sm font-bold tracking-wide text-slate-700">College / School</label>
               <select {...register('college')} className={selectCls}>
                 <option value="">Select college / school</option>
-                {faculties.map((faculty) => (
-                  <option key={faculty.id} value={faculty.name}>
-                    {faculty.name}
+                {COLLEGE_OPTIONS.map((college) => (
+                  <option key={college} value={college}>
+                    {college}
                   </option>
                 ))}
               </select>
               {errors.college && <p className={errCls}>{errors.college.message}</p>}
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm font-bold tracking-wide text-slate-700">Department</label>
+              <select
+                {...departmentInput}
+                className={selectCls}
+                onChange={(event) => {
+                  departmentInput.onChange(event);
+                  setDepartmentId(event.target.value ? Number(event.target.value) : null);
+                }}
+              >
+                <option value="">Select department</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+              {errors.departmentId && <p className={errCls}>{errors.departmentId.message}</p>}
             </div>
             <div>
               <label className="text-sm font-bold tracking-wide text-slate-700">Current Year</label>
